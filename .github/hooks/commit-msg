@@ -1,0 +1,12 @@
+#!/bin/sh
+# 커밋 메시지 컨벤션 검증 훅
+# 설정: git config core.hooksPath .github/hooks
+
+msg=$(cat "$1" | head -1)
+if echo "$msg" | grep -qE "^(feat|fix|docs|style|refactor|test|chore): .+"; then
+  exit 0
+fi
+echo "커밋 메시지 형식을 맞추어주세요!"
+echo "   입력: $msg"
+echo "   형식: type: subject (예: feat: 로그인 API 구현)"
+exit 1
