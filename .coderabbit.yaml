@@ -12,23 +12,19 @@ reviews:
   poem: false
   review_status: true
 
+  path_filters:
+    - "!**/build/**"
+    - "!**/generated/**"
+    - "!**/Q*.java"
+    - "!**/*.gradle"
+    - "!gradle/**"
+
   auto_review:
     enabled: true
     drafts: false
     base_branches: ["main", "dev"]
 
   path_instructions:
-    - path: "**/build/**"
-      instructions: "Exclude from review"
-    - path: "**/generated/**"
-      instructions: "Exclude from review"
-    - path: "**/Q*.java"
-      instructions: "Exclude from review (QueryDSL generated)"
-    - path: "**/*.gradle"
-      instructions: "Exclude from review (only critical issues if needed)"
-    - path: "gradle/**"
-      instructions: "Exclude from review"
-
     - path: "**/*.java"
       instructions: |
         You are a production-level code reviewer specializing in Spring Boot 3.5 and Java 21.
