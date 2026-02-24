@@ -47,7 +47,7 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
-    base_branches: ["main", "dev", "develop"]
+    base_branches: ["main", "dev"]
 
   path_instructions:
     - path: "**/build/**"
