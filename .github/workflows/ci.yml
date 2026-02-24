@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: read
-  checks: write
   pull-requests: write
 
 jobs:
@@ -58,7 +57,7 @@ jobs:
           fi
 
       - name: Jacoco PR Comment
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false
         uses: madrapps/jacoco-report@v1.7.1
         with:
           paths: build/reports/jacoco/test/jacocoTestReport.xml
