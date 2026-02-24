@@ -17,6 +17,11 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .ignoringRequestMatchers(
+                                "/actuator/health", "/actuator/health/**", "/actuator/info",
+                                "/api/health", "/api/ping",
+                                "/swagger-ui/**", "/v3/api-docs/**"
+                        )
                 )
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)

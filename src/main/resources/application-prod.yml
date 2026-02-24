@@ -19,6 +19,15 @@ spring:
       hibernate:
         format_sql: false
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
 logging:
   level:
     org.hibernate.SQL: warn

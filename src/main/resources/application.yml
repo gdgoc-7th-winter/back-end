@@ -6,17 +6,17 @@ spring:
   datasource:
     driver-class-name: org.postgresql.Driver
 
-  session:
-    store-type: redis
-    redis:
-      namespace: hufsdev:session
-
   jpa:
     open-in-view: false
     properties:
       hibernate:
         jdbc:
           time_zone: UTC
+
+  session:
+    store-type: redis
+    redis:
+      namespace: hufsdev:session
 
 server:
   port: 8080
@@ -25,15 +25,6 @@ server:
       charset: UTF-8
       force: true
   forward-headers-strategy: framework
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-  endpoint:
-    health:
-      show-details: never
 
 springdoc:
   swagger-ui:
