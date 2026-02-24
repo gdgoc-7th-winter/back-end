@@ -28,7 +28,7 @@ Thumbs.db
 .env
 *.env.local
 
-application.yml
+application-local.yml
 
 # QueryDSL generated sources
 src/main/generated/

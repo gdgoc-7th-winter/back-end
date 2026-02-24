@@ -1,0 +1,42 @@
+# 공통 설정
+spring:
+  application:
+    name: hufsdev
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+
+  session:
+    store-type: redis
+    redis:
+      namespace: hufsdev:session
+
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+  forward-headers-strategy: framework
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui
+  api-docs:
+    path: /v3/api-docs

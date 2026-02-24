@@ -9,12 +9,12 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Instant;
 import java.util.Map;
 
-@Tag(name = "Health", description = "Health Check API")
+@Tag(name = "ApiHealth", description = "API 헬스 체크")
 @RestController
 @RequestMapping("/api")
-public class HealthController {
+public class ApiHealthController {
 
-    @Operation(summary = "Health Check", description = "서버 상태를 확인합니다.")
+    @Operation(summary = "헬스 체크", description = "서버 상태 및 타임스탬프를 확인합니다.")
     @GetMapping("/health")
     public Map<String, String> health() {
         return Map.of(
@@ -23,7 +23,7 @@ public class HealthController {
         );
     }
 
-    @Operation(summary = "Ping", description = "서버가 응답 가능한지 확인합니다.")
+    @Operation(summary = "핑", description = "서버가 응답 가능한지 확인합니다.")
     @GetMapping("/ping")
     public String ping() {
         return "pong";
