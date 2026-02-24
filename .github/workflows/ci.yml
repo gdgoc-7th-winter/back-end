@@ -45,6 +45,7 @@ jobs:
         if: always()
         with:
           files: build/test-results/**/*.xml
+          comment_mode: off  # Checks 탭에서만 확인, PR 댓글 없음
 
       - name: Add Jacoco Coverage to Job Summary
         if: always()
@@ -57,7 +58,7 @@ jobs:
           fi
 
       - name: Jacoco PR Comment
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false
         uses: madrapps/jacoco-report@v1.7.1
         with:
           paths: build/reports/jacoco/test/jacocoTestReport.xml
