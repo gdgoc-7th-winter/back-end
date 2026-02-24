@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   build:
+    name: Backend CI / build
     runs-on: ubuntu-latest
 
     steps:
@@ -38,7 +39,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build & Test
-        run: ./gradlew build --no-daemon
+        run: ./gradlew build jacocoTestReport --no-daemon
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
