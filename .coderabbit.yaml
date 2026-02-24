@@ -15,7 +15,6 @@ reviews:
   path_filters:
     - "!**/build/**"
     - "!**/generated/**"
-    - "!**/Q*.java"
     - "!**/*.gradle"
     - "!gradle/**"
 

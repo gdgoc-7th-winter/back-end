@@ -45,6 +45,7 @@ jobs:
         if: always()
         with:
           files: build/test-results/**/*.xml
+          comment_mode: off  # Checks 탭에서만 확인, PR 댓글 없음
 
       - name: Add Jacoco Coverage to Job Summary
         if: always()
