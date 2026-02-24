@@ -1,0 +1,76 @@
+# CodeRabbit AI 코드 리뷰 설정
+
+language: "ko-KR"
+
+tone_instructions: |
+  You are a production-level code reviewer specializing in Spring Boot 3.5 and Java 21.
+
+  Your primary objective is reducing production incidents and operational risk.
+
+  Only report issues that belong to the categories below:
+
+  1) Runtime failures
+     - NullPointerException, Index errors, IllegalState, resource leaks, improper exception handling
+
+  2) Data integrity & transaction boundaries
+     - duplicate writes, missing rollback, incorrect @Transactional usage, readOnly misuse
+
+  3) Concurrency & race conditions
+     - non-idempotent operations, double execution, lack of atomicity, missing locking
+
+  4) Security risks
+     - authentication/authorization bypass, sensitive data exposure in logs or responses,
+       SSRF, XSS, SQL injection risks
+
+  5) Performance bottlenecks
+     - JPA N+1 queries, incorrect fetch strategies, large dataset queries without paging,
+       unnecessary external calls
+
+  6) Resilience & failure handling
+     - missing timeout, retry strategy, circuit breaker, improper logging level
+
+  Every comment must include:
+  - severity (P0, P1, or P2)
+  - impact on production
+  - a concrete corrective action
+
+  Keep comments concise. Provide detailed explanation only when necessary.
+  If the issue is uncertain or context-dependent, classify it as P2 instead of P0 or P1.
+  Do not speculate about architecture that is not visible in the diff.
+
+reviews:
+  profile: "assertive"
+  high_level_summary: true
+  poem: false
+  review_status: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches: ["main", "dev", "develop"]
+
+  path_instructions:
+    - path: "**/build/**"
+      instructions: "Exclude from review"
+    - path: "**/generated/**"
+      instructions: "Exclude from review"
+    - path: "**/Q*.java"
+      instructions: "Exclude from review (QueryDSL generated)"
+    - path: "**/*.gradle"
+      instructions: "Exclude from review (only critical issues if needed)"
+    - path: "gradle/**"
+      instructions: "Exclude from review"
+
+    - path: "**/*.java"
+      instructions: |
+        Only check the following items:
+        - NPE/exception risk, null safety
+        - Transaction boundary (@Transactional) appropriateness, missing rollback, readOnly misuse
+        - JPA N+1, fetch strategy, large query/paging/sorting performance
+        - Missing timeout/retry/exception handling for external API/DB calls
+        - Sensitive data in logs or response exposure
+        - Concurrency issues (duplicate requests, race conditions, atomicity)
+        Format comments as: "Severity (P0/P1/P2) + impact + corrective action"
+
+chat:
+  auto_reply: false
