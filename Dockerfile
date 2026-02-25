@@ -24,6 +24,10 @@ WORKDIR /app
 
 COPY --from=builder /app/build/libs/*.jar app.jar
 
+RUN groupadd -r appuser && useradd -r -g appuser -d /app appuser \
+    && chown -R appuser:appuser /app
+USER appuser
+
 ENV TZ=UTC
 EXPOSE 8080
 

@@ -30,6 +30,11 @@ management:
 logging:
   file:
     path: /app/logs
+  logback:
+    rollingpolicy:
+      max-file-size: 50MB
+      total-size-cap: 1GB
+      max-history: 14
   level:
     org.hibernate.SQL: warn
     root: info

@@ -6,7 +6,7 @@ on:
 
 concurrency:
   group: cd-deploy
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build-and-push:
@@ -59,6 +59,18 @@ jobs:
     needs: build-and-push
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync deploy.sh to EC2
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "scripts/deploy.sh"
+          target: "/opt/hufsdev/backend/"
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -67,4 +79,5 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script_stop: true
           script: |
+            chmod +x /opt/hufsdev/backend/deploy.sh
             /opt/hufsdev/backend/deploy.sh ${{ github.sha }}
