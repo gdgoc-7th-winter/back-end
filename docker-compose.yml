@@ -10,8 +10,7 @@ services:
     image: ${IMAGE_REF:-873135413383.dkr.ecr.ap-northeast-2.amazonaws.com/hufsdev-backend:latest}
     user: "1000:1000"
     restart: always
-    ports:
-      - "8080:8080"
+    network_mode: host
     env_file:
       - .env
     healthcheck:
