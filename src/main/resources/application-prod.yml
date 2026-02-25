@@ -28,6 +28,8 @@ management:
       show-details: never
 
 logging:
+  file:
+    path: /app/logs
   level:
     org.hibernate.SQL: warn
     root: info
