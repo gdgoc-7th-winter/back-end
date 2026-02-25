@@ -7,7 +7,7 @@ ECR_REGISTRY="873135413383.dkr.ecr.ap-northeast-2.amazonaws.com"
 REPO_NAME="REDACTED_DB_PASSWORD-backend"
 CONTAINER_NAME="REDACTED_DB_PASSWORD-backend"
 HEALTH_URL="http://localhost:8080/actuator/health"
-CURL_OPTS=(--connect-timeout 2 --max-time 3 -fsS)
+CURL_OPTS=(--connect-timeout 5 --max-time 15 -fsS)
 LOCK_FILE="$DEPLOY_DIR/.deploy.lock"
 
 cd "$DEPLOY_DIR"

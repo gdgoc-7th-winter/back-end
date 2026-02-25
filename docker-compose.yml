@@ -10,6 +10,8 @@ services:
     image: ${IMAGE_REF:-873135413383.dkr.ecr.ap-northeast-2.amazonaws.com/REDACTED_DB_PASSWORD-backend:latest}
     user: "1000:1000"
     restart: always
+    dns:
+      - 172.31.0.2
     ports:
       - "8080:8080"
     env_file:
