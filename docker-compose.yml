@@ -1,3 +1,4 @@
+# 로컬 개발용
 services:
   postgres:
     image: postgres:17-alpine
