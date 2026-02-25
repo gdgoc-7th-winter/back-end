@@ -9,7 +9,6 @@ spring:
     redis:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
       database: 0
 
   jpa:
@@ -29,6 +28,13 @@ management:
       show-details: never
 
 logging:
+  file:
+    path: /app/logs
+  logback:
+    rollingpolicy:
+      max-file-size: 50MB
+      total-size-cap: 1GB
+      max-history: 14
   level:
     org.hibernate.SQL: warn
     root: info
