@@ -10,6 +10,7 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT:6379}
       database: 0
+      timeout: 3s
 
   jpa:
     hibernate:
@@ -26,6 +27,13 @@ management:
   endpoint:
     health:
       show-details: never
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
 
 logging:
   file:
