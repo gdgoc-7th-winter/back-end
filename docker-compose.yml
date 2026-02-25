@@ -1,27 +1,30 @@
-# 로컬 개발용
+# ****************************** #
+# EC2 DOCKER COMPOSE             #
+# Updated At: 26.02.25           #
+# Updated By: Chaehyeon Yeo      #
+# ****************************** #
+
+version: "3.9"
+
 services:
-  postgres:
-    image: postgres:17-alpine
-    container_name: hufsdev-postgres
+  backend:
+    container_name: hufsdev-backend
+    image: ${IMAGE_REF:-873135413383.dkr.ecr.ap-northeast-2.amazonaws.com/hufsdev-backend:latest}
+    restart: always
     ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: hufsdev
-      POSTGRES_USER: hufsdev
-      POSTGRES_PASSWORD: hufsdev
+      - "8080:8080"
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
     volumes:
-      - postgres-data:/var/lib/postgresql/data
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    container_name: hufsdev-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    restart: unless-stopped
-
-volumes:
-  postgres-data:
-  redis-data:
+      - ./logs:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"

@@ -1,0 +1,27 @@
+# 로컬 개발용 (PostgreSQL + Redis)
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: hufsdev-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: hufsdev
+      POSTGRES_USER: hufsdev
+      POSTGRES_PASSWORD: hufsdev
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: hufsdev-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  redis-data:

@@ -30,9 +30,6 @@ Thumbs.db
 
 application-local.yml
 
-# Docker
-docker-compose-prod.yml
-
 # PEM
 *.pem
 

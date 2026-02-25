@@ -62,13 +62,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Sync deploy.sh to EC2
+      - name: Sync deploy files to EC2
         uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "scripts/deploy.sh"
+          source: "scripts/deploy.sh,docker-compose.yml"
           target: "/opt/hufsdev/backend/"
 
       - name: Deploy via SSH
@@ -79,5 +79,5 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script_stop: true
           script: |
-            chmod +x /opt/hufsdev/backend/deploy.sh
-            /opt/hufsdev/backend/deploy.sh ${{ github.sha }}
+            chmod +x /opt/hufsdev/backend/scripts/deploy.sh
+            /opt/hufsdev/backend/scripts/deploy.sh ${{ github.sha }}

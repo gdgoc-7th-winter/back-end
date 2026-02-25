@@ -18,13 +18,13 @@ git config core.hooksPath .github/hooks
 
 ```bash
 ./gradlew clean build -x test
-docker-compose up --build -d
+docker compose -f docker-compose-local.yml up -d
 ```
 
 ## 🔧 로컬 개발
 
 ```bash
-docker-compose up -d                    # 인프라 (PostgreSQL + Redis)
+docker compose -f docker-compose-local.yml up -d   # 인프라 (PostgreSQL + Redis)
 ./gradlew bootRun                       # 앱 실행
 ./gradlew build                         # 빌드 + 테스트 + checkstyle + jacoco
 ```

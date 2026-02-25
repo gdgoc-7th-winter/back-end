@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ---- 설정 (변수화) ----
+# ---- 설정 변수 ----
 DEPLOY_DIR="/opt/hufsdev/backend"
 ECR_REGISTRY="873135413383.dkr.ecr.ap-northeast-2.amazonaws.com"
 REPO_NAME="hufsdev-backend"
@@ -50,7 +50,7 @@ docker compose up -d --remove-orphans
 
 echo "[5/8] Health check"
 HEALTH_OK=false
-for i in {1..40}; do
+for _ in {1..40}; do
   if curl "${CURL_OPTS[@]}" "$HEALTH_URL" >/dev/null; then
     HEALTH_OK=true
     echo "Health OK"
@@ -72,7 +72,7 @@ if [[ "$HEALTH_OK" != "true" ]]; then
     docker compose up -d --remove-orphans
     echo "Waiting for rollback container to be healthy..."
     ROLLBACK_HEALTH_OK=false
-    for i in {1..20}; do
+    for _ in {1..20}; do
       if curl "${CURL_OPTS[@]}" "$HEALTH_URL" >/dev/null; then
         ROLLBACK_HEALTH_OK=true
         break
