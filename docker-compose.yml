@@ -4,12 +4,11 @@
 # Updated By: Chaehyeon Yeo      #
 # ****************************** #
 
-version: "3.9"
-
 services:
   backend:
     container_name: REDACTED_DB_PASSWORD-backend
     image: ${IMAGE_REF:-873135413383.dkr.ecr.ap-northeast-2.amazonaws.com/REDACTED_DB_PASSWORD-backend:latest}
+    user: "1000:1000"
     restart: always
     ports:
       - "8080:8080"
