@@ -70,17 +70,19 @@ if [[ "$HEALTH_OK" != "true" ]]; then
     echo "Rolling back to: $ROLLBACK_REF"
     export IMAGE_REF="$ROLLBACK_REF"
     docker compose pull
-    docker compose down
-    docker compose up -d --remove-orphans
-    echo "Waiting for rollback container to be healthy..."
     ROLLBACK_HEALTH_OK=false
-    for _ in {1..20}; do
-      if curl "${CURL_OPTS[@]}" "$HEALTH_URL" >/dev/null; then
-        ROLLBACK_HEALTH_OK=true
-        break
-      fi
-      sleep 2
-    done
+    if docker compose down && docker compose up -d --remove-orphans; then
+      echo "Waiting for rollback container to be healthy..."
+      for _ in {1..20}; do
+        if curl "${CURL_OPTS[@]}" "$HEALTH_URL" >/dev/null; then
+          ROLLBACK_HEALTH_OK=true
+          break
+        fi
+        sleep 2
+      done
+    else
+      echo "[!] Rollback container failed to start"
+    fi
     if [[ "$ROLLBACK_HEALTH_OK" == "true" ]]; then
       echo "Rollback OK - previous version restored"
     else

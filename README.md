@@ -23,5 +23,5 @@ docker compose -f docker-compose-local.yml up -d   # 인프라 (PostgreSQL + Red
 PR을 올리기 전에 빌드 테스트를 진행해주세요
 
 ```bash
-./gradlew clean build -x test
+./gradlew clean build
 ```
