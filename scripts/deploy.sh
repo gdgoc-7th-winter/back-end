@@ -34,6 +34,7 @@ if [[ -n "$CURRENT_IMAGE" ]]; then
   echo "$CURRENT_IMAGE" > .prev_ref
   echo "Rollback target: $CURRENT_IMAGE"
 else
+  rm -f .prev_ref
   echo "No running container - skip rollback target"
 fi
 
@@ -45,19 +46,20 @@ echo "[3/8] Pull image ($IMAGE_TAG)"
 docker compose pull
 
 echo "[4/8] Restart container"
-docker compose down
-docker compose up -d --remove-orphans
-
-echo "[5/8] Health check"
 HEALTH_OK=false
-for _ in {1..40}; do
-  if curl "${CURL_OPTS[@]}" "$HEALTH_URL" >/dev/null; then
-    HEALTH_OK=true
-    echo "Health OK"
-    break
-  fi
-  sleep 2
-done
+if docker compose down && docker compose up -d --remove-orphans; then
+  echo "[5/8] Health check"
+  for _ in {1..40}; do
+    if curl "${CURL_OPTS[@]}" "$HEALTH_URL" >/dev/null; then
+      HEALTH_OK=true
+      echo "Health OK"
+      break
+    fi
+    sleep 2
+  done
+else
+  echo "[!] Restart failed before health check"
+fi
 
 if [[ "$HEALTH_OK" != "true" ]]; then
   echo "[!] Health FAILED - attempting rollback"
