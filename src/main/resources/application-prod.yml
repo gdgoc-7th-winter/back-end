@@ -11,6 +11,8 @@ spring:
       port: ${REDIS_PORT:6379}
       database: 0
       timeout: 3s
+      ssl:
+        enabled: true
 
   jpa:
     hibernate:
