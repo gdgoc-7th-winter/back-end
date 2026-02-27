@@ -8,11 +8,27 @@ concurrency:
   group: cd-deploy
   cancel-in-progress: false
 
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_ACCOUNT: 873135413383
+  ECR_REPO: hufsdev-backend
+
 jobs:
-  build-and-push:
-    name: Build & Push to ECR
+  test:
+    name: Test
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 20
 
     steps:
       - name: Checkout
@@ -24,11 +40,35 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Run tests
-        run: ./gradlew test --no-daemon
+      - name: Build & Test
+        run: ./gradlew build jacocoTestReport --no-daemon
+
+  build-and-push:
+    name: Build & Push to ECR
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set ECR env
+        id: ecr
+        run: |
+          echo "image=${ECR_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -38,7 +78,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-northeast-2
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
@@ -49,10 +89,10 @@ jobs:
           context: .
           push: true
           tags: |
-            873135413383.dkr.ecr.ap-northeast-2.amazonaws.com/hufsdev-backend:${{ github.sha }}
-            873135413383.dkr.ecr.ap-northeast-2.amazonaws.com/hufsdev-backend:latest
-          cache-from: type=registry,ref=873135413383.dkr.ecr.ap-northeast-2.amazonaws.com/hufsdev-backend:buildcache
-          cache-to: type=registry,ref=873135413383.dkr.ecr.ap-northeast-2.amazonaws.com/hufsdev-backend:buildcache,mode=max
+            ${{ steps.ecr.outputs.image }}:${{ github.sha }}
+            ${{ steps.ecr.outputs.image }}:latest
+          cache-from: type=registry,ref=${{ steps.ecr.outputs.image }}:buildcache
+          cache-to: type=registry,ref=${{ steps.ecr.outputs.image }}:buildcache,mode=max
 
   deploy:
     name: Deploy to EC2
@@ -65,21 +105,21 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Sync deploy files to EC2
-        uses: appleboy/scp-action@v1
+        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345  # v1
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "scripts/deploy.sh,docker-compose.yml"
+          source: "scripts,docker-compose.yml"
           target: "/opt/hufsdev/backend/"
 
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2  # v1
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          script_stop: true
           script: |
+            mkdir -p /opt/hufsdev/backend/scripts
             chmod +x /opt/hufsdev/backend/scripts/deploy.sh
             /opt/hufsdev/backend/scripts/deploy.sh ${{ github.sha }}
