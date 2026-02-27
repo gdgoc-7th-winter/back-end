@@ -80,9 +80,18 @@ jobs:
           title: "Code Coverage"
           update-comment: true
 
-      - name: Upload Reports
+      - name: Check reports exist
         if: always()
-        continue-on-error: true
+        id: reports
+        run: |
+          if [ -d build/reports ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload Reports
+        if: always() && steps.reports.outputs.exists == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: reports
