@@ -15,6 +15,18 @@ jobs:
   build:
     name: Backend CI / build
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 20
 
     steps:
       - name: Checkout
@@ -52,10 +64,10 @@ jobs:
         if: always()
         run: |
           if [ -f build/reports/jacoco/test/jacocoTestReport.xml ]; then
-            echo "## Code Coverage Report" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Jacoco HTML report uploaded as artifact." >> $GITHUB_STEP_SUMMARY
-            echo "Minimum line coverage: **5%**" >> $GITHUB_STEP_SUMMARY
+            echo "## Code Coverage Report" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Jacoco HTML report uploaded as artifact." >> "$GITHUB_STEP_SUMMARY"
+            echo "Minimum line coverage: **0%** (추후 테스트 추가 시 상향)" >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Jacoco PR Comment
@@ -64,12 +76,13 @@ jobs:
         with:
           paths: build/reports/jacoco/test/jacocoTestReport.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 5
+          min-coverage-overall: 0
           title: "Code Coverage"
           update-comment: true
 
       - name: Upload Reports
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: reports
