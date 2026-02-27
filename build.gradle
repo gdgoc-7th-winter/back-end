@@ -36,6 +36,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.session:spring-session-data-redis'
 
+    // verification main sender
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
     // .env 파일 로드
     implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 

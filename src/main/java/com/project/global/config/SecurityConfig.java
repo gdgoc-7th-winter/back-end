@@ -19,7 +19,7 @@ public class SecurityConfig {
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .ignoringRequestMatchers(
                                 "/actuator/health", "/actuator/health/**", "/actuator/info",
-                                "/api/health", "/api/ping",
+                                "/api/health", "/api/ping","/api/auth/**",
                                 "/swagger-ui/**", "/v3/api-docs/**"
                         )
                 )
@@ -32,6 +32,9 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                         // Swagger UI
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // 이메일 인증용
+                        .requestMatchers("/api/auth/**").permitAll()
+
                         // 그 외 모든 요청은 인증 필요 (Redis 세션 기반 인증 적용 예정)
                         .anyRequest().authenticated()
                 )
