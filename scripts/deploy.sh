@@ -97,16 +97,16 @@ fi
 echo "[6/8] Show status"
 docker ps --filter "name=$CONTAINER_NAME"
 
-echo "[7/8] Cleanup dangling images"
-docker image prune -f
+echo "[7/8] Cleanup unused Docker resources"
+docker system prune -f
 
-echo "[8/8] Remove old images (keep last 5)"
+echo "[8/8] Remove old images (keep last 2)"
 docker images "$ECR_REGISTRY/$REPO_NAME" \
   --format "{{.CreatedAt}} {{.Repository}}:{{.Tag}}" \
   | grep -v ":latest" \
   | sort -r \
   | awk '{print $NF}' \
-  | tail -n +6 \
+  | tail -n +3 \
   | xargs -r docker rmi || true
 
 echo "===== DEPLOY COMPLETE ====="
