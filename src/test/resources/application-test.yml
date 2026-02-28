@@ -13,6 +13,23 @@ spring:
     redis:
       host: localhost
       port: 6379
+      ttl:
+        auth-code-minutes: 5
+        session-minutes: 30
+        limit-seconds: 60
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: test@gmail.com
+    password: dummy-pw
+    domain: "@hufs.ac.kr"
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
   jpa:
     hibernate:
@@ -32,3 +49,7 @@ management:
   endpoint:
     health:
       show-details: never
+
+  health:
+    mail:
+      enabled: false
