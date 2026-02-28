@@ -1,21 +1,40 @@
 package com.project.user.application.service;
 
+import com.project.global.error.BusinessException;
+import com.project.global.error.ErrorCode;
 import com.project.user.domain.repository.EmailAuthRepository;
-import lombok.RequiredArgsConstructor;
+import com.project.user.domain.repository.impl.RedisEmailAuthRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 
+@Slf4j
 @Service
-@RequiredArgsConstructor
 public class EmailService {
     private final JavaMailSender mailSender;
     private final EmailAuthRepository emailAuthRepository;
+    private final long authCodeTtl;
+    private final long limitSeconds;
 
-    // 이메일 도메인 유효성 검사
+    public EmailService(
+            JavaMailSender mailSender,
+            RedisEmailAuthRepository emailAuthRepository,
+            @Value("${spring.data.redis.ttl.auth-code-minutes:5}") long authCodeTtl,
+            @Value("${spring.data.redis.ttl.limit-seconds:60}") long limitSeconds) {
+        this.mailSender = mailSender;
+        this.emailAuthRepository = emailAuthRepository;
+        this.authCodeTtl = authCodeTtl;
+        this.limitSeconds = limitSeconds;
+    }
+
+    // 이메일 도메인 유효성 검사 (hufs.ac.kr)
+    @Value("${spring.mail.domain}")
+    private String emailDomain;
     public void validateHufsEmail(String email) {
-        if (!email.endsWith("@hufs.ac.kr")) {
+        if (!email.endsWith(emailDomain)) {
             throw new IllegalArgumentException("한국외대 이메일(@hufs.ac.kr)만 사용 가능합니다.");
         }
     }
@@ -30,18 +49,27 @@ public class EmailService {
     // 이메일 발송
     public void sendAuthEmail(String email) {
         validateHufsEmail(email);
-        String authCode = generateAuthCode();
 
+        // 중복요청 예외처리
+        if (emailAuthRepository.hasRecentRequest(email)) {
+            throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS);
+        }
+
+        // 이메일 발송 로직 1: 인증코드 및 메일 내용 형성
+        String authCode = generateAuthCode();
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject("[HUFS Community] 회원가입 인증번호");
-        message.setText("인증번호는 [" + authCode + "] 입니다. 5분 이내에 입력해주세요.");
+        message.setText("인증번호는 [" + authCode + "] 입니다. [" + authCodeTtl + " ]분 이내에 입력해주세요.");
 
+        // 이메일 발송 로직 2: 인증번호 정보 Redis DB 저장 (TTL 5분)
         try {
-            mailSender.send(message); // 실제 발송
             emailAuthRepository.saveAuthCode(email, authCode);
+            mailSender.send(message); // 실제 발송
+            emailAuthRepository.saveSendLimit(email, limitSeconds);
         } catch (Exception e) {
-            throw new RuntimeException("메일 발송 중 오류가 발생했습니다.");
+            log.error("메일 발송 실패: email={}", email, e);
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "이메일 서버에 일시적인 오류가 발생했습니다. 죄송합니다.");
         }
     }
 
@@ -54,10 +82,10 @@ public class EmailService {
         String savedCode = emailAuthRepository.getAuthCode(email);
 
         if (savedCode == null || !savedCode.equals(inputCode)) {
-            throw new IllegalArgumentException("인증번호가 일치하지 않거나 만료되었습니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "잘못된 인증번호이거나 세션이 만료된 정보입니다. 다시 진행해주세요.");
         }
 
-        emailAuthRepository.deleteAuthcode(email);
+        emailAuthRepository.deleteAuthCode(email);
         emailAuthRepository.setRegisterSession(email);
     }
 }
