@@ -19,11 +19,11 @@ spring:
         limit-seconds: 60
 
   mail:
-    host: ${MAIL_HOST:smtp@gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:test@gmail.com}
-    password: ${MAIL_PASSWORD:dummy-pw}
-    domain: "@hufs.ac.kr"
+    host:
+    port:
+    username:
+    password:
+    domain: ""
     properties:
       mail:
         smtp:
