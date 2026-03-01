@@ -1,29 +1,24 @@
 package com.project.global.presentation;
 
-import com.project.global.config.SecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(ApiHealthController.class)
-@Import(SecurityConfig.class)
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
 class ApiHealthControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @MockitoBean
-    private RedisTemplate<String, Object> redisTemplate;
 
     @Test
     @DisplayName("GET /api/health → 200 OK, status=UP, time 존재")
@@ -39,6 +34,6 @@ class ApiHealthControllerTest {
     void ping() throws Exception {
         mockMvc.perform(get("/api/ping"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("pong"));
+                .andExpect(jsonPath("$.message").value("pong"));
     }
 }
