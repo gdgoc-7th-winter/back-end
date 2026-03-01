@@ -58,10 +58,9 @@ public class UserService {
             String encodedPassword = passwordEncoder.encode(request.getPassword());
             User user = new User(request.getEmail(), encodedPassword);
             userRepository.save(user);
+            emailAuthRepository.deleteRegisterSession(request.getEmail());
         } catch (DataIntegrityViolationException e){
             throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS);
-        } finally {
-            emailAuthRepository.deleteRegisterSession(request.getEmail());
         }
     }
 
