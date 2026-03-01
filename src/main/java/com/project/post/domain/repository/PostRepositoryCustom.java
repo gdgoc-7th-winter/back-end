@@ -1,0 +1,16 @@
+package com.project.post.domain.repository;
+
+import com.project.post.domain.repository.dto.PostDetailQueryResult;
+import com.project.post.application.dto.PostListResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
+
+import java.util.Optional;
+
+public interface PostRepositoryCustom {
+
+    Page<PostListResponse> findPostList(@NonNull String boardCode, @NonNull Pageable pageable);
+
+    Optional<PostDetailQueryResult> findPostDetail(@NonNull Long postId);
+}
