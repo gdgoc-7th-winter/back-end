@@ -123,6 +123,5 @@ public class User {
         if (interests != null) this.interests.addAll(interests);
 
         this.authority = Authority.USER;
-        this.updatedAt = OffsetDateTime.now();
     }
 }

@@ -4,9 +4,9 @@ import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 
 import com.project.user.application.dto.UserSession;
+import com.project.user.application.dto.request.UserPromotionEvent;
 import com.project.user.application.dto.response.ProfileResponse;
 import com.project.user.domain.entity.User;
-import com.project.user.domain.enums.Authority;
 import com.project.user.domain.repository.EmailAuthRepository;
 import com.project.user.domain.repository.UserRepository;
 import com.project.user.presentation.dto.request.LoginRequest;
@@ -17,6 +17,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -36,6 +38,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final EmailAuthRepository emailAuthRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 회원가입
     @Transactional
@@ -51,27 +54,25 @@ public class UserService {
         }
 
         // 비밀번호 암호화 및 엔티티 생성
-        String encodedPassword = passwordEncoder.encode(request.getPassword());
-
-        User user = new User(request.getEmail(), encodedPassword);
-
-        // DB 저장 (UserRepositoryImpl의 save 호출)
-        userRepository.save(user);
-
-        // 가입 성공 후 Redis의 인증 성공 상태는 삭제
-        emailAuthRepository.deleteRegisterSession(request.getEmail());
+        try{
+            String encodedPassword = passwordEncoder.encode(request.getPassword());
+            User user = new User(request.getEmail(), encodedPassword);
+            userRepository.save(user);
+        } catch (DataIntegrityViolationException e){
+            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS);
+        }
     }
 
     @Transactional
     public void login(LoginRequest request, HttpSession session, HttpServletRequest servletRequest) {
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT,"존재하지 않는 정보입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.LOGIN_FAILED));
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new BusinessException(ErrorCode.LOGIN_FAILED);
         }
 
-        String role = user.getAuthority().name(); // Authority Enum 사용
+        String role = user.getAuthority().name();
         List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(role));
 
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
@@ -86,6 +87,7 @@ public class UserService {
         context.setAuthentication(token);
         SecurityContextHolder.setContext(context);
 
+        servletRequest.changeSessionId();
         session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
 
         UserSession userSession = UserSession.builder()
@@ -104,33 +106,15 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "존재하지 않는 사용자입니다."));
 
-        // Entity에 정의한 updateProfile 메서드 활용 (Track도 Enum으로 전달)
         user.updateProfile(
-                request.getNickname(),
-                request.getStudentId(),
-                request.getDepartment(),
-                request.getTrack(),
-                request.getProfilePicture(),
-                request.getTechStacks(),
-                request.getInterests()
+                request.getNickname(), request.getStudentId(), request.getDepartment(), request.getTrack(),
+                request.getProfilePicture(), request.getTechStacks(), request.getInterests()
         );
-
-        user.promoteToUser();
-        UserSession userSession = (UserSession) session.getAttribute("LOGIN_USER");
-
-        if (userSession != null) {
-            UserSession updatedSession = UserSession.builder()
-                    .userId(userSession.getUserId())
-                    .email(userSession.getEmail())
-                    .authority(Authority.USER)
-                    .needsProfile(false)
-                    .build();
-            session.setAttribute("LOGIN_USER", updatedSession);
-            updateSecurityContext(user.getEmail());
-        }
+        eventPublisher.publishEvent(new UserPromotionEvent(user.getEmail(), session, user.getId()));
     }
 
-    private void updateSecurityContext(String email) {
+    @Transactional
+    public void updateSecurityContext(String email) {
         Authentication newAuth = new UsernamePasswordAuthenticationToken(
                 email, null, List.of(new SimpleGrantedAuthority("USER")));
         SecurityContextHolder.getContext().setAuthentication(newAuth);

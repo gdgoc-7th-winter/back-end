@@ -14,7 +14,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 import java.io.IOException;
@@ -41,16 +40,6 @@ public class SecurityConfig {
                                 "/swagger-ui/**", "/v3/api-docs/**", "/api/users/signup", "/api/users/login", "/api/users/logout"
                         )
                 )
-                .formLogin(form -> form
-                        .loginProcessingUrl("/api/users/login")
-                        .successHandler((request, response, authentication) -> {
-                            CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
-                            if (csrfToken != null) {response.setHeader(csrfToken.getHeaderName(), csrfToken.getToken());}
-                            response.setContentType("application/json;charset=UTF-8");
-                            response.setStatus(HttpServletResponse.SC_OK);
-                            response.getWriter().write("{\"success\": true, \"message\": \"로그인 성공\"}");
-                        })
-                )
                 .logout(logout -> logout
                         .logoutUrl("/api/users/logout").invalidateHttpSession(true).clearAuthentication(true).deleteCookies("JSESSIONID")
                         .logoutSuccessHandler((request, response, authentication) -> {
@@ -65,7 +54,6 @@ public class SecurityConfig {
                         })
                 )
                 .httpBasic(AbstractHttpConfigurer::disable)
-                .formLogin(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         // 사용자/개발자 확인용
                         .requestMatchers("/api/health", "/api/ping").permitAll()
