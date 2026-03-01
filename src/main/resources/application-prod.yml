@@ -51,8 +51,12 @@ management:
   health:
     livenessstate:
       enabled: true
+
     readinessstate:
       enabled: true
+
+    mail:
+      enabled: false
 
 logging:
   file:

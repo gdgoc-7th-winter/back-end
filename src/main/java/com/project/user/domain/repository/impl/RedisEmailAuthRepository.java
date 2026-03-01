@@ -32,14 +32,26 @@ public class RedisEmailAuthRepository implements EmailAuthRepository {
         );
     }
 
+
     @Override
-    public String getAuthCode(String email) {
-        return redisTemplate.opsForValue().get("AUTH_CODE:" + email);
+    public String getAndDeleteAuthCode(String email) {
+        String key = "AUTH_CODE:" + email;
+        return redisTemplate.opsForValue().getAndDelete(key);
     }
 
     @Override
-    public void deleteAuthCode(String email) {
-        redisTemplate.delete("AUTH_CODE:" + email);
+    public boolean hasRecentRequest(String email) {
+        return Boolean.TRUE.equals(redisTemplate.hasKey("LIMIT:" + email));
+    }
+
+    @Override
+    public void saveSendLimit(String email, long limitSeconds) {
+        // "LIMIT:이메일" 키를 만들고 지정된 시간(예: 60초) 뒤에 자동 삭제되게 함
+        redisTemplate.opsForValue().set(
+                "LIMIT:" + email,
+                "SENT",
+                Duration.ofSeconds(limitSeconds)
+        );
     }
 
     // 회원가입 권한 세션 (30분) 정보 Redis DB 저장 로직
@@ -53,18 +65,15 @@ public class RedisEmailAuthRepository implements EmailAuthRepository {
     }
 
     @Override
-    public boolean hasRecentRequest(String email) {
-        // "LIMIT:이메일" 키가 존재하면 최근에 보낸 적이 있는 것임
-        return Boolean.TRUE.equals(redisTemplate.hasKey("LIMIT:" + email));
+    public boolean hasRegisterSession(String email) {
+        return Boolean.TRUE.equals(redisTemplate.hasKey("REGISTER_SESSION:" + email));
     }
 
     @Override
-    public void saveSendLimit(String email, long limitSeconds) {
-        // "LIMIT:이메일" 키를 만들고 지정된 시간(예: 60초) 뒤에 자동 삭제되게 함
-        redisTemplate.opsForValue().set(
-                "LIMIT:" + email,
-                "SENT",
-                Duration.ofSeconds(limitSeconds)
-        );
+    public void deleteRegisterSession(String email) {
+        redisTemplate.delete("REGISTER_SESSION:" + email);
     }
+
+
+
 }

@@ -34,21 +34,19 @@ class EmailServiceTest {
 
     @BeforeEach
     void setUp() {
-        // 인증 코드 삭제
         redisTemplate.delete("AUTH_CODE:" + testEmail);
-        redisTemplate.delete("EMAIL_LIMIT:" + testEmail);
+        redisTemplate.delete("LIMIT:" + testEmail);
     }
 
     @AfterEach
     void tearDown() {
-        // 테스트가 끝난 후 사용한 데이터 즉시 삭제 (정리)
         redisTemplate.delete("AUTH_CODE:" + testEmail);
-        redisTemplate.delete("EMAIL_LIMIT:" + testEmail);
+        redisTemplate.delete("LIMIT:" + testEmail);
     }
 
     @Test
     @DisplayName("실제 로직을 실행하여 Redis에 6자리 난수가 저장되는지 확인한다")
-    void sendEmailAndCheckRedis() throws InterruptedException {
+    void sendEmailAndCheckRedis() {
         // 1. 발송 로직 실행 (실제 메일 발송 포함)
         emailService.sendAuthEmail(testEmail);
 
