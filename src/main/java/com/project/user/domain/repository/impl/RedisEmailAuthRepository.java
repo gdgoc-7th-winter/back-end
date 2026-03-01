@@ -66,7 +66,7 @@ public class RedisEmailAuthRepository implements EmailAuthRepository {
 
     @Override
     public boolean hasRegisterSession(String email) {
-        return Boolean.TRUE.equals(redisTemplate.delete("REGISTER_SESSION:" + email));
+        return Boolean.TRUE.equals(redisTemplate.hasKey("REGISTER_SESSION:" + email));
     }
 
     @Override
