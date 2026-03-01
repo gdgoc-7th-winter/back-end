@@ -60,6 +60,8 @@ public class UserService {
             userRepository.save(user);
         } catch (DataIntegrityViolationException e){
             throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS);
+        } finally {
+            emailAuthRepository.deleteRegisterSession(request.getEmail());
         }
     }
 
