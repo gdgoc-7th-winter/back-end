@@ -1,5 +1,7 @@
 package com.project.global.interceptor;
 
+import com.project.global.error.BusinessException;
+import com.project.global.error.ErrorCode;
 import com.project.user.application.dto.UserSession;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -7,6 +9,8 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
+
+import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
@@ -26,10 +30,6 @@ public class OnboardingInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        if (userSession == null) {
-            return true;
-        }
-
         if (userSession.isNeedsProfile()) {
             // 프로필 설정 API 자체는 허용해야 무한 루프에 빠지지 않음
             if (requestURI.equals("/api/users/profile-setup")) {
@@ -46,7 +46,12 @@ public class OnboardingInterceptor implements HandlerInterceptor {
                     + "\"message\": \"프로필 설정을 먼저 완료해주세요.\""
                     + "}";
 
-            response.getWriter().write(jsonResponse);
+            try {
+                response.getWriter().write(jsonResponse);
+            } catch (IOException e) {
+                throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+            }
+
             return false;
         }
 

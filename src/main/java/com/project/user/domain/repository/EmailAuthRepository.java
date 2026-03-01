@@ -7,7 +7,6 @@ public interface EmailAuthRepository {
     void setRegisterSession(String email);
     boolean hasRegisterSession(String email);
     void deleteRegisterSession(String email);
-
     boolean hasRecentRequest(String email);
     void saveSendLimit(String email, long limitSeconds);
 }

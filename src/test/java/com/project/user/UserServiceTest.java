@@ -3,9 +3,11 @@ package com.project.user;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.user.application.dto.UserSession;
+import com.project.user.application.dto.request.UserPromotionEvent;
 import com.project.user.application.service.UserService;
 import com.project.user.domain.entity.User;
 import com.project.user.domain.enums.Authority;
+import com.project.user.domain.enums.Track;
 import com.project.user.domain.repository.EmailAuthRepository;
 import com.project.user.domain.repository.UserRepository;
 import com.project.user.presentation.dto.request.LoginRequest;
@@ -16,9 +18,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
@@ -36,8 +40,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.spy;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -50,6 +55,8 @@ class UserServiceTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private RedisTemplate<String, Object> redisTemplate;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private UserService userService;
@@ -73,6 +80,7 @@ class UserServiceTest {
         LoginRequest request = new LoginRequest(email, password);
 
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
+        servletRequest.getSession(true);
         CsrfToken mockCsrfToken = new DefaultCsrfToken("X-XSRF-TOKEN", "_csrf", "test-token-value");
         servletRequest.setAttribute(CsrfToken.class.getName(), mockCsrfToken);
 
@@ -123,16 +131,12 @@ class UserServiceTest {
 
         // then
         // 1. 엔티티 상태 변경 확인
-        verify(user).promoteToUser();
+        ArgumentCaptor<UserPromotionEvent> eventCaptor = ArgumentCaptor.forClass(UserPromotionEvent.class);
+        verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
 
-        // 2. 갱신된 세션 확인
-        UserSession updatedSession = (UserSession) session.getAttribute("LOGIN_USER");
-        assertThat(updatedSession.getAuthority()).isEqualTo(Authority.USER);
-        assertThat(updatedSession.isNeedsProfile()).isFalse();
-
-        // 3. SecurityContext 갱신 확인
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertThat(auth.getAuthorities()).extracting("authority").contains("USER");
+        UserPromotionEvent publishedEvent = eventCaptor.getValue();
+        assertThat(publishedEvent.email()).isEqualTo(email);
+        assertThat(publishedEvent.userId()).isEqualTo(user.getId());
     }
 
     @Test
@@ -146,10 +150,15 @@ class UserServiceTest {
         // when & then
         assertThatThrownBy(() -> userService.login(loginRequest, session, httpRequest))
                 .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT);
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.LOGIN_FAILED);
     }
 
     private ProfileUpdateRequest createProfileUpdateRequest() {
-        return new ProfileUpdateRequest("닉네임", "202001234", "컴퓨터공학", "BACKEND", null, null, null);
+        return ProfileUpdateRequest.builder()
+                .nickname("닉네임")
+                .studentId("202001234")
+                .department("컴퓨터공학")
+                .track(Track.BACKEND)
+                .build();
     }
 }
