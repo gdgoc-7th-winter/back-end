@@ -39,7 +39,7 @@ dependencies {
     // verification main sender
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
-    // .env 파일 로드
+    // .env-prod 파일 로드
     implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
     // Database

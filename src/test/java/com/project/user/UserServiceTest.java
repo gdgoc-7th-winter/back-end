@@ -1,0 +1,164 @@
+package com.project.user;
+
+import com.project.global.error.BusinessException;
+import com.project.global.error.ErrorCode;
+import com.project.user.application.dto.UserSession;
+import com.project.user.application.dto.request.UserPromotionEvent;
+import com.project.user.application.service.UserService;
+import com.project.user.domain.entity.User;
+import com.project.user.domain.enums.Authority;
+import com.project.user.domain.enums.Track;
+import com.project.user.domain.repository.EmailAuthRepository;
+import com.project.user.domain.repository.UserRepository;
+import com.project.user.presentation.dto.request.LoginRequest;
+import com.project.user.presentation.dto.request.ProfileUpdateRequest;
+
+import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.DefaultCsrfToken;
+
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.spy;
+
+@ExtendWith(MockitoExtension.class)
+class UserServiceTest {
+
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private EmailAuthRepository emailAuthRepository;
+    @Mock
+    private PasswordEncoder passwordEncoder;
+    @Mock
+    private RedisTemplate<String, Object> redisTemplate;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
+    @InjectMocks
+    private UserService userService;
+
+    private MockHttpSession session;
+
+    @BeforeEach
+    void setUp() {
+        session = new MockHttpSession();
+        // SecurityContext 초기화
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    @DisplayName("로그인 성공 시 세션에 유저 정보와 보안 컨텍스트가 저장되어야 한다")
+    void loginSuccess() {
+        // given
+        String email = "test@hufs.ac.kr";
+        String password = "password123";
+        User user = new User(email, "encodedPassword");
+        LoginRequest request = new LoginRequest(email, password);
+
+        MockHttpServletRequest servletRequest = new MockHttpServletRequest();
+        servletRequest.getSession(true);
+        CsrfToken mockCsrfToken = new DefaultCsrfToken("X-XSRF-TOKEN", "_csrf", "test-token-value");
+        servletRequest.setAttribute(CsrfToken.class.getName(), mockCsrfToken);
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(passwordEncoder.matches(password, user.getPassword())).willReturn(true);
+
+        // when
+        userService.login(request, session, servletRequest);
+
+        // then
+        // 세션에 LOGIN_USER가 저장되었는지 확인
+        UserSession userSession = (UserSession) session.getAttribute("LOGIN_USER");
+        assertThat(userSession).isNotNull();
+        assertThat(userSession.getEmail()).isEqualTo(email);
+        assertThat(userSession.isNeedsProfile()).isTrue();
+
+        // 세션에 Spring Security Context가 저장되었는지 확인
+        Object securityContext = session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        assertThat(securityContext).isInstanceOf(SecurityContext.class);
+
+        CsrfToken tokenInRequest = (CsrfToken) servletRequest.getAttribute(CsrfToken.class.getName());
+        assertThat(tokenInRequest).isNotNull();
+        assertThat(tokenInRequest.getToken()).isEqualTo("test-token-value");
+
+        Authentication auth = ((SecurityContext) securityContext).getAuthentication();
+        assertThat(auth.getPrincipal()).isEqualTo(email);
+        assertThat(auth.getAuthorities()).extracting("authority").contains("DUMMY");
+    }
+
+
+    @Test
+    @DisplayName("초기 프로필 설정 완료 시 권한이 USER로 승격되고 세션이 갱신되어야 한다")
+    void completeInitialProfileSuccess() {
+        // given
+        String email = "test@hufs.ac.kr";
+        User user = spy(new User(email, "password")); // updateProfile 감시를 위해 spy 사용
+        ProfileUpdateRequest request = createProfileUpdateRequest(); // 테스트용 DTO 생성 메서드
+
+        // 기존 세션 설정
+        UserSession oldSession = UserSession.builder()
+                .userId(1L).email(email).authority(Authority.DUMMY).needsProfile(true).build();
+        session.setAttribute("LOGIN_USER", oldSession);
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+
+        // when
+        userService.completeInitialProfile(email, request, session);
+
+        // then
+        // 1. 엔티티 상태 변경 확인
+        ArgumentCaptor<UserPromotionEvent> eventCaptor = ArgumentCaptor.forClass(UserPromotionEvent.class);
+        verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
+
+        UserPromotionEvent publishedEvent = eventCaptor.getValue();
+        assertThat(publishedEvent.email()).isEqualTo(email);
+        assertThat(publishedEvent.userId()).isEqualTo(user.getId());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 이메일로 로그인 시 BusinessException이 발생한다")
+    void loginFailUserNotFound() {
+        // given
+        LoginRequest loginRequest = new LoginRequest("none@hufs.ac.kr", "pwd");
+        HttpServletRequest httpRequest = new MockHttpServletRequest();
+        given(userRepository.findByEmail(anyString())).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userService.login(loginRequest, session, httpRequest))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.LOGIN_FAILED);
+    }
+
+    private ProfileUpdateRequest createProfileUpdateRequest() {
+        return ProfileUpdateRequest.builder()
+                .nickname("닉네임")
+                .studentId("202001234")
+                .department("컴퓨터공학")
+                .track(Track.BACKEND)
+                .build();
+    }
+}
