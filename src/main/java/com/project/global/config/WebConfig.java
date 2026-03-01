@@ -12,7 +12,6 @@ public class WebConfig implements WebMvcConfigurer {
 
     public WebConfig(OnboardingInterceptor onboardingInterceptor) {
         this.onboardingInterceptor = onboardingInterceptor;
-        System.out.println("✅✅✅ WebConfig Loaded! ✅✅✅");
     }
 
     @Override

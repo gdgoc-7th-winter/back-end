@@ -46,7 +46,7 @@ public class UserController {
             @RequestBody @Valid LoginRequest loginRequest,
             HttpServletRequest request) {
         HttpSession session = request.getSession(true);
-        userService.login(loginRequest,session);
+        userService.login(loginRequest,session,request);
 
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(ApiResponse.ok("정상 로그인처리 되었습니다."));
@@ -54,12 +54,10 @@ public class UserController {
 
     @PostMapping("/profile-setup")
     public ResponseEntity<?> setupProfile(
-            @RequestBody ProfileUpdateRequest request,
+            @RequestBody @Valid ProfileUpdateRequest request,
             HttpSession session
     ) {
         UserSession user = (UserSession) session.getAttribute("LOGIN_USER");
-
-        System.out.println("user = " + user);
 
         if (user == null) {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND, "세션이 만료되었습니다.");

@@ -25,7 +25,7 @@ Thumbs.db
 *.pid
 
 # Environment
-.env
+.env-prod
 *.env.local
 
 application-local.yml

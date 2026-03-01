@@ -10,5 +10,8 @@ public class LoginResponse implements Serializable {
     private boolean needsProfile;
 
     public LoginResponse(Long id, String email, String nickname, boolean b) {
+        this.email = email;
+        this.nickname = nickname;
+        this.needsProfile = b;
     }
 }

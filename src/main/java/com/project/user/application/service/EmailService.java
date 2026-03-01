@@ -65,7 +65,6 @@ public class EmailService {
         // 이메일 발송 로직 2: 인증번호 정보 Redis DB 저장 (TTL 5분)
         try {
             emailAuthRepository.saveAuthCode(email, authCode);
-            System.out.println(authCode);
             mailSender.send(message); // 실제 발송
             emailAuthRepository.saveSendLimit(email, limitSeconds);
         } catch (Exception e) {

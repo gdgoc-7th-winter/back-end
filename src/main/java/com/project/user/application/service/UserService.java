@@ -13,6 +13,7 @@ import com.project.user.presentation.dto.request.LoginRequest;
 import com.project.user.presentation.dto.request.ProfileUpdateRequest;
 import com.project.user.presentation.dto.request.SignUpRequest;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +25,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,9 +37,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final EmailAuthRepository emailAuthRepository;
     private final PasswordEncoder passwordEncoder;
-    private final RedisTemplate<String, Object> redisTemplate;
-
-    private static final long SESSION_TIMEOUT = 30;
 
     // 회원가입
     @Transactional
@@ -65,12 +64,12 @@ public class UserService {
     }
 
     @Transactional
-    public void login(LoginRequest request, HttpSession session) {
+    public void login(LoginRequest request, HttpSession session, HttpServletRequest servletRequest) {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT,"존재하지 않는 정보입니다."));
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new BusinessException(ErrorCode.INVALID_AUTH_CODE, "비밀번호를 다시 입력하세요.");
+            throw new BusinessException(ErrorCode.LOGIN_FAILED);
         }
 
         String role = user.getAuthority().name(); // Authority Enum 사용
@@ -78,6 +77,11 @@ public class UserService {
 
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
                 user.getEmail(), null, authorities);
+
+        CsrfToken csrfToken = (CsrfToken) servletRequest.getAttribute(CsrfToken.class.getName());
+        if (csrfToken != null) {
+            csrfToken.getToken();
+        }
 
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(token);
@@ -99,7 +103,7 @@ public class UserService {
     @Transactional
     public void completeInitialProfile(String email, ProfileUpdateRequest request, HttpSession session) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "존재하지 않는 사용자입니다."));
 
         // Entity에 정의한 updateProfile 메서드 활용 (Track도 Enum으로 전달)
         user.updateProfile(

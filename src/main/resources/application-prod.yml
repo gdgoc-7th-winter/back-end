@@ -56,7 +56,7 @@ management:
       enabled: true
 
     mail:
-      enabled: true
+      enabled: false
 
 logging:
   file:

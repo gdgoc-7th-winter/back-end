@@ -15,7 +15,7 @@ services:
     ports:
       - "8080:8080"
     env_file:
-      - .env
+      - .env-prod
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health/liveness"]
       interval: 30s
