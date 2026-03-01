@@ -35,7 +35,7 @@ public class EmailService {
     private String emailDomain;
     public void validateHufsEmail(String email) {
         if (!email.endsWith(emailDomain)) {
-            throw new IllegalArgumentException("한국외대 이메일(@hufs.ac.kr)만 사용 가능합니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT,"한국외대 이메일(@hufs.ac.kr)만 사용 가능합니다.");
         }
     }
 
@@ -65,6 +65,7 @@ public class EmailService {
         // 이메일 발송 로직 2: 인증번호 정보 Redis DB 저장 (TTL 5분)
         try {
             emailAuthRepository.saveAuthCode(email, authCode);
+            System.out.println(authCode);
             mailSender.send(message); // 실제 발송
             emailAuthRepository.saveSendLimit(email, limitSeconds);
         } catch (Exception e) {
@@ -73,19 +74,18 @@ public class EmailService {
         }
     }
 
-    public String getAuthInfo(String email) {
-        return emailAuthRepository.getAuthCode(email);
-    }
-
     // 인증코드 확인 및 이메일 인증 정보 Redis DB 인스턴스 삭제
-    public void verifyCode(String email, String inputCode) {
-        String savedCode = emailAuthRepository.getAuthCode(email);
+    public void verifyCode(String email, String authCode) {
+        String savedCode = emailAuthRepository.getAndDeleteAuthCode(email);
 
-        if (savedCode == null || !savedCode.equals(inputCode)) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "잘못된 인증번호이거나 세션이 만료된 정보입니다. 다시 진행해주세요.");
+        if (savedCode == null) {
+            throw new BusinessException(ErrorCode.SESSION_NOT_FOUND); // 세션이 만료되거나 존재하지 않음
         }
 
-        emailAuthRepository.deleteAuthCode(email);
+        if (!savedCode.equals(authCode)) {
+            throw new BusinessException(ErrorCode.INVALID_AUTH_CODE); // 번호 틀림
+        }
+        // 회원가입 권한 세션 저장
         emailAuthRepository.setRegisterSession(email);
     }
 }
