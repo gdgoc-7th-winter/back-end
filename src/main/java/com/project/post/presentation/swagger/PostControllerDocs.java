@@ -1,0 +1,70 @@
+package com.project.post.presentation.swagger;
+
+import com.project.post.application.dto.LikeScrapToggleResponse;
+import com.project.post.application.dto.PostCreateRequest;
+import com.project.post.application.dto.PostDetailResponse;
+import com.project.post.application.dto.PostListResponse;
+import com.project.post.application.dto.PostUpdateRequest;
+import com.project.global.response.CommonResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import com.project.user.domain.entity.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+
+@Tag(name = "Post", description = "게시글 API")
+public interface PostControllerDocs {
+
+    @Operation(summary = "게시글 목록 조회", description = "게시판 코드로 게시글 목록을 페이징하여 조회합니다.")
+    @ApiResponse(responseCode = "200", description = "성공")
+    ResponseEntity<CommonResponse<Page<PostListResponse>>> getList(
+            @Parameter(description = "게시판 코드") String code,
+            Pageable pageable);
+
+    @Operation(summary = "게시글 상세 조회", description = "게시글 ID로 상세 정보를 조회합니다. 조회 시 조회수가 증가합니다.")
+    @ApiResponse(responseCode = "200", description = "성공")
+    ResponseEntity<CommonResponse<PostDetailResponse>> getDetail(
+            @Parameter(description = "게시글 ID") Long id);
+
+    @Operation(summary = "게시글 작성", description = "새 게시글을 작성합니다.")
+    @ApiResponse(responseCode = "201", description = "생성됨")
+    @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
+    ResponseEntity<CommonResponse<Long>> create(
+            @Parameter(description = "게시판 코드") String code,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "게시글 작성 요청") PostCreateRequest request,
+            User user);
+
+    @Operation(summary = "게시글 수정", description = "게시글을 수정합니다.")
+    @ApiResponse(responseCode = "200", description = "성공")
+    @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
+    ResponseEntity<CommonResponse<Void>> update(
+            @Parameter(description = "게시글 ID") Long id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "게시글 수정 요청") PostUpdateRequest request,
+            User user);
+
+    @Operation(summary = "게시글 삭제", description = "게시글을 소프트 삭제합니다.")
+    @ApiResponse(responseCode = "200", description = "성공")
+    @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
+    ResponseEntity<CommonResponse<Void>> delete(
+            @Parameter(description = "게시글 ID") Long id,
+            User user);
+
+    @Operation(summary = "좋아요 토글", description = "게시글에 좋아요를 추가하거나 취소합니다.")
+    @ApiResponse(responseCode = "200", description = "성공")
+    @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
+    ResponseEntity<CommonResponse<LikeScrapToggleResponse>> toggleLike(
+            @Parameter(description = "게시글 ID") Long id,
+            User user);
+
+    @Operation(summary = "스크랩 토글", description = "게시글을 스크랩하거나 취소합니다.")
+    @ApiResponse(responseCode = "200", description = "성공")
+    @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
+    ResponseEntity<CommonResponse<LikeScrapToggleResponse>> toggleScrap(
+            @Parameter(description = "게시글 ID") Long id,
+            User user);
+}
