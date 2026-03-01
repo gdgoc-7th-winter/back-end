@@ -17,7 +17,14 @@ public enum ErrorCode {
 
     INVALID_AUTH_CODE(HttpStatus.BAD_REQUEST, "E001", "인증번호가 다릅니다."),
     SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "E002", "세션 정보가 만료되었거나 찾을 수 없습니다."),
-    DUPLICATED_ADDRESS(HttpStatus.CONFLICT, "E003", "이미 존재하는 아이디입니다.");
+    DUPLICATED_ADDRESS(HttpStatus.CONFLICT, "E003", "이미 존재하는 아이디입니다."),
+
+    LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "A001", "이메일 또는 비밀번호가 일치하지 않습니다."),
+    PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "A002", "현재 비밀번호가 일치하지 않습니다."),
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "A003", "접근 권한이 없습니다."),
+    SESSION_EXPIRED(HttpStatus.UNAUTHORIZED, "A004", "세션이 만료되었습니다.");
+
+
 
     private final HttpStatus status;
     private final String code;

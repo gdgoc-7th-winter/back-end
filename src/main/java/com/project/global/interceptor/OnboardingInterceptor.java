@@ -15,9 +15,6 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @RequiredArgsConstructor
 public class OnboardingInterceptor implements HandlerInterceptor {
 
-    private final RedisTemplate<String, Object> redisTemplate;
-    Logger log = LogManager.getLogger(OnboardingInterceptor.class);
-
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String requestURI = request.getRequestURI();
@@ -26,7 +23,11 @@ public class OnboardingInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        UserSession userSession = (UserSession) session.getAttribute("LOGIN_USER");
+        Object attr = session.getAttribute("LOGIN_USER");
+
+        if (!(attr instanceof UserSession userSession)) {
+            return true;
+        }
 
         if (userSession == null) {
             return true;
@@ -34,7 +35,7 @@ public class OnboardingInterceptor implements HandlerInterceptor {
 
         if (userSession.isNeedsProfile()) {
             // 프로필 설정 API 자체는 허용해야 무한 루프에 빠지지 않음
-            if (requestURI.contains("/api/users/profile-setup")) {
+            if (requestURI.equals("/api/users/profile-setup")) {
                 return true;
             }
 

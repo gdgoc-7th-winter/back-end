@@ -98,8 +98,6 @@ public class User {
     public User(String email, String password) {
         this.email = email;
         this.password = password;
-        this.authority = Authority.DUMMY;
-        this.createdAt = OffsetDateTime.now();
     }
 
     public boolean needsInitialSetup() {
@@ -123,7 +121,6 @@ public class User {
 
         this.interests.clear();
         if (interests != null) this.interests.addAll(interests);
-        this.needsInitialSetup();
 
         this.authority = Authority.USER;
         this.updatedAt = OffsetDateTime.now();

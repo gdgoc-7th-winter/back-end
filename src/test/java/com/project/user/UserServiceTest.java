@@ -11,21 +11,28 @@ import com.project.user.domain.repository.UserRepository;
 import com.project.user.presentation.dto.request.LoginRequest;
 import com.project.user.presentation.dto.request.ProfileUpdateRequest;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import org.junit.jupiter.api.extension.MediaType;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.DefaultCsrfToken;
+
+import java.net.http.HttpRequest;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,16 +75,19 @@ class UserServiceTest {
         User user = new User(email, "encodedPassword");
         LoginRequest request = new LoginRequest(email, password);
 
+        MockHttpServletRequest servletRequest = new MockHttpServletRequest();
+        CsrfToken mockCsrfToken = new DefaultCsrfToken("X-XSRF-TOKEN", "_csrf", "test-token-value");
+        servletRequest.setAttribute(CsrfToken.class.getName(), mockCsrfToken);
+
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
         given(passwordEncoder.matches(password, user.getPassword())).willReturn(true);
 
         // when
-        userService.login(request, session);
+        userService.login(request, session, servletRequest);
 
         // then
         // 세션에 LOGIN_USER가 저장되었는지 확인
         UserSession userSession = (UserSession) session.getAttribute("LOGIN_USER");
-
         assertThat(userSession).isNotNull();
         assertThat(userSession.getEmail()).isEqualTo(email);
         assertThat(userSession.isNeedsProfile()).isTrue();
@@ -85,6 +95,10 @@ class UserServiceTest {
         // 세션에 Spring Security Context가 저장되었는지 확인
         Object securityContext = session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
         assertThat(securityContext).isInstanceOf(SecurityContext.class);
+
+        CsrfToken tokenInRequest = (CsrfToken) servletRequest.getAttribute(CsrfToken.class.getName());
+        assertThat(tokenInRequest).isNotNull();
+        assertThat(tokenInRequest.getToken()).isEqualTo("test-token-value");
 
         Authentication auth = ((SecurityContext) securityContext).getAuthentication();
         assertThat(auth.getPrincipal()).isEqualTo(email);
@@ -128,11 +142,12 @@ class UserServiceTest {
     @DisplayName("존재하지 않는 이메일로 로그인 시 BusinessException이 발생한다")
     void loginFailUserNotFound() {
         // given
-        LoginRequest request = new LoginRequest("none@hufs.ac.kr", "pwd");
+        LoginRequest loginRequest = new LoginRequest("none@hufs.ac.kr", "pwd");
+        HttpServletRequest httpRequest = new MockHttpServletRequest();
         given(userRepository.findByEmail(anyString())).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> userService.login(request, session))
+        assertThatThrownBy(() -> userService.login(loginRequest, session, httpRequest))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT);
     }

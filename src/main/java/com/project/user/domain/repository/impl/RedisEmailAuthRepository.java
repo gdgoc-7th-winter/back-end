@@ -12,7 +12,6 @@ public class RedisEmailAuthRepository implements EmailAuthRepository {
     private final StringRedisTemplate redisTemplate;
     private final long authCodeTtl;
     private final long sessionTtl;
-    private static final String VERIFIED_PREFIX = "VERIFIED:";
 
     public RedisEmailAuthRepository(
             StringRedisTemplate redisTemplate,
@@ -37,12 +36,7 @@ public class RedisEmailAuthRepository implements EmailAuthRepository {
     @Override
     public String getAndDeleteAuthCode(String email) {
         String key = "AUTH_CODE:" + email;
-        String authCode = redisTemplate.opsForValue().get(key);
-
-        if (authCode != null) {
-            redisTemplate.delete(key);
-        }
-        return authCode;
+        return redisTemplate.opsForValue().getAndDelete(key);
     }
 
     @Override
