@@ -1,8 +1,9 @@
 package com.project.user.presentation.controller;
 
+import com.project.user.presentation.swagger.UserControllerDocs;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
-import com.project.global.response.ApiResponse;
+import com.project.global.response.CommonResponse;
 
 import com.project.user.application.dto.UserSession;
 import com.project.user.application.dto.response.ProfileResponse;
@@ -30,28 +31,31 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-public class UserController {
+public class UserController implements UserControllerDocs {
 
     private final UserService userService;
 
+    @Override
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<String>> signUp(@RequestBody @Valid SignUpRequest request) {
+    public ResponseEntity<CommonResponse<String>> signUp(@RequestBody @Valid SignUpRequest request) {
         userService.signUp(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("회원가입이 완료되었습니다."));
+                .body(CommonResponse.ok("회원가입이 완료되었습니다."));
     }
 
+    @Override
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<String>> login(
+    public ResponseEntity<CommonResponse<String>> login(
             @RequestBody @Valid LoginRequest loginRequest,
             HttpServletRequest request) {
         HttpSession session = request.getSession(true);
         userService.login(loginRequest,session,request);
 
         return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(ApiResponse.ok("정상 로그인처리 되었습니다."));
+                .body(CommonResponse.ok("정상 로그인처리 되었습니다."));
     }
 
+    @Override
     @PostMapping("/profile-setup")
     public ResponseEntity<?> setupProfile(
             @RequestBody @Valid ProfileUpdateRequest request,
@@ -65,11 +69,12 @@ public class UserController {
 
         userService.completeInitialProfile(user.getEmail(), request, session);
 
-        return ResponseEntity.ok(ApiResponse.ok("프로필 설정이 완료되었습니다."));
+        return ResponseEntity.ok(CommonResponse.ok("프로필 설정이 완료되었습니다."));
     }
 
+    @Override
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<ProfileResponse>> getMyProfile(HttpSession session) {
+    public ResponseEntity<CommonResponse<ProfileResponse>> getMyProfile(HttpSession session) {
         UserSession sessionUser = (UserSession) session.getAttribute("LOGIN_USER");
 
         if (sessionUser == null) {
@@ -77,6 +82,6 @@ public class UserController {
         }
 
         ProfileResponse response = userService.getUserProfile(sessionUser.getEmail());
-        return ResponseEntity.ok(ApiResponse.ok(response));
+        return ResponseEntity.ok(CommonResponse.ok(response));
     }
 }
