@@ -1,0 +1,18 @@
+package com.project.post.application.dto;
+
+import java.time.Instant;
+import java.util.List;
+
+public record PostCommentResponse(
+        Long commentId,
+        Long postId,
+        Long userId,
+        String userNickname,
+        Long parentCommentId,
+        int depth,
+        String content,
+        long likeCount,
+        Instant createdAt,
+        List<PostCommentResponse> replies
+) {
+}
