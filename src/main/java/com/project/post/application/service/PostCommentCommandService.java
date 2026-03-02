@@ -25,7 +25,7 @@ public class PostCommentCommandService {
 
     @Transactional
     public Long create(@NonNull Long postId, @NonNull PostCommentRequest request, @NonNull User user) {
-        Post post = postRepository.findByIdForUpdate(postId)
+        Post post = postRepository.findActiveById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
 
         PostComment comment;
@@ -48,8 +48,9 @@ public class PostCommentCommandService {
 
     @Transactional
     public void softDelete(@NonNull Long postId, @NonNull Long commentId, @NonNull User user) {
-        postRepository.findByIdForUpdate(postId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
+        if (!postRepository.existsActiveById(postId)) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다.");
+        }
 
         PostComment comment = commentRepository.findActiveById(commentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "댓글을 찾을 수 없습니다."));
@@ -63,6 +64,5 @@ public class PostCommentCommandService {
         }
 
         comment.softDelete();
-        postRepository.decrementCommentCount(postId);
     }
 }

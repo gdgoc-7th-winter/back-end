@@ -18,10 +18,10 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
-import java.util.LinkedHashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 @Repository
 @RequiredArgsConstructor
@@ -102,28 +102,28 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
             return Optional.empty();
         }
 
-        Set<String> tagNames = fetchTagNames(postId);
-        Set<PostDetailQueryResult.AttachmentDto> attachments = fetchAttachments(postId);
+        List<String> tagNames = fetchTagNames(postId);
+        List<PostDetailQueryResult.AttachmentDto> attachments = fetchAttachments(postId);
 
         return Optional.of(buildDetailResult(base, post, user, tagNames, attachments));
     }
 
-    private Set<String> fetchTagNames(Long postId) {
+    private List<String> fetchTagNames(Long postId) {
         QPostTag postTag = QPostTag.postTag;
         QTag tag = QTag.tag;
-        Set<String> tagNames = new LinkedHashSet<>(queryFactory
+        List<String> tagNames = new ArrayList<>(queryFactory
                 .select(tag.name)
                 .from(postTag)
                 .join(postTag.tag, tag)
                 .where(postTag.post.id.eq(postId))
                 .fetch());
-        tagNames.remove(null);
+        tagNames.removeIf(Objects::isNull);
         return tagNames;
     }
 
-    private Set<PostDetailQueryResult.AttachmentDto> fetchAttachments(Long postId) {
+    private List<PostDetailQueryResult.AttachmentDto> fetchAttachments(Long postId) {
         QPostAttachment attachment = QPostAttachment.postAttachment;
-        return new LinkedHashSet<>(queryFactory
+        return new ArrayList<>(queryFactory
                 .select(Projections.constructor(
                         PostDetailQueryResult.AttachmentDto.class,
                         attachment.fileUrl,
@@ -142,8 +142,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
             Tuple base,
             QPost post,
             QUser user,
-            Set<String> tagNames,
-            Set<PostDetailQueryResult.AttachmentDto> attachments) {
+            List<String> tagNames,
+            List<PostDetailQueryResult.AttachmentDto> attachments) {
         return new PostDetailQueryResult(
                 base.get(post.id),
                 base.get(post.title),

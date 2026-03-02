@@ -1,7 +1,7 @@
 package com.project.post.domain.repository.dto;
 
 import java.time.Instant;
-import java.util.Set;
+import java.util.List;
 
 public record PostDetailQueryResult(
         Long postId,
@@ -10,14 +10,14 @@ public record PostDetailQueryResult(
         String thumbnailUrl,
         String authorNickname,
         Long authorId,
-        int viewCount,
-        int likeCount,
-        int scrapCount,
-        int commentCount,
+        long viewCount,
+        long likeCount,
+        long scrapCount,
+        long commentCount,
         Instant createdAt,
         Instant updatedAt,
-        Set<String> tagNames,
-        Set<AttachmentDto> attachments
+        List<String> tagNames,
+        List<AttachmentDto> attachments
 ) {
 
     public record AttachmentDto(

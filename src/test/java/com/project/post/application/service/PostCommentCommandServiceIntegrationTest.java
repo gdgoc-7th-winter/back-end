@@ -56,7 +56,7 @@ class PostCommentCommandServiceIntegrationTest {
                 .content("parent")
                 .build();
 
-        when(postRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(post));
+        when(postRepository.findActiveById(1L)).thenReturn(Optional.of(post));
         when(postCommentRepository.findActiveById(20L)).thenReturn(Optional.of(parent));
 
         PostCommentRequest request = new PostCommentRequest("reply", 20L);

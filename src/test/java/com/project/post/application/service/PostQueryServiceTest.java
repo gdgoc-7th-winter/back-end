@@ -20,11 +20,10 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import java.time.Instant;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -59,13 +58,13 @@ class PostQueryServiceTest {
     @Test
     @DisplayName("상세 조회는 태그/첨부를 정렬 및 필터링한다")
     void getDetailMapsTagsAndAttachments() {
-        Set<String> tagNames = new HashSet<>(List.of("spring", "java"));
+        List<String> tagNames = new ArrayList<>(List.of("spring", "java"));
         tagNames.add(null);
 
-        Set<PostDetailQueryResult.AttachmentDto> attachments = new HashSet<>();
+        List<PostDetailQueryResult.AttachmentDto> attachments = new ArrayList<>();
         attachments.add(new PostDetailQueryResult.AttachmentDto(null, "skip", "text/plain", 10L, 1));
-        attachments.add(new PostDetailQueryResult.AttachmentDto("url-2", "b.txt", "text/plain", 20L, 2));
         attachments.add(new PostDetailQueryResult.AttachmentDto("url-1", "a.txt", "text/plain", 5L, null));
+        attachments.add(new PostDetailQueryResult.AttachmentDto("url-2", "b.txt", "text/plain", 20L, 2));
 
         PostDetailQueryResult result = new PostDetailQueryResult(
                 1L,
@@ -74,10 +73,10 @@ class PostQueryServiceTest {
                 "thumb",
                 "author",
                 10L,
-                3,
-                2,
-                1,
-                4,
+                3L,
+                2L,
+                1L,
+                4L,
                 Instant.now(),
                 Instant.now(),
                 tagNames,

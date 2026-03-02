@@ -44,19 +44,19 @@ public class Post extends SoftDeleteEntity {
 
     @Column(name = "view_count", nullable = false)
     @lombok.Builder.Default
-    private int viewCount = 0;
+    private long viewCount = 0;
 
     @Column(name = "like_count", nullable = false)
     @lombok.Builder.Default
-    private int likeCount = 0;
+    private long likeCount = 0;
 
     @Column(name = "scrap_count", nullable = false)
     @lombok.Builder.Default
-    private int scrapCount = 0;
+    private long scrapCount = 0;
 
     @Column(name = "comment_count", nullable = false)
     @lombok.Builder.Default
-    private int commentCount = 0;
+    private long commentCount = 0;
 
     public void update(String title, String content, String thumbnailUrl) {
         if (title != null) {

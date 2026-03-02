@@ -15,6 +15,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.util.Objects;
+
 @Entity
 @Table(name = "post_comments")
 @Getter
@@ -39,14 +41,23 @@ public class PostComment extends SoftDeleteEntity {
     @lombok.Builder.Default
     private int depth = 0;
 
-    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
     @Column(name = "like_count", nullable = false)
     @lombok.Builder.Default
-    private int likeCount = 0;
+    private long likeCount = 0;
+
+    @Override
+    public void softDelete() {
+        super.softDelete();
+        this.content = null;
+    }
 
     public static PostComment createRoot(Post post, User user, String content) {
+        Objects.requireNonNull(post, "게시글은 필수입니다.");
+        Objects.requireNonNull(user, "사용자는 필수입니다.");
+        Objects.requireNonNull(content, "댓글 내용은 필수입니다.");
         return PostComment.builder()
                 .post(post)
                 .user(user)
@@ -57,6 +68,9 @@ public class PostComment extends SoftDeleteEntity {
     }
 
     public static PostComment createReply(Post post, User user, PostComment parent, String content) {
+        Objects.requireNonNull(post, "게시글은 필수입니다.");
+        Objects.requireNonNull(user, "사용자는 필수입니다.");
+        Objects.requireNonNull(content, "댓글 내용은 필수입니다.");
         if (parent == null) {
             throw new PostDomainException("부모 댓글이 없습니다.");
         }

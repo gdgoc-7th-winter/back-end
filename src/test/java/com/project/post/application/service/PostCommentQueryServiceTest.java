@@ -64,7 +64,7 @@ class PostCommentQueryServiceTest {
         when(postRepository.existsActiveById(1L)).thenReturn(true);
         when(commentRepository.findRootComments(1L, PageRequest.of(0, 10)))
                 .thenReturn(new PageImpl<>(List.of(root)));
-        when(commentRepository.findRepliesByParentIds(List.of(10L)))
+        when(commentRepository.findRepliesByParentId(10L, 21))
                 .thenReturn(List.of(reply));
 
         Page<PostCommentResponse> result = postCommentQueryService.getComments(1L, PageRequest.of(0, 10));
@@ -75,6 +75,7 @@ class PostCommentQueryServiceTest {
         assertThat(rootResponse.replies().get(0).parentCommentId()).isEqualTo(10L);
         assertThat(rootResponse.replies().get(0).content()).isEqualTo("reply");
         assertThat(rootResponse.isDeleted()).isFalse();
+        assertThat(rootResponse.hasMoreReplies()).isFalse();
     }
 
     @Test
@@ -90,7 +91,7 @@ class PostCommentQueryServiceTest {
         when(postRepository.existsActiveById(1L)).thenReturn(true);
         when(commentRepository.findRootComments(1L, PageRequest.of(0, 10)))
                 .thenReturn(new PageImpl<>(List.of(root)));
-        when(commentRepository.findRepliesByParentIds(List.of(10L)))
+        when(commentRepository.findRepliesByParentId(10L, 21))
                 .thenReturn(List.of());
 
         Page<PostCommentResponse> result = postCommentQueryService.getComments(1L, PageRequest.of(0, 10));
@@ -100,6 +101,7 @@ class PostCommentQueryServiceTest {
         assertThat(rootResponse.content()).isNull();
         assertThat(rootResponse.userId()).isNull();
         assertThat(rootResponse.userNickname()).isNull();
+        assertThat(rootResponse.hasMoreReplies()).isFalse();
     }
 
     private static User buildUser(Long id, String nickname) {

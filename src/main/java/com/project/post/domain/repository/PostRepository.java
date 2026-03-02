@@ -40,7 +40,7 @@ public interface PostRepository extends JpaRepository<Post, Long>, PostRepositor
     int decrementLikeCount(@Param("postId") Long postId);
 
     @Query("SELECT p.likeCount FROM Post p WHERE p.id = :postId AND p.deletedAt IS NULL")
-    Optional<Integer> findLikeCountById(@Param("postId") Long postId);
+    Optional<Long> findLikeCountById(@Param("postId") Long postId);
 
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Post p SET p.scrapCount = p.scrapCount + 1 WHERE p.id = :postId AND p.deletedAt IS NULL")
@@ -51,7 +51,7 @@ public interface PostRepository extends JpaRepository<Post, Long>, PostRepositor
     int decrementScrapCount(@Param("postId") Long postId);
 
     @Query("SELECT p.scrapCount FROM Post p WHERE p.id = :postId AND p.deletedAt IS NULL")
-    Optional<Integer> findScrapCountById(@Param("postId") Long postId);
+    Optional<Long> findScrapCountById(@Param("postId") Long postId);
 
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Post p SET p.commentCount = p.commentCount + 1 WHERE p.id = :postId AND p.deletedAt IS NULL")

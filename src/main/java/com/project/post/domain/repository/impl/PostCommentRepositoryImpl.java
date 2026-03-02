@@ -52,8 +52,8 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom {
     }
 
     @Override
-    public List<PostComment> findRepliesByParentIds(@NonNull List<Long> parentIds) {
-        if (parentIds == null || parentIds.isEmpty()) {
+    public List<PostComment> findRepliesByParentId(@NonNull Long parentId, int limit) {
+        if (parentId == null || limit <= 0) {
             return Collections.emptyList();
         }
         QPostComment comment = QPostComment.postComment;
@@ -63,10 +63,11 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom {
                 .join(comment.post).fetchJoin()
                 .join(comment.parentComment).fetchJoin()
                 .where(
-                        comment.parentComment.id.in(parentIds),
+                        comment.parentComment.id.eq(parentId),
                         comment.deletedAt.isNull()
                 )
                 .orderBy(comment.createdAt.asc())
+                .limit(limit)
                 .fetch();
     }
 }

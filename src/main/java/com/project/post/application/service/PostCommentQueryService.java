@@ -9,17 +9,20 @@ import com.project.post.domain.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PostCommentQueryService {
+
+    private static final int MAX_PAGE_SIZE = 100;
+    private static final int MAX_REPLIES_PER_ROOT = 20;
 
     private final PostRepository postRepository;
     private final PostCommentRepository commentRepository;
@@ -30,21 +33,22 @@ public class PostCommentQueryService {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다.");
         }
 
-        Page<PostComment> rootComments = commentRepository.findRootComments(postId, pageable);
-        List<Long> rootIds = rootComments.getContent().stream()
-                .map(PostComment::getId)
-                .toList();
+        Pageable safePageable = pageable.getPageSize() > MAX_PAGE_SIZE
+                ? PageRequest.of(pageable.getPageNumber(), MAX_PAGE_SIZE, pageable.getSort())
+                : pageable;
 
-        List<PostComment> replies = rootIds.isEmpty()
-                ? List.of()
-                : commentRepository.findRepliesByParentIds(rootIds);
-        Map<Long, List<PostComment>> repliesByParent = replies.stream()
-                .filter(c -> c.getParentComment() != null)
-                .collect(Collectors.groupingBy(c -> c.getParentComment().getId()));
+        Page<PostComment> rootComments = commentRepository.findRootComments(postId, safePageable);
 
         return rootComments.map(root -> {
-            List<PostComment> replyList = repliesByParent.getOrDefault(root.getId(), List.of());
-            return toResponseWithReplies(root, replyList);
+            List<PostComment> replies = commentRepository.findRepliesByParentId(
+                    root.getId(),
+                    MAX_REPLIES_PER_ROOT + 1
+            );
+            boolean hasMoreReplies = replies.size() > MAX_REPLIES_PER_ROOT;
+            List<PostComment> replyList = hasMoreReplies
+                    ? replies.subList(0, MAX_REPLIES_PER_ROOT)
+                    : replies;
+            return toResponseWithReplies(root, replyList, hasMoreReplies);
         });
     }
 
@@ -61,11 +65,12 @@ public class PostCommentQueryService {
                 deleted,
                 comment.getLikeCount(),
                 comment.getCreatedAt(),
-                List.of()
+                List.of(),
+                false
         );
     }
 
-    private PostCommentResponse toResponseWithReplies(PostComment root, List<PostComment> replies) {
+    private PostCommentResponse toResponseWithReplies(PostComment root, List<PostComment> replies, boolean hasMoreReplies) {
         List<PostCommentResponse> replyList = replies.stream()
                 .map(reply -> toResponse(reply, root.getId()))
                 .collect(Collectors.toList());
@@ -82,7 +87,8 @@ public class PostCommentQueryService {
                 deleted,
                 root.getLikeCount(),
                 root.getCreatedAt(),
-                replyList
+                replyList,
+                hasMoreReplies
         );
     }
 }

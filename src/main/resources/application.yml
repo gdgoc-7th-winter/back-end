@@ -13,6 +13,11 @@ spring:
         jdbc:
           time_zone: UTC
 
+  data:
+    web:
+      pageable:
+        max-page-size: 100
+
   session:
     store-type: redis
     redis:
