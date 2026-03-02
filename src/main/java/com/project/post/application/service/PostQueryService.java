@@ -6,6 +6,7 @@ import com.project.post.application.dto.PostDetailResponse;
 import com.project.post.application.dto.PostListResponse;
 import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
+import com.project.post.domain.repository.dto.PostListQueryResult;
 import com.project.post.domain.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
@@ -37,7 +38,21 @@ public class PostQueryService {
                 ? PageRequest.of(pageable.getPageNumber(), MAX_PAGE_SIZE, pageable.getSort())
                 : pageable;
 
-        return postRepository.findPostList(boardCode, safePageable);
+        return postRepository.findPostList(boardCode, safePageable)
+                .map(this::toListResponse);
+    }
+
+    private PostListResponse toListResponse(PostListQueryResult result) {
+        return new PostListResponse(
+                result.postId(),
+                result.title(),
+                result.thumbnailUrl(),
+                result.authorNickname(),
+                result.viewCount(),
+                result.likeCount(),
+                result.commentCount(),
+                result.createdAt()
+        );
     }
 
     @Transactional(readOnly = true)

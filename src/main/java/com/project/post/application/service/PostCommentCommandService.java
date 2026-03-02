@@ -5,6 +5,7 @@ import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.PostCommentRequest;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.PostComment;
+import com.project.post.domain.exception.PostDomainException;
 import com.project.post.domain.repository.PostCommentRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
@@ -12,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -31,23 +34,21 @@ public class PostCommentCommandService {
         } else {
             PostComment parent = commentRepository.findActiveById(request.parentCommentId())
                     .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "부모 댓글을 찾을 수 없습니다."));
-            if (!parent.getPost().getId().equals(postId)) {
-                throw new BusinessException(ErrorCode.INVALID_INPUT, "부모 댓글이 해당 게시글에 속하지 않습니다.");
+            try {
+                comment = PostComment.createReply(post, user, parent, request.content());
+            } catch (PostDomainException ex) {
+                throw new BusinessException(ErrorCode.INVALID_INPUT, ex.getMessage());
             }
-            if (parent.getDepth() >= 1) {
-                throw new BusinessException(ErrorCode.INVALID_INPUT, "대댓글은 1단계까지만 허용됩니다.");
-            }
-            comment = PostComment.createReply(post, user, parent, request.content());
         }
 
-        PostComment savedComment = commentRepository.save(comment);
-        post.incrementCommentCount();
+        PostComment savedComment = commentRepository.save(Objects.requireNonNull(comment));
+        postRepository.incrementCommentCount(postId);
         return savedComment.getId();
     }
 
     @Transactional
     public void softDelete(@NonNull Long postId, @NonNull Long commentId, @NonNull User user) {
-        Post post = postRepository.findByIdForUpdate(postId)
+        postRepository.findByIdForUpdate(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
 
         PostComment comment = commentRepository.findActiveById(commentId)
@@ -62,6 +63,6 @@ public class PostCommentCommandService {
         }
 
         comment.softDelete();
-        post.decrementCommentCount();
+        postRepository.decrementCommentCount(postId);
     }
 }

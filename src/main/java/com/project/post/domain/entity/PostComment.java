@@ -1,6 +1,7 @@
 package com.project.post.domain.entity;
 
 import com.project.global.entity.SoftDeleteEntity;
+import com.project.post.domain.exception.PostDomainException;
 import com.project.user.domain.entity.User;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
@@ -56,6 +57,15 @@ public class PostComment extends SoftDeleteEntity {
     }
 
     public static PostComment createReply(Post post, User user, PostComment parent, String content) {
+        if (parent == null) {
+            throw new PostDomainException("부모 댓글이 없습니다.");
+        }
+        if (!parent.getPost().getId().equals(post.getId())) {
+            throw new PostDomainException("부모 댓글이 해당 게시글에 속하지 않습니다.");
+        }
+        if (parent.getDepth() >= 1) {
+            throw new PostDomainException("대댓글은 1단계까지만 허용됩니다.");
+        }
         return PostComment.builder()
                 .post(post)
                 .user(user)

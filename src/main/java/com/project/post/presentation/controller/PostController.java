@@ -14,6 +14,7 @@ import com.project.post.application.service.PostScrapService;
 import com.project.user.domain.entity.User;
 import com.project.global.response.CommonResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +22,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -31,10 +34,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Objects;
-
 @RestController
 @RequestMapping("/api/v1")
+@Validated
 @RequiredArgsConstructor
 public class PostController implements PostControllerDocs {
 
@@ -46,95 +48,94 @@ public class PostController implements PostControllerDocs {
     @Override
     @GetMapping("/boards/{code}/posts")
     public ResponseEntity<CommonResponse<Page<PostListResponse>>> getList(
-            @PathVariable String code,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<PostListResponse> list = postQueryService.getList(Objects.requireNonNull(code), Objects.requireNonNull(pageable));
+            @PathVariable @NonNull String code,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) @NonNull Pageable pageable) {
+        Page<PostListResponse> list = postQueryService.getList(code, pageable);
         return ResponseEntity.ok(CommonResponse.ok(list));
     }
 
     @Override
     @GetMapping("/posts/{id}")
-    public ResponseEntity<CommonResponse<PostDetailResponse>> getDetail(@PathVariable Long id) {
-        Long postId = Objects.requireNonNull(id);
-        PostDetailResponse detail = postQueryService.getDetail(postId);
+    public ResponseEntity<CommonResponse<PostDetailResponse>> getDetail(@PathVariable @Positive @NonNull Long id) {
+        PostDetailResponse detail = postQueryService.getDetail(id);
         return ResponseEntity.ok(CommonResponse.ok(detail));
     }
 
     @Override
     @PostMapping("/posts/{id}/view")
-    public ResponseEntity<CommonResponse<Void>> increaseViewCount(@PathVariable Long id) {
-        postCommandService.increaseViewCount(Objects.requireNonNull(id));
+    public ResponseEntity<CommonResponse<Void>> increaseViewCount(@PathVariable @Positive @NonNull Long id) {
+        postCommandService.increaseViewCount(id);
         return ResponseEntity.ok(CommonResponse.ok());
     }
 
     @Override
     @PostMapping("/boards/{code}/posts")
     public ResponseEntity<CommonResponse<Long>> create(
-            @PathVariable String code,
-            @RequestBody @Valid PostCreateRequest request,
-            @CurrentUser User user) {
+            @PathVariable @NonNull String code,
+            @RequestBody @Valid @NonNull PostCreateRequest request,
+            @CurrentUser @NonNull User user) {
         Long postId = postCommandService.create(
-                Objects.requireNonNull(code),
-                Objects.requireNonNull(request),
-                Objects.requireNonNull(user));
+                code,
+                request,
+                user);
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.ok(postId));
     }
 
     @Override
     @PatchMapping("/posts/{id}")
     public ResponseEntity<CommonResponse<Void>> update(
-            @PathVariable Long id,
-            @RequestBody @Valid PostUpdateRequest request,
-            @CurrentUser User user) {
+            @PathVariable @Positive @NonNull Long id,
+            @RequestBody @Valid @NonNull PostUpdateRequest request,
+            @CurrentUser @NonNull User user) {
         postCommandService.update(
-                Objects.requireNonNull(id),
-                Objects.requireNonNull(request),
-                Objects.requireNonNull(user));
+                id,
+                request,
+                user);
         return ResponseEntity.ok(CommonResponse.ok());
     }
 
     @Override
     @DeleteMapping("/posts/{id}")
     public ResponseEntity<CommonResponse<Void>> delete(
-            @PathVariable Long id,
-            @CurrentUser User user) {
-        postCommandService.softDelete(Objects.requireNonNull(id), Objects.requireNonNull(user));
+            @PathVariable @Positive @NonNull Long id,
+            @CurrentUser @NonNull User user) {
+        postCommandService.softDelete(id, user);
         return ResponseEntity.ok(CommonResponse.ok());
     }
 
     @Override
     @PutMapping("/posts/{id}/like")
     public ResponseEntity<CommonResponse<LikeScrapToggleResponse>> like(
-            @PathVariable Long id,
-            @CurrentUser User user) {
-        LikeScrapToggleResponse response = postLikeService.like(Objects.requireNonNull(id), Objects.requireNonNull(user));
+            @PathVariable @Positive @NonNull Long id,
+            @CurrentUser @NonNull User user) {
+        LikeScrapToggleResponse response = postLikeService.like(id, user);
         return ResponseEntity.ok(CommonResponse.ok(response));
     }
 
     @Override
     @DeleteMapping("/posts/{id}/like")
     public ResponseEntity<CommonResponse<LikeScrapToggleResponse>> unlike(
-            @PathVariable Long id,
-            @CurrentUser User user) {
-        LikeScrapToggleResponse response = postLikeService.unlike(Objects.requireNonNull(id), Objects.requireNonNull(user));
+            @PathVariable @Positive @NonNull Long id,
+            @CurrentUser @NonNull User user) {
+        LikeScrapToggleResponse response = postLikeService.unlike(id, user);
         return ResponseEntity.ok(CommonResponse.ok(response));
     }
 
     @Override
     @PutMapping("/posts/{id}/scrap")
     public ResponseEntity<CommonResponse<LikeScrapToggleResponse>> scrap(
-            @PathVariable Long id,
-            @CurrentUser User user) {
-        LikeScrapToggleResponse response = postScrapService.scrap(Objects.requireNonNull(id), Objects.requireNonNull(user));
+            @PathVariable @Positive @NonNull Long id,
+            @CurrentUser @NonNull User user) {
+        LikeScrapToggleResponse response = postScrapService.scrap(id, user);
         return ResponseEntity.ok(CommonResponse.ok(response));
     }
 
     @Override
     @DeleteMapping("/posts/{id}/scrap")
     public ResponseEntity<CommonResponse<LikeScrapToggleResponse>> unscrap(
-            @PathVariable Long id,
-            @CurrentUser User user) {
-        LikeScrapToggleResponse response = postScrapService.unscrap(Objects.requireNonNull(id), Objects.requireNonNull(user));
+            @PathVariable @Positive @NonNull Long id,
+            @CurrentUser @NonNull User user) {
+        LikeScrapToggleResponse response = postScrapService.unscrap(id, user);
         return ResponseEntity.ok(CommonResponse.ok(response));
     }
 }
