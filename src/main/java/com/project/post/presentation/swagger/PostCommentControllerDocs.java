@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import com.project.user.domain.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,7 +25,7 @@ public interface PostCommentControllerDocs {
     @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
     ResponseEntity<CommonResponse<Long>> createComment(
             @Parameter(description = "게시글 ID") @Positive @NonNull Long postId,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "댓글 작성 요청") @NonNull PostCommentRequest request,
+            @RequestBody(description = "댓글 작성 요청") @NonNull PostCommentRequest request,
             @NonNull User user);
 
     @Operation(summary = "댓글 목록 조회", description = "게시글의 댓글 목록을 페이징하여 조회합니다.")
