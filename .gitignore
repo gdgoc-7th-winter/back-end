@@ -1,7 +1,6 @@
 # Gradle
 .gradle/
 build/
-!gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
 
 # IDE
@@ -14,18 +13,29 @@ build/
 .classpath
 .settings/
 *.swp
+*.swo
 out/
+bin/
 
 # OS
 .DS_Store
 Thumbs.db
+*.bak
+*.tmp
+*.temp
 
 # Application
 *.log
 *.pid
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+*.war
+*.hprof
 
 # Environment
 .env
+.env-prod
 *.env.local
 
 application-local.yml
@@ -35,3 +45,8 @@ application-local.yml
 
 # QueryDSL generated sources
 src/main/generated/
+
+# Test & Coverage
+test-output/
+coverage/
+*.exec
