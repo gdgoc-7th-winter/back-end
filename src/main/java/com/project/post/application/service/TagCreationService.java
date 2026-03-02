@@ -14,8 +14,13 @@ public class TagCreationService {
 
     private final TagRepository tagRepository;
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public Tag createTag(@NonNull String name) {
-        return tagRepository.save(new Tag(name));
+    @Transactional(propagation = Propagation.MANDATORY)
+    public Tag getOrCreate(@NonNull String name) {
+        return tagRepository.findByName(name)
+                .orElseGet(() -> {
+                    tagRepository.insertIfAbsent(name);
+                    return tagRepository.findByName(name)
+                            .orElseThrow(() -> new IllegalStateException("태그 생성에 실패했습니다: " + name));
+                });
     }
 }

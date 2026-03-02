@@ -3,8 +3,6 @@ package com.project.post.application.service;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.LikeScrapToggleResponse;
-import com.project.post.domain.entity.Post;
-import com.project.post.domain.entity.PostLike;
 import com.project.post.domain.repository.PostRepository;
 import com.project.post.domain.repository.PostLikeRepository;
 import com.project.user.domain.entity.User;
@@ -22,21 +20,15 @@ public class PostLikeService {
 
     @Transactional
     public LikeScrapToggleResponse like(@NonNull Long postId, @NonNull User user) {
-        Post post = postRepository.findActiveById(postId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
-
-        var existing = postLikeRepository.findByPostIdAndUserId(postId, user.getId());
-        if (existing.isPresent()) {
-            int count = postRepository.findLikeCountById(postId)
-                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
-            return new LikeScrapToggleResponse(true, count);
+        if (!postRepository.existsActiveById(postId)) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다.");
         }
 
-        PostLike newLike = PostLike.of(post, user);
-        postLikeRepository.save(newLike);
-        postRepository.incrementLikeCount(postId);
-        int count = postRepository.findLikeCountById(postId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
+        int inserted = postLikeRepository.insertIfAbsent(postId, user.getId());
+        if (inserted > 0) {
+            postRepository.incrementLikeCount(postId);
+        }
+        long count = postRepository.findLikeCountById(postId).orElse(0L);
         return new LikeScrapToggleResponse(true, count);
     }
 
@@ -46,18 +38,11 @@ public class PostLikeService {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다.");
         }
 
-        var existing = postLikeRepository.findByPostIdAndUserId(postId, user.getId());
-        if (existing.isEmpty()) {
-            int count = postRepository.findLikeCountById(postId)
-                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
-            return new LikeScrapToggleResponse(false, count);
+        int deleted = postLikeRepository.deleteByPostIdAndUserId(postId, user.getId());
+        if (deleted > 0) {
+            postRepository.decrementLikeCount(postId);
         }
-
-        PostLike existingLike = existing.orElseThrow();
-        postLikeRepository.delete(existingLike);
-        postRepository.decrementLikeCount(postId);
-        int count = postRepository.findLikeCountById(postId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
+        long count = postRepository.findLikeCountById(postId).orElse(0L);
         return new LikeScrapToggleResponse(false, count);
     }
 }

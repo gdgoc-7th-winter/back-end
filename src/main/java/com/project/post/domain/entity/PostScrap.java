@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.lang.NonNull;
 
 import java.time.Instant;
+import java.util.Objects;
 
 @Entity
 @Table(name = "post_scraps", uniqueConstraints = {
@@ -44,6 +45,8 @@ public class PostScrap {
 
     @NonNull
     public static PostScrap of(@NonNull Post post, @NonNull User user) {
+        Objects.requireNonNull(post, "게시글은 필수입니다.");
+        Objects.requireNonNull(user, "사용자는 필수입니다.");
         PostScrap scrap = new PostScrap();
         scrap.post = post;
         scrap.user = user;

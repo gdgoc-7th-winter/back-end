@@ -46,7 +46,7 @@ class PostCommentCommandServiceTest {
         Post post = buildPost(1L, user);
         PostCommentRequest request = new PostCommentRequest("content", null);
 
-        when(postRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(post));
+        when(postRepository.findActiveById(1L)).thenReturn(Optional.of(post));
 
         PostComment saved = PostComment.createRoot(post, user, "content");
         ReflectionTestUtils.setField(Objects.requireNonNull(saved), "id", 10L);
@@ -75,7 +75,7 @@ class PostCommentCommandServiceTest {
                 .build();
         ReflectionTestUtils.setField(Objects.requireNonNull(parent), "id", 20L);
 
-        when(postRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(post));
+        when(postRepository.findActiveById(1L)).thenReturn(Optional.of(post));
         when(commentRepository.findActiveById(20L)).thenReturn(Optional.of(parent));
 
         assertThatThrownBy(() -> postCommentCommandService.create(1L, request, user))
@@ -96,7 +96,7 @@ class PostCommentCommandServiceTest {
         PostComment comment = PostComment.createRoot(post, author, "content");
         ReflectionTestUtils.setField(Objects.requireNonNull(comment), "id", 100L);
 
-        when(postRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(post));
+        when(postRepository.existsActiveById(1L)).thenReturn(true);
         when(commentRepository.findActiveById(100L)).thenReturn(Optional.of(comment));
 
         assertThatThrownBy(() -> postCommentCommandService.softDelete(1L, 100L, Objects.requireNonNull(other)))
@@ -106,21 +106,22 @@ class PostCommentCommandServiceTest {
     }
 
     @Test
-    @DisplayName("댓글 삭제 시 소프트 삭제 및 댓글 수 감소")
-    void softDeleteUpdatesState() {
+    @DisplayName("댓글 삭제 시 소프트 삭제(내용 마스킹) + comment_count 유지")
+    void softDeleteMasksContentAndKeepsCount() {
         User author = buildUser(1L, "author");
         Post post = buildPost(1L, author);
 
         PostComment comment = PostComment.createRoot(post, author, "content");
         ReflectionTestUtils.setField(Objects.requireNonNull(comment), "id", 100L);
 
-        when(postRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(post));
+        when(postRepository.existsActiveById(1L)).thenReturn(true);
         when(commentRepository.findActiveById(100L)).thenReturn(Optional.of(comment));
 
         postCommentCommandService.softDelete(1L, 100L, Objects.requireNonNull(author));
 
         assertThat(comment.isDeleted()).isTrue();
-        verify(postRepository).decrementCommentCount(1L);
+        assertThat(comment.getContent()).isNull();
+        verify(postRepository, never()).decrementCommentCount(1L);
     }
 
     private static User buildUser(Long id, String nickname) {

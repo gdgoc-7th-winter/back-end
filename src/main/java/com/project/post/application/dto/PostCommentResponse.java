@@ -14,6 +14,7 @@ public record PostCommentResponse(
         boolean isDeleted,
         long likeCount,
         Instant createdAt,
-        List<PostCommentResponse> replies
+        List<PostCommentResponse> replies,
+        boolean hasMoreReplies
 ) {
 }

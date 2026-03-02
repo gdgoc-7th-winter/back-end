@@ -16,10 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -68,14 +66,13 @@ public class PostQueryService {
                 : result.tagNames().stream()
                 .filter(Objects::nonNull)
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
 
         List<PostDetailResponse.AttachmentResponse> attachmentList = result.attachments() == null
                 ? List.of()
                 : result.attachments().stream()
                 .filter(Objects::nonNull)
                 .filter(a -> a.fileUrl() != null)
-                .sorted(Comparator.comparingInt(a -> a.sortOrder() == null ? 0 : a.sortOrder()))
                 .map(a -> new PostDetailResponse.AttachmentResponse(
                         a.fileUrl(),
                         a.fileName(),
@@ -83,7 +80,7 @@ public class PostQueryService {
                         a.fileSize(),
                         a.sortOrder() == null ? 0 : a.sortOrder()
                 ))
-                .collect(Collectors.toList());
+                .toList();
 
         return new PostDetailResponse(
                 result.postId(),
