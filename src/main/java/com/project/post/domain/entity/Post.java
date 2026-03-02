@@ -13,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(name = "posts")
@@ -20,6 +21,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
 @AttributeOverride(name = "id", column = @Column(name = "post_id"))
+@SQLRestriction("deleted_at IS NULL")
 public class Post extends SoftDeleteEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

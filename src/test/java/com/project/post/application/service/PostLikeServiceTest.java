@@ -28,7 +28,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@SuppressWarnings("null")
 class PostLikeServiceTest {
 
     @Mock
@@ -41,11 +40,11 @@ class PostLikeServiceTest {
     private PostLikeService postLikeService;
 
     @Test
-    @DisplayName("게시글이 없으면 좋아요 토글 시 예외를 던진다")
-    void toggleThrowsWhenPostMissing() {
-        when(postRepository.findByIdForUpdate(1L)).thenReturn(Optional.empty());
+    @DisplayName("게시글이 없으면 좋아요 추가 시 예외를 던진다")
+    void likeThrowsWhenPostMissing() {
+        when(postRepository.findActiveById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postLikeService.toggle(1L, buildUser(1L)))
+        assertThatThrownBy(() -> postLikeService.like(1L, buildUser(1L)))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
@@ -55,41 +54,83 @@ class PostLikeServiceTest {
 
     @Test
     @DisplayName("좋아요가 없으면 추가하고 true를 반환한다")
-    void toggleAddsLikeWhenNotExists() {
+    void likeAddsLikeWhenNotExists() {
         User user = buildUser(1L);
         Post post = buildPost(1L, user);
         ReflectionTestUtils.setField(post, "likeCount", 0);
 
-        when(postRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(post));
+        when(postRepository.findActiveById(1L)).thenReturn(Optional.of(post));
         when(postLikeRepository.findByPostIdAndUserId(1L, 1L)).thenReturn(Optional.empty());
+        when(postRepository.findLikeCountById(1L)).thenReturn(Optional.of(1));
 
-        LikeScrapToggleResponse result = postLikeService.toggle(1L, user);
+        LikeScrapToggleResponse result = postLikeService.like(1L, user);
 
         assertThat(result.liked()).isTrue();
         assertThat(result.count()).isEqualTo(1);
-        assertThat(post.getLikeCount()).isEqualTo(1);
         verify(postLikeRepository).save(any(PostLike.class));
+        verify(postRepository).incrementLikeCount(1L);
         verify(postLikeRepository, never()).delete(any());
     }
 
     @Test
-    @DisplayName("좋아요가 있으면 제거하고 false를 반환한다")
-    void toggleRemovesLikeWhenExists() {
+    @DisplayName("좋아요가 있으면 추가 요청 시 상태를 유지한다")
+    void likeKeepsStateWhenExists() {
         User user = buildUser(1L);
         Post post = buildPost(1L, user);
         ReflectionTestUtils.setField(post, "likeCount", 1);
         PostLike like = PostLike.of(post, user);
         ReflectionTestUtils.setField(like, "id", 10L);
 
-        when(postRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(post));
+        when(postRepository.findActiveById(1L)).thenReturn(Optional.of(post));
         when(postLikeRepository.findByPostIdAndUserId(1L, 1L)).thenReturn(Optional.of(like));
+        when(postRepository.findLikeCountById(1L)).thenReturn(Optional.of(1));
 
-        LikeScrapToggleResponse result = postLikeService.toggle(1L, user);
+        LikeScrapToggleResponse result = postLikeService.like(1L, user);
+
+        assertThat(result.liked()).isTrue();
+        assertThat(result.count()).isEqualTo(1);
+        verify(postLikeRepository, never()).delete(any());
+        verify(postLikeRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("좋아요가 있으면 취소하고 false를 반환한다")
+    void unlikeRemovesLikeWhenExists() {
+        User user = buildUser(1L);
+        Post post = buildPost(1L, user);
+        ReflectionTestUtils.setField(post, "likeCount", 1);
+        PostLike like = PostLike.of(post, user);
+        ReflectionTestUtils.setField(like, "id", 10L);
+
+        when(postRepository.existsActiveById(1L)).thenReturn(true);
+        when(postLikeRepository.findByPostIdAndUserId(1L, 1L)).thenReturn(Optional.of(like));
+        when(postRepository.findLikeCountById(1L)).thenReturn(Optional.of(0));
+
+        LikeScrapToggleResponse result = postLikeService.unlike(1L, user);
 
         assertThat(result.liked()).isFalse();
         assertThat(result.count()).isEqualTo(0);
-        assertThat(post.getLikeCount()).isEqualTo(0);
         verify(postLikeRepository).delete(like);
+        verify(postRepository).decrementLikeCount(1L);
+        verify(postLikeRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("좋아요가 없으면 취소 요청 시 상태를 유지한다")
+    void unlikeKeepsStateWhenNotExists() {
+        User user = buildUser(1L);
+        Post post = buildPost(1L, user);
+        ReflectionTestUtils.setField(post, "likeCount", 0);
+
+        when(postRepository.existsActiveById(1L)).thenReturn(true);
+        when(postLikeRepository.findByPostIdAndUserId(1L, 1L)).thenReturn(Optional.empty());
+        when(postRepository.findLikeCountById(1L)).thenReturn(Optional.of(0));
+
+        LikeScrapToggleResponse result = postLikeService.unlike(1L, user);
+
+        assertThat(result.liked()).isFalse();
+        assertThat(result.count()).isEqualTo(0);
+        verify(postLikeRepository, never()).delete(any());
         verify(postLikeRepository, never()).save(any());
     }
 

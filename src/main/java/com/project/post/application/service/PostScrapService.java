@@ -13,8 +13,6 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
-
 @Service
 @RequiredArgsConstructor
 public class PostScrapService {
@@ -23,20 +21,43 @@ public class PostScrapService {
     private final PostScrapRepository postScrapRepository;
 
     @Transactional
-    public LikeScrapToggleResponse toggle(@NonNull Long postId, @NonNull User user) {
-        Post post = postRepository.findByIdForUpdate(postId)
+    public LikeScrapToggleResponse scrap(@NonNull Long postId, @NonNull User user) {
+        Post post = postRepository.findActiveById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
 
         var existing = postScrapRepository.findByPostIdAndUserId(postId, user.getId());
-
         if (existing.isPresent()) {
-            postScrapRepository.delete(Objects.requireNonNull(existing.orElseThrow()));
-            post.decrementScrapCount();
-            return new LikeScrapToggleResponse(false, post.getScrapCount());
-        } else {
-            postScrapRepository.save(Objects.requireNonNull(PostScrap.of(post, user)));
-            post.incrementScrapCount();
-            return new LikeScrapToggleResponse(true, post.getScrapCount());
+            int count = postRepository.findScrapCountById(postId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
+            return new LikeScrapToggleResponse(true, count);
         }
+
+        PostScrap newScrap = PostScrap.of(post, user);
+        postScrapRepository.save(newScrap);
+        postRepository.incrementScrapCount(postId);
+        int count = postRepository.findScrapCountById(postId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
+        return new LikeScrapToggleResponse(true, count);
+    }
+
+    @Transactional
+    public LikeScrapToggleResponse unscrap(@NonNull Long postId, @NonNull User user) {
+        if (!postRepository.existsActiveById(postId)) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다.");
+        }
+
+        var existing = postScrapRepository.findByPostIdAndUserId(postId, user.getId());
+        if (existing.isEmpty()) {
+            int count = postRepository.findScrapCountById(postId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
+            return new LikeScrapToggleResponse(false, count);
+        }
+
+        PostScrap existingScrap = existing.orElseThrow();
+        postScrapRepository.delete(existingScrap);
+        postRepository.decrementScrapCount(postId);
+        int count = postRepository.findScrapCountById(postId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
+        return new LikeScrapToggleResponse(false, count);
     }
 }

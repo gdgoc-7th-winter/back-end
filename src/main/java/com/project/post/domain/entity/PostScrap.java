@@ -14,6 +14,7 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.lang.NonNull;
 
 import java.time.Instant;
 
@@ -41,7 +42,8 @@ public class PostScrap {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
-    public static PostScrap of(Post post, User user) {
+    @NonNull
+    public static PostScrap of(@NonNull Post post, @NonNull User user) {
         PostScrap scrap = new PostScrap();
         scrap.post = post;
         scrap.user = user;

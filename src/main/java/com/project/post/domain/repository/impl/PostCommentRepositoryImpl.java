@@ -31,7 +31,6 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom {
                 .join(comment.post).fetchJoin()
                 .where(
                         comment.post.id.eq(postId),
-                        comment.deletedAt.isNull(),
                         comment.parentComment.isNull()
                 )
                 .orderBy(comment.createdAt.asc())
@@ -44,7 +43,6 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom {
                 .from(comment)
                 .where(
                         comment.post.id.eq(postId),
-                        comment.deletedAt.isNull(),
                         comment.parentComment.isNull()
                 )
                 .fetchOne();

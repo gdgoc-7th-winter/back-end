@@ -37,8 +37,8 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
                                   @Nullable ModelAndViewContainer mavContainer,
                                   @NonNull NativeWebRequest webRequest,
                                   @Nullable WebDataBinderFactory binderFactory) {
-        HttpServletRequest request = (HttpServletRequest) webRequest.getNativeRequest();
-        HttpSession session = request.getSession(false);
+        HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
+        HttpSession session = request != null ? request.getSession(false) : null;
         return userSessionService.getCurrentUser(session);
     }
 }

@@ -11,6 +11,7 @@ public record PostCommentResponse(
         Long parentCommentId,
         int depth,
         String content,
+        boolean isDeleted,
         long likeCount,
         Instant createdAt,
         List<PostCommentResponse> replies

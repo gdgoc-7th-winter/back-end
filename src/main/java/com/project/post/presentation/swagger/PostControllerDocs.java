@@ -26,9 +26,14 @@ public interface PostControllerDocs {
             @Parameter(description = "게시판 코드") String code,
             Pageable pageable);
 
-    @Operation(summary = "게시글 상세 조회", description = "게시글 ID로 상세 정보를 조회합니다. 조회 시 조회수가 증가합니다.")
+    @Operation(summary = "게시글 상세 조회", description = "게시글 ID로 상세 정보를 조회합니다.")
     @ApiResponse(responseCode = "200", description = "성공")
     ResponseEntity<CommonResponse<PostDetailResponse>> getDetail(
+            @Parameter(description = "게시글 ID") Long id);
+
+    @Operation(summary = "게시글 조회수 증가", description = "게시글 조회수를 1 증가시킵니다.")
+    @ApiResponse(responseCode = "200", description = "성공")
+    ResponseEntity<CommonResponse<Void>> increaseViewCount(
             @Parameter(description = "게시글 ID") Long id);
 
     @Operation(summary = "게시글 작성", description = "새 게시글을 작성합니다.")
@@ -37,7 +42,7 @@ public interface PostControllerDocs {
     ResponseEntity<CommonResponse<Long>> create(
             @Parameter(description = "게시판 코드") String code,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "게시글 작성 요청") PostCreateRequest request,
-            User user);
+            @Parameter(hidden = true) User user);
 
     @Operation(summary = "게시글 수정", description = "게시글을 수정합니다.")
     @ApiResponse(responseCode = "200", description = "성공")
@@ -45,26 +50,40 @@ public interface PostControllerDocs {
     ResponseEntity<CommonResponse<Void>> update(
             @Parameter(description = "게시글 ID") Long id,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "게시글 수정 요청") PostUpdateRequest request,
-            User user);
+            @Parameter(hidden = true) User user);
 
     @Operation(summary = "게시글 삭제", description = "게시글을 소프트 삭제합니다.")
     @ApiResponse(responseCode = "200", description = "성공")
     @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
     ResponseEntity<CommonResponse<Void>> delete(
             @Parameter(description = "게시글 ID") Long id,
-            User user);
+            @Parameter(hidden = true) User user);
 
-    @Operation(summary = "좋아요 토글", description = "게시글에 좋아요를 추가하거나 취소합니다.")
+    @Operation(summary = "좋아요 추가", description = "게시글에 좋아요를 추가합니다.")
     @ApiResponse(responseCode = "200", description = "성공")
     @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
-    ResponseEntity<CommonResponse<LikeScrapToggleResponse>> toggleLike(
+    ResponseEntity<CommonResponse<LikeScrapToggleResponse>> like(
             @Parameter(description = "게시글 ID") Long id,
-            User user);
+            @Parameter(hidden = true) User user);
 
-    @Operation(summary = "스크랩 토글", description = "게시글을 스크랩하거나 취소합니다.")
+    @Operation(summary = "좋아요 취소", description = "게시글 좋아요를 취소합니다.")
     @ApiResponse(responseCode = "200", description = "성공")
     @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
-    ResponseEntity<CommonResponse<LikeScrapToggleResponse>> toggleScrap(
+    ResponseEntity<CommonResponse<LikeScrapToggleResponse>> unlike(
             @Parameter(description = "게시글 ID") Long id,
-            User user);
+            @Parameter(hidden = true) User user);
+
+    @Operation(summary = "스크랩 추가", description = "게시글을 스크랩합니다.")
+    @ApiResponse(responseCode = "200", description = "성공")
+    @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
+    ResponseEntity<CommonResponse<LikeScrapToggleResponse>> scrap(
+            @Parameter(description = "게시글 ID") Long id,
+            @Parameter(hidden = true) User user);
+
+    @Operation(summary = "스크랩 취소", description = "게시글 스크랩을 취소합니다.")
+    @ApiResponse(responseCode = "200", description = "성공")
+    @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
+    ResponseEntity<CommonResponse<LikeScrapToggleResponse>> unscrap(
+            @Parameter(description = "게시글 ID") Long id,
+            @Parameter(hidden = true) User user);
 }

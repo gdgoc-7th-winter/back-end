@@ -27,7 +27,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@SuppressWarnings("null")
 class PostCommentQueryServiceTest {
 
     @Mock
@@ -75,6 +74,32 @@ class PostCommentQueryServiceTest {
         assertThat(rootResponse.replies()).hasSize(1);
         assertThat(rootResponse.replies().get(0).parentCommentId()).isEqualTo(10L);
         assertThat(rootResponse.replies().get(0).content()).isEqualTo("reply");
+        assertThat(rootResponse.isDeleted()).isFalse();
+    }
+
+    @Test
+    @DisplayName("삭제된 댓글은 isDeleted true, content·작성자 정보 null로 반환한다")
+    void getCommentsReturnsDeletedCommentWithHiddenAuthor() {
+        User user = buildUser(1L, "user");
+        Post post = buildPost(1L, user);
+
+        PostComment root = PostComment.createRoot(post, user, "deleted content");
+        ReflectionTestUtils.setField(root, "id", 10L);
+        root.softDelete();
+
+        when(postRepository.existsActiveById(1L)).thenReturn(true);
+        when(commentRepository.findRootComments(1L, PageRequest.of(0, 10)))
+                .thenReturn(new PageImpl<>(List.of(root)));
+        when(commentRepository.findRepliesByParentIds(List.of(10L)))
+                .thenReturn(List.of());
+
+        Page<PostCommentResponse> result = postCommentQueryService.getComments(1L, PageRequest.of(0, 10));
+
+        PostCommentResponse rootResponse = result.getContent().get(0);
+        assertThat(rootResponse.isDeleted()).isTrue();
+        assertThat(rootResponse.content()).isNull();
+        assertThat(rootResponse.userId()).isNull();
+        assertThat(rootResponse.userNickname()).isNull();
     }
 
     private static User buildUser(Long id, String nickname) {

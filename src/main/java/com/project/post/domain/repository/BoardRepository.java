@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface BoardRepository extends JpaRepository<Board, Long> {
 
     Optional<Board> findByCode(String code);
+
+    Optional<Board> findByCodeAndActiveTrue(String code);
 }

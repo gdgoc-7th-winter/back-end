@@ -29,7 +29,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@SuppressWarnings("null")
 class PostCommandServiceTest {
 
     @Mock
@@ -50,7 +49,7 @@ class PostCommandServiceTest {
     @Test
     @DisplayName("게시판이 없으면 생성 시 예외를 던진다")
     void createThrowsWhenBoardMissing() {
-        when(boardRepository.findByCode("general")).thenReturn(Optional.empty());
+        when(boardRepository.findByCodeAndActiveTrue("general")).thenReturn(Optional.empty());
 
         PostCreateRequest request = new PostCreateRequest("title", "content", null, null, null);
 
@@ -70,7 +69,7 @@ class PostCommandServiceTest {
         User author = buildUser(1L);
         Post post = buildPost(1L, board, author);
 
-        when(boardRepository.findByCode("general")).thenReturn(Optional.of(board));
+        when(boardRepository.findByCodeAndActiveTrue("general")).thenReturn(Optional.of(board));
         when(postRepository.save(any(Post.class))).thenReturn(post);
 
         PostCreateRequest request = new PostCreateRequest(
@@ -192,7 +191,7 @@ class PostCommandServiceTest {
     @Test
     @DisplayName("게시글이 없으면 조회수 증가 시 예외를 던진다")
     void increaseViewCountThrowsWhenPostMissing() {
-        when(postRepository.findByIdForUpdate(1L)).thenReturn(Optional.empty());
+        when(postRepository.incrementViewCount(1L)).thenReturn(0);
 
         assertThatThrownBy(() -> postCommandService.increaseViewCount(1L))
                 .isInstanceOf(BusinessException.class)
@@ -201,16 +200,13 @@ class PostCommandServiceTest {
     }
 
     @Test
-    @DisplayName("조회수 증가 시 viewCount가 1 증가한다")
+    @DisplayName("조회수 증가 시 incrementViewCount를 호출한다")
     void increaseViewCountIncrements() {
-        Post post = buildPost(1L, Board.of("general", "자유"), buildUser(1L));
-        ReflectionTestUtils.setField(post, "viewCount", 5);
-
-        when(postRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(post));
+        when(postRepository.incrementViewCount(1L)).thenReturn(1);
 
         postCommandService.increaseViewCount(1L);
 
-        assertThat(post.getViewCount()).isEqualTo(6);
+        verify(postRepository).incrementViewCount(1L);
     }
 
     private static User buildUser(Long id) {

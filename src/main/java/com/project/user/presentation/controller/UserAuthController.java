@@ -31,7 +31,7 @@ public class UserAuthController implements UserAuthControllerDocs {
 
     @Override
     @PostMapping("/verify-code")
-    public CommonResponse<Void> verifyCode(@RequestBody EmailVerificationRequest request) {
+    public CommonResponse<Void> verifyCode(@RequestBody @Valid EmailVerificationRequest request) {
         emailService.verifyCode(request.email(), request.authCode());
         return CommonResponse.ok();
     }

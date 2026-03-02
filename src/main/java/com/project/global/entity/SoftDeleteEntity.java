@@ -6,15 +6,12 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.SQLRestriction;
-
 import java.time.Instant;
 
 @Getter
 @SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @MappedSuperclass
-@SQLRestriction("deleted_at IS NULL")
 public abstract class SoftDeleteEntity extends AuditEntity {
 
     @Column(columnDefinition = "TIMESTAMPTZ")

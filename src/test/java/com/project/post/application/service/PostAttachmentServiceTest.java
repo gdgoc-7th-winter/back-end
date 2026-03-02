@@ -25,7 +25,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-@SuppressWarnings("null")
 class PostAttachmentServiceTest {
 
     @Mock
@@ -102,7 +101,10 @@ class PostAttachmentServiceTest {
 
         postAttachmentService.replaceAttachments(post, attachments);
 
-        verify(postAttachmentRepository, times(2)).save(any());
+        ArgumentCaptor<PostAttachment> captor = ArgumentCaptor.forClass(PostAttachment.class);
+        verify(postAttachmentRepository, times(2)).save(captor.capture());
+        assertThat(captor.getAllValues().get(0).getSortOrder()).isEqualTo(0);
+        assertThat(captor.getAllValues().get(1).getSortOrder()).isEqualTo(1);
     }
 
     private static Post buildPost(Long id) {

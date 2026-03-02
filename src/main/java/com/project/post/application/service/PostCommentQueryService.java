@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,7 +35,9 @@ public class PostCommentQueryService {
                 .map(PostComment::getId)
                 .toList();
 
-        List<PostComment> replies = commentRepository.findRepliesByParentIds(Objects.requireNonNull(rootIds));
+        List<PostComment> replies = rootIds.isEmpty()
+                ? List.of()
+                : commentRepository.findRepliesByParentIds(rootIds);
         Map<Long, List<PostComment>> repliesByParent = replies.stream()
                 .filter(c -> c.getParentComment() != null)
                 .collect(Collectors.groupingBy(c -> c.getParentComment().getId()));
@@ -48,14 +49,16 @@ public class PostCommentQueryService {
     }
 
     private PostCommentResponse toResponse(PostComment comment, Long parentId) {
+        boolean deleted = comment.isDeleted();
         return new PostCommentResponse(
                 comment.getId(),
                 comment.getPost().getId(),
-                comment.getUser().getId(),
-                comment.getUser().getNickname(),
+                deleted ? null : comment.getUser().getId(),
+                deleted ? null : comment.getUser().getNickname(),
                 parentId,
                 comment.getDepth(),
-                comment.getContent(),
+                deleted ? null : comment.getContent(),
+                deleted,
                 comment.getLikeCount(),
                 comment.getCreatedAt(),
                 List.of()
@@ -67,14 +70,16 @@ public class PostCommentQueryService {
                 .map(reply -> toResponse(reply, root.getId()))
                 .collect(Collectors.toList());
 
+        boolean deleted = root.isDeleted();
         return new PostCommentResponse(
                 root.getId(),
                 root.getPost().getId(),
-                root.getUser().getId(),
-                root.getUser().getNickname(),
+                deleted ? null : root.getUser().getId(),
+                deleted ? null : root.getUser().getNickname(),
                 null,
                 root.getDepth(),
-                root.getContent(),
+                deleted ? null : root.getContent(),
+                deleted,
                 root.getLikeCount(),
                 root.getCreatedAt(),
                 replyList
