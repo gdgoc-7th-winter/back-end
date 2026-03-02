@@ -26,7 +26,7 @@ public interface PostCommentControllerDocs {
     ResponseEntity<CommonResponse<Long>> createComment(
             @Parameter(description = "게시글 ID") @Positive @NonNull Long postId,
             @RequestBody(description = "댓글 작성 요청") @NonNull PostCommentRequest request,
-            @NonNull User user);
+            @Parameter(hidden = true) @NonNull User user);
 
     @Operation(summary = "댓글 목록 조회", description = "게시글의 댓글 목록을 페이징하여 조회합니다. 각 루트 댓글의 답글은 최대 20개까지 반환되며, 초과 시 hasMoreReplies=true로 표시됩니다.")
     @ApiResponse(responseCode = "200", description = "성공")
@@ -40,5 +40,5 @@ public interface PostCommentControllerDocs {
     ResponseEntity<CommonResponse<Void>> deleteComment(
             @Parameter(description = "게시글 ID") @Positive @NonNull Long postId,
             @Parameter(description = "댓글 ID") @Positive @NonNull Long commentId,
-            @NonNull User user);
+            @Parameter(hidden = true) @NonNull User user);
 }

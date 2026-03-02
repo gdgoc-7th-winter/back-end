@@ -1,55 +1,10 @@
 package com.project.post.application.service;
 
-import com.project.post.domain.entity.Post;
-import com.project.post.domain.entity.PostTag;
-import com.project.post.domain.entity.Tag;
-import com.project.post.domain.repository.PostTagRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
+import com.project.post.domain.entity.Post;
 
-@Service
-@RequiredArgsConstructor
-public class PostTagService {
+public interface PostTagService {
 
-    private final PostTagRepository postTagRepository;
-    private final TagCreationService tagCreationService;
-
-    @Transactional(propagation = Propagation.MANDATORY)
-    public void replaceTags(@NonNull Post post, List<String> tagNames) {
-        if (tagNames == null) {
-            return;
-        }
-        postTagRepository.deleteByPostId(post.getId());
-        if (tagNames.isEmpty()) {
-            return;
-        }
-        List<Tag> tags = getOrCreateTags(tagNames);
-        for (Tag tag : tags) {
-            postTagRepository.save(new PostTag(post, tag));
-        }
-    }
-
-    private List<Tag> getOrCreateTags(List<String> tagNames) {
-        Set<String> uniqueNames = new LinkedHashSet<>();
-        for (String name : tagNames) {
-            if (name == null || name.isBlank()) {
-                continue;
-            }
-            uniqueNames.add(name.trim());
-        }
-
-        List<Tag> result = new ArrayList<>();
-        for (String name : uniqueNames) {
-            result.add(tagCreationService.getOrCreate(name));
-        }
-        return result;
-    }
+    void replaceTags(@NonNull Post post, List<String> tagNames);
 }

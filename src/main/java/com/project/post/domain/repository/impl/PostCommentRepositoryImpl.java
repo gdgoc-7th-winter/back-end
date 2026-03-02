@@ -31,7 +31,8 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom {
                 .join(comment.post).fetchJoin()
                 .where(
                         comment.post.id.eq(postId),
-                        comment.parentComment.isNull()
+                        comment.parentComment.isNull(),
+                        comment.deletedAt.isNull()
                 )
                 .orderBy(comment.createdAt.asc())
                 .offset(pageable.getOffset())
@@ -43,7 +44,8 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom {
                 .from(comment)
                 .where(
                         comment.post.id.eq(postId),
-                        comment.parentComment.isNull()
+                        comment.parentComment.isNull(),
+                        comment.deletedAt.isNull()
                 )
                 .fetchOne();
 
@@ -68,6 +70,28 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom {
                 )
                 .orderBy(comment.createdAt.asc())
                 .limit(limit)
+                .fetch();
+    }
+
+    @Override
+    public List<PostComment> findRepliesByParentIds(@NonNull List<Long> parentIds) {
+        if (parentIds == null || parentIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        QPostComment comment = QPostComment.postComment;
+        return queryFactory
+                .selectFrom(comment)
+                .join(comment.user).fetchJoin()
+                .join(comment.post).fetchJoin()
+                .join(comment.parentComment).fetchJoin()
+                .where(
+                        comment.parentComment.id.in(parentIds),
+                        comment.deletedAt.isNull()
+                )
+                .orderBy(
+                        comment.parentComment.id.asc(),
+                        comment.createdAt.asc()
+                )
                 .fetch();
     }
 }

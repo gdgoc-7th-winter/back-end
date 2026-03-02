@@ -4,6 +4,7 @@ import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.PostTag;
 import com.project.post.domain.entity.Tag;
+import com.project.post.application.service.impl.PostTagServiceImpl;
 import com.project.post.domain.repository.PostTagRepository;
 import com.project.user.domain.entity.User;
 import org.junit.jupiter.api.DisplayName;
@@ -34,7 +35,7 @@ class PostTagServiceTest {
     private TagCreationService tagCreationService;
 
     @InjectMocks
-    private PostTagService postTagService;
+    private PostTagServiceImpl postTagService;
 
     @Test
     @DisplayName("태그 입력이 null이면 아무 동작도 하지 않는다")

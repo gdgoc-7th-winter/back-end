@@ -6,6 +6,7 @@ import com.project.post.application.dto.PostCommentRequest;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.PostComment;
+import com.project.post.application.service.impl.PostCommentCommandServiceImpl;
 import com.project.post.domain.repository.PostCommentRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
@@ -26,7 +27,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {
-        PostCommentCommandService.class,
+        PostCommentCommandServiceImpl.class,
         PostCommentCommandServiceIntegrationTest.TestConfig.class
 })
 class PostCommentCommandServiceIntegrationTest {

@@ -6,6 +6,7 @@ import com.project.post.application.dto.PostCommentRequest;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.PostComment;
+import com.project.post.application.service.impl.PostCommentCommandServiceImpl;
 import com.project.post.domain.repository.PostCommentRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
@@ -37,7 +38,7 @@ class PostCommentCommandServiceTest {
     private PostCommentRepository commentRepository;
 
     @InjectMocks
-    private PostCommentCommandService postCommentCommandService;
+    private PostCommentCommandServiceImpl postCommentCommandService;
 
     @Test
     @DisplayName("루트 댓글 생성 시 댓글 수가 증가한다")
