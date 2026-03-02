@@ -5,6 +5,7 @@ import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.PostDetailResponse;
 import com.project.post.application.dto.PostListResponse;
 import com.project.post.domain.entity.Board;
+import com.project.post.application.service.impl.PostQueryServiceImpl;
 import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
@@ -40,7 +41,7 @@ class PostQueryServiceTest {
     private PostRepository postRepository;
 
     @InjectMocks
-    private PostQueryService postQueryService;
+    private PostQueryServiceImpl postQueryService;
 
     @Test
     @DisplayName("게시판이 없으면 목록 조회는 예외를 던진다")

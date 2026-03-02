@@ -12,4 +12,6 @@ public interface PostCommentRepositoryCustom {
     Page<PostComment> findRootComments(@NonNull Long postId, @NonNull Pageable pageable);
 
     List<PostComment> findRepliesByParentId(@NonNull Long parentId, int limit);
+
+    List<PostComment> findRepliesByParentIds(@NonNull List<Long> parentIds);
 }

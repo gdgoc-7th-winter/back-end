@@ -6,6 +6,7 @@ import com.project.post.application.dto.PostCommentResponse;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.PostComment;
+import com.project.post.application.service.impl.PostCommentQueryServiceImpl;
 import com.project.post.domain.repository.PostCommentRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
@@ -24,6 +25,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,7 +38,7 @@ class PostCommentQueryServiceTest {
     private PostCommentRepository commentRepository;
 
     @InjectMocks
-    private PostCommentQueryService postCommentQueryService;
+    private PostCommentQueryServiceImpl postCommentQueryService;
 
     @Test
     @DisplayName("게시글이 없으면 댓글 조회는 예외를 던진다")
@@ -64,7 +66,7 @@ class PostCommentQueryServiceTest {
         when(postRepository.existsActiveById(1L)).thenReturn(true);
         when(commentRepository.findRootComments(1L, PageRequest.of(0, 10)))
                 .thenReturn(new PageImpl<>(List.of(root)));
-        when(commentRepository.findRepliesByParentId(10L, 21))
+        when(commentRepository.findRepliesByParentIds(any()))
                 .thenReturn(List.of(reply));
 
         Page<PostCommentResponse> result = postCommentQueryService.getComments(1L, PageRequest.of(0, 10));
@@ -91,7 +93,7 @@ class PostCommentQueryServiceTest {
         when(postRepository.existsActiveById(1L)).thenReturn(true);
         when(commentRepository.findRootComments(1L, PageRequest.of(0, 10)))
                 .thenReturn(new PageImpl<>(List.of(root)));
-        when(commentRepository.findRepliesByParentId(10L, 21))
+        when(commentRepository.findRepliesByParentIds(any()))
                 .thenReturn(List.of());
 
         Page<PostCommentResponse> result = postCommentQueryService.getComments(1L, PageRequest.of(0, 10));

@@ -3,6 +3,7 @@ package com.project.post.application.service;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.LikeScrapToggleResponse;
+import com.project.post.application.service.impl.PostScrapServiceImpl;
 import com.project.post.domain.repository.PostRepository;
 import com.project.post.domain.repository.PostScrapRepository;
 import com.project.user.domain.entity.User;
@@ -33,7 +34,7 @@ class PostScrapServiceTest {
     private PostScrapRepository postScrapRepository;
 
     @InjectMocks
-    private PostScrapService postScrapService;
+    private PostScrapServiceImpl postScrapService;
 
     @Test
     @DisplayName("게시글이 없으면 스크랩 추가 시 예외를 던진다")

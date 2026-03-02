@@ -6,6 +6,7 @@ import com.project.post.application.dto.PostCreateRequest;
 import com.project.post.application.dto.PostUpdateRequest;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
+import com.project.post.application.service.impl.PostCommandServiceImpl;
 import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
@@ -44,7 +45,7 @@ class PostCommandServiceTest {
     private PostAttachmentService postAttachmentService;
 
     @InjectMocks
-    private PostCommandService postCommandService;
+    private PostCommandServiceImpl postCommandService;
 
     @Test
     @DisplayName("게시판이 없으면 생성 시 예외를 던진다")

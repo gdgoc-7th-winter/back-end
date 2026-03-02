@@ -4,6 +4,7 @@ import com.project.post.application.dto.PostAttachmentRequest;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.PostAttachment;
+import com.project.post.application.service.impl.PostAttachmentServiceImpl;
 import com.project.post.domain.repository.PostAttachmentRepository;
 import com.project.user.domain.entity.User;
 import org.junit.jupiter.api.DisplayName;
@@ -31,7 +32,7 @@ class PostAttachmentServiceTest {
     private PostAttachmentRepository postAttachmentRepository;
 
     @InjectMocks
-    private PostAttachmentService postAttachmentService;
+    private PostAttachmentServiceImpl postAttachmentService;
 
     @Test
     @DisplayName("attachments가 null이면 아무 동작도 하지 않는다")
