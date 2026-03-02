@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import com.project.user.domain.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,7 +45,7 @@ public interface PostControllerDocs {
     @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
     ResponseEntity<CommonResponse<Long>> create(
             @Parameter(description = "게시판 코드") @NotBlank @NonNull String code,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "게시글 작성 요청") @NonNull PostCreateRequest request,
+            @RequestBody(description = "게시글 작성 요청") @NonNull PostCreateRequest request,
             @Parameter(hidden = true) @NonNull User user);
 
     @Operation(summary = "게시글 수정", description = "게시글을 수정합니다.")
@@ -52,7 +53,7 @@ public interface PostControllerDocs {
     @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
     ResponseEntity<CommonResponse<Void>> update(
             @Parameter(description = "게시글 ID") @Positive @NonNull Long id,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "게시글 수정 요청") @NonNull PostUpdateRequest request,
+            @RequestBody(description = "게시글 수정 요청") @NonNull PostUpdateRequest request,
             @Parameter(hidden = true) @NonNull User user);
 
     @Operation(summary = "게시글 삭제", description = "게시글을 소프트 삭제합니다.")
