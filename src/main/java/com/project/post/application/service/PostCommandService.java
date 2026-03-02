@@ -6,6 +6,7 @@ import com.project.post.application.dto.PostCreateRequest;
 import com.project.post.application.dto.PostUpdateRequest;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
+import com.project.post.domain.exception.PostDomainException;
 import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
@@ -13,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -36,12 +39,12 @@ public class PostCommandService {
                 .thumbnailUrl(request.thumbnailUrl())
                 .build();
 
-        Post savedPost = postRepository.save(post);
+        Post savedPost = postRepository.save(Objects.requireNonNull(post));
 
-        postTagService.replaceTags(savedPost, request.tagNames());
-        postAttachmentService.replaceAttachments(savedPost, request.attachments());
+        postTagService.replaceTags(Objects.requireNonNull(savedPost), request.tagNames());
+        postAttachmentService.replaceAttachments(Objects.requireNonNull(savedPost), request.attachments());
 
-        return savedPost.getId();
+        return Objects.requireNonNull(savedPost.getId());
     }
 
     @Transactional
@@ -53,7 +56,11 @@ public class PostCommandService {
             throw new BusinessException(ErrorCode.ACCESS_DENIED, "수정 권한이 없습니다.");
         }
 
-        post.update(request.title(), request.content(), request.thumbnailUrl());
+        try {
+            post.update(request.title(), request.content(), request.thumbnailUrl());
+        } catch (PostDomainException ex) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, ex.getMessage());
+        }
 
         postTagService.replaceTags(post, request.tagNames());
         postAttachmentService.replaceAttachments(post, request.attachments());

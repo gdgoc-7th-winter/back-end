@@ -14,6 +14,7 @@ import com.project.post.application.service.PostScrapService;
 import com.project.user.domain.entity.User;
 import com.project.global.response.CommonResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -48,7 +49,7 @@ public class PostController implements PostControllerDocs {
     @Override
     @GetMapping("/boards/{code}/posts")
     public ResponseEntity<CommonResponse<Page<PostListResponse>>> getList(
-            @PathVariable @NonNull String code,
+            @PathVariable @NotBlank @NonNull String code,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) @NonNull Pageable pageable) {
         Page<PostListResponse> list = postQueryService.getList(code, pageable);
         return ResponseEntity.ok(CommonResponse.ok(list));
@@ -71,7 +72,7 @@ public class PostController implements PostControllerDocs {
     @Override
     @PostMapping("/boards/{code}/posts")
     public ResponseEntity<CommonResponse<Long>> create(
-            @PathVariable @NonNull String code,
+            @PathVariable @NotBlank @NonNull String code,
             @RequestBody @Valid @NonNull PostCreateRequest request,
             @CurrentUser @NonNull User user) {
         Long postId = postCommandService.create(

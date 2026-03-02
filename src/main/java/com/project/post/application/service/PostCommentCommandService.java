@@ -24,7 +24,7 @@ public class PostCommentCommandService {
     private final PostCommentRepository commentRepository;
 
     @Transactional
-    public Long create(Long postId, PostCommentRequest request, User user) {
+    public Long create(@NonNull Long postId, @NonNull PostCommentRequest request, @NonNull User user) {
         Post post = postRepository.findByIdForUpdate(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
 

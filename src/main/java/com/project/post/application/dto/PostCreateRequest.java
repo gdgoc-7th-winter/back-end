@@ -14,7 +14,7 @@ public record PostCreateRequest(
         String content,
         String thumbnailUrl,
         @Size(max = 20, message = "태그는 최대 20개까지 등록 가능합니다.")
-        List<String> tagNames,
+        List<@Size(max = 50, message = "태그는 50자를 초과할 수 없습니다.") String> tagNames,
         @Size(max = 10, message = "첨부파일은 최대 10개까지 등록 가능합니다.")
         @Valid List<PostAttachmentRequest> attachments
 ) {

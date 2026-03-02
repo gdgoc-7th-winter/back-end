@@ -31,33 +31,33 @@ public interface PostRepository extends JpaRepository<Post, Long>, PostRepositor
     @Query("UPDATE Post p SET p.viewCount = p.viewCount + 1 WHERE p.id = :postId AND p.deletedAt IS NULL")
     int incrementViewCount(@Param("postId") Long postId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE Post p SET p.likeCount = p.likeCount + 1 WHERE p.id = :postId AND p.deletedAt IS NULL")
     int incrementLikeCount(@Param("postId") Long postId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE Post p SET p.likeCount = CASE WHEN p.likeCount > 0 THEN p.likeCount - 1 ELSE 0 END WHERE p.id = :postId AND p.deletedAt IS NULL")
     int decrementLikeCount(@Param("postId") Long postId);
 
     @Query("SELECT p.likeCount FROM Post p WHERE p.id = :postId AND p.deletedAt IS NULL")
     Optional<Integer> findLikeCountById(@Param("postId") Long postId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE Post p SET p.scrapCount = p.scrapCount + 1 WHERE p.id = :postId AND p.deletedAt IS NULL")
     int incrementScrapCount(@Param("postId") Long postId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE Post p SET p.scrapCount = CASE WHEN p.scrapCount > 0 THEN p.scrapCount - 1 ELSE 0 END WHERE p.id = :postId AND p.deletedAt IS NULL")
     int decrementScrapCount(@Param("postId") Long postId);
 
     @Query("SELECT p.scrapCount FROM Post p WHERE p.id = :postId AND p.deletedAt IS NULL")
     Optional<Integer> findScrapCountById(@Param("postId") Long postId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE Post p SET p.commentCount = p.commentCount + 1 WHERE p.id = :postId AND p.deletedAt IS NULL")
     int incrementCommentCount(@Param("postId") Long postId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE Post p SET p.commentCount = CASE WHEN p.commentCount > 0 THEN p.commentCount - 1 ELSE 0 END WHERE p.id = :postId AND p.deletedAt IS NULL")
     int decrementCommentCount(@Param("postId") Long postId);
 }
