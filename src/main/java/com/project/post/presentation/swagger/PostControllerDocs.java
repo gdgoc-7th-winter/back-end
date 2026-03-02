@@ -6,6 +6,7 @@ import com.project.post.application.dto.PostDetailResponse;
 import com.project.post.application.dto.PostListResponse;
 import com.project.post.application.dto.PostUpdateRequest;
 import com.project.global.response.CommonResponse;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import com.project.user.domain.entity.User;
@@ -25,7 +26,7 @@ public interface PostControllerDocs {
     @Operation(summary = "게시글 목록 조회", description = "게시판 코드로 게시글 목록을 페이징하여 조회합니다.")
     @ApiResponse(responseCode = "200", description = "성공")
     ResponseEntity<CommonResponse<Page<PostListResponse>>> getList(
-            @Parameter(description = "게시판 코드") @NonNull String code,
+            @Parameter(description = "게시판 코드") @NotBlank @NonNull String code,
             @NonNull Pageable pageable);
 
     @Operation(summary = "게시글 상세 조회", description = "게시글 ID로 상세 정보를 조회합니다.")
@@ -42,7 +43,7 @@ public interface PostControllerDocs {
     @ApiResponse(responseCode = "201", description = "생성됨")
     @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
     ResponseEntity<CommonResponse<Long>> create(
-            @Parameter(description = "게시판 코드") @NonNull String code,
+            @Parameter(description = "게시판 코드") @NotBlank @NonNull String code,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "게시글 작성 요청") @NonNull PostCreateRequest request,
             @Parameter(hidden = true) @NonNull User user);
 

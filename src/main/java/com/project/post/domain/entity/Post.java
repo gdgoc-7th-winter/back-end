@@ -1,6 +1,7 @@
 package com.project.post.domain.entity;
 
 import com.project.global.entity.SoftDeleteEntity;
+import com.project.post.domain.exception.PostDomainException;
 import com.project.user.domain.entity.User;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
@@ -59,13 +60,22 @@ public class Post extends SoftDeleteEntity {
 
     public void update(String title, String content, String thumbnailUrl) {
         if (title != null) {
+            validateNotBlank(title, "제목은 공백일 수 없습니다.");
             this.title = title;
         }
         if (content != null) {
+            validateNotBlank(content, "본문은 공백일 수 없습니다.");
             this.content = content;
         }
         if (thumbnailUrl != null) {
+            validateNotBlank(thumbnailUrl, "썸네일 URL은 공백일 수 없습니다.");
             this.thumbnailUrl = thumbnailUrl;
+        }
+    }
+
+    private void validateNotBlank(String value, String message) {
+        if (value.isBlank()) {
+            throw new PostDomainException(message);
         }
     }
 }
