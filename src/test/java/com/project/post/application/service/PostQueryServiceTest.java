@@ -8,6 +8,7 @@ import com.project.post.domain.entity.Board;
 import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
+import com.project.post.domain.repository.dto.PostListQueryResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -96,14 +97,14 @@ class PostQueryServiceTest {
     }
 
     @Test
-    @DisplayName("목록 조회는 레포지토리 결과를 그대로 반환한다")
+    @DisplayName("목록 조회는 레포지토리 결과를 Response DTO로 변환하여 반환한다")
     void getListReturnsRepositoryPage() {
         when(boardRepository.findByCodeAndActiveTrue("general")).thenReturn(Optional.of(Board.of("general", "자유게시판")));
 
-        Page<PostListResponse> expected = new PageImpl<>(Objects.requireNonNull(List.of(
-                new PostListResponse(1L, "t", "thumb", "nick", 0, 0, 0, Instant.now())
+        Page<PostListQueryResult> queryPage = new PageImpl<>(Objects.requireNonNull(List.of(
+                new PostListQueryResult(1L, "t", "thumb", "nick", 0, 0, 0, Instant.now())
         )));
-        when(postRepository.findPostList("general", PageRequest.of(0, 10))).thenReturn(expected);
+        when(postRepository.findPostList("general", PageRequest.of(0, 10))).thenReturn(queryPage);
 
         Page<PostListResponse> result = postQueryService.getList("general", PageRequest.of(0, 10));
 

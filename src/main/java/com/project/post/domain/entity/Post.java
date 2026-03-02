@@ -57,40 +57,6 @@ public class Post extends SoftDeleteEntity {
     @lombok.Builder.Default
     private int commentCount = 0;
 
-    public void incrementViewCount() {
-        this.viewCount++;
-    }
-
-    public void incrementLikeCount() {
-        this.likeCount++;
-    }
-
-    public void decrementLikeCount() {
-        if (this.likeCount > 0) {
-            this.likeCount--;
-        }
-    }
-
-    public void incrementScrapCount() {
-        this.scrapCount++;
-    }
-
-    public void decrementScrapCount() {
-        if (this.scrapCount > 0) {
-            this.scrapCount--;
-        }
-    }
-
-    public void incrementCommentCount() {
-        this.commentCount++;
-    }
-
-    public void decrementCommentCount() {
-        if (this.commentCount > 0) {
-            this.commentCount--;
-        }
-    }
-
     public void update(String title, String content, String thumbnailUrl) {
         if (title != null) {
             this.title = title;

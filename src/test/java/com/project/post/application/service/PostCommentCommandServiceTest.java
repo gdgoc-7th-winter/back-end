@@ -18,10 +18,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,14 +49,14 @@ class PostCommentCommandServiceTest {
         when(postRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(post));
 
         PostComment saved = PostComment.createRoot(post, user, "content");
-        ReflectionTestUtils.setField(saved, "id", 10L);
-        when(commentRepository.save(any(PostComment.class))).thenReturn(saved);
+        ReflectionTestUtils.setField(Objects.requireNonNull(saved), "id", 10L);
+        when(commentRepository.save(notNull())).thenReturn(saved);
 
         Long result = postCommentCommandService.create(1L, request, user);
 
         assertThat(result).isEqualTo(10L);
-        assertThat(post.getCommentCount()).isEqualTo(1);
-        verify(commentRepository).save(any(PostComment.class));
+        verify(commentRepository).save(notNull());
+        verify(postRepository).incrementCommentCount(1L);
     }
 
     @Test
@@ -72,7 +73,7 @@ class PostCommentCommandServiceTest {
                 .depth(1)
                 .content("parent")
                 .build();
-        ReflectionTestUtils.setField(parent, "id", 20L);
+        ReflectionTestUtils.setField(Objects.requireNonNull(parent), "id", 20L);
 
         when(postRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(post));
         when(commentRepository.findActiveById(20L)).thenReturn(Optional.of(parent));
@@ -82,7 +83,7 @@ class PostCommentCommandServiceTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.INVALID_INPUT);
 
-        verify(commentRepository, never()).save(any(PostComment.class));
+        verify(commentRepository, never()).save(notNull());
     }
 
     @Test
@@ -93,12 +94,12 @@ class PostCommentCommandServiceTest {
         Post post = buildPost(1L, author);
 
         PostComment comment = PostComment.createRoot(post, author, "content");
-        ReflectionTestUtils.setField(comment, "id", 100L);
+        ReflectionTestUtils.setField(Objects.requireNonNull(comment), "id", 100L);
 
         when(postRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(post));
         when(commentRepository.findActiveById(100L)).thenReturn(Optional.of(comment));
 
-        assertThatThrownBy(() -> postCommentCommandService.softDelete(1L, 100L, other))
+        assertThatThrownBy(() -> postCommentCommandService.softDelete(1L, 100L, Objects.requireNonNull(other)))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ACCESS_DENIED);
@@ -109,18 +110,17 @@ class PostCommentCommandServiceTest {
     void softDeleteUpdatesState() {
         User author = buildUser(1L, "author");
         Post post = buildPost(1L, author);
-        ReflectionTestUtils.setField(post, "commentCount", 3);
 
         PostComment comment = PostComment.createRoot(post, author, "content");
-        ReflectionTestUtils.setField(comment, "id", 100L);
+        ReflectionTestUtils.setField(Objects.requireNonNull(comment), "id", 100L);
 
         when(postRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(post));
         when(commentRepository.findActiveById(100L)).thenReturn(Optional.of(comment));
 
-        postCommentCommandService.softDelete(1L, 100L, author);
+        postCommentCommandService.softDelete(1L, 100L, Objects.requireNonNull(author));
 
         assertThat(comment.isDeleted()).isTrue();
-        assertThat(post.getCommentCount()).isEqualTo(2);
+        verify(postRepository).decrementCommentCount(1L);
     }
 
     private static User buildUser(Long id, String nickname) {
@@ -132,7 +132,7 @@ class PostCommentCommandServiceTest {
 
     private static Post buildPost(Long id, User author) {
         Board board = Board.of("general", "자유게시판");
-        ReflectionTestUtils.setField(board, "id", 10L);
+        ReflectionTestUtils.setField(Objects.requireNonNull(board), "id", 10L);
         return Post.builder()
                 .id(id)
                 .board(board)

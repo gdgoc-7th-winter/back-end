@@ -2,7 +2,7 @@ package com.project.post.domain.repository.impl;
 
 import com.project.post.domain.repository.PostRepositoryCustom;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
-import com.project.post.application.dto.PostListResponse;
+import com.project.post.domain.repository.dto.PostListQueryResult;
 import com.project.post.domain.entity.QPost;
 import com.project.post.domain.entity.QPostAttachment;
 import com.project.post.domain.entity.QPostTag;
@@ -30,13 +30,13 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<PostListResponse> findPostList(@NonNull String boardCode, @NonNull Pageable pageable) {
+    public Page<PostListQueryResult> findPostList(@NonNull String boardCode, @NonNull Pageable pageable) {
         QPost post = QPost.post;
         QUser user = QUser.user;
 
         var content = queryFactory
                 .select(Projections.constructor(
-                        PostListResponse.class,
+                        PostListQueryResult.class,
                         post.id,
                         post.title,
                         post.thumbnailUrl,
