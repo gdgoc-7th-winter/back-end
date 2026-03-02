@@ -1,5 +1,7 @@
 package com.project.user.presentation.controller;
-import com.project.global.response.ApiResponse;
+
+import com.project.user.presentation.swagger.UserAuthControllerDocs;
+import com.project.global.response.CommonResponse;
 import com.project.user.application.service.EmailService;
 import com.project.user.presentation.dto.request.EmailSendRequest;
 import com.project.user.presentation.dto.request.EmailVerificationRequest;
@@ -17,18 +19,20 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-public class UserAuthController {
+public class UserAuthController implements UserAuthControllerDocs {
     private final EmailService emailService;
 
+    @Override
     @PostMapping("/email-verification")
-    public ApiResponse<Void> sendEmail(@RequestBody @Valid EmailSendRequest request) {
+    public CommonResponse<Void> sendEmail(@RequestBody @Valid EmailSendRequest request) {
         emailService.sendAuthEmail(request.email());
-        return ApiResponse.ok();
+        return CommonResponse.ok();
     }
 
+    @Override
     @PostMapping("/verify-code")
-    public ApiResponse<Void> verifyCode(@RequestBody EmailVerificationRequest request) {
+    public CommonResponse<Void> verifyCode(@RequestBody @Valid EmailVerificationRequest request) {
         emailService.verifyCode(request.email(), request.authCode());
-        return ApiResponse.ok();
+        return CommonResponse.ok();
     }
 }
