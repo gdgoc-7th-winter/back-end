@@ -15,7 +15,7 @@ public interface PostTagRepository extends JpaRepository<PostTag, PostTag.PostTa
     @Query("SELECT pt FROM PostTag pt WHERE pt.post.id = :postId")
     List<PostTag> findByPostId(@Param("postId") Long postId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("DELETE FROM PostTag pt WHERE pt.post.id = :postId")
     void deleteByPostId(@Param("postId") Long postId);
 }

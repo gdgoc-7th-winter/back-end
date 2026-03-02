@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Objects;
 
 @RestController
-@RequestMapping("/api/v1/posts")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class PostCommentController implements PostCommentControllerDocs {
 
@@ -35,7 +35,7 @@ public class PostCommentController implements PostCommentControllerDocs {
     private final PostCommentQueryService postCommentQueryService;
 
     @Override
-    @PostMapping("/{postId}/comments")
+    @PostMapping("/posts/{postId}/comments")
     public ResponseEntity<CommonResponse<Long>> createComment(
             @PathVariable Long postId,
             @RequestBody @Valid PostCommentRequest request,
@@ -45,7 +45,7 @@ public class PostCommentController implements PostCommentControllerDocs {
     }
 
     @Override
-    @GetMapping("/{postId}/comments")
+    @GetMapping("/posts/{postId}/comments")
     public ResponseEntity<CommonResponse<Page<PostCommentResponse>>> getComments(
             @PathVariable Long postId,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.ASC) Pageable pageable) {
@@ -54,7 +54,7 @@ public class PostCommentController implements PostCommentControllerDocs {
     }
 
     @Override
-    @DeleteMapping("/{postId}/comments/{commentId}")
+    @DeleteMapping("/posts/{postId}/comments/{commentId}")
     public ResponseEntity<CommonResponse<Void>> deleteComment(
             @PathVariable Long postId,
             @PathVariable Long commentId,

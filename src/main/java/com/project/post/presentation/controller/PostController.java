@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -55,9 +56,15 @@ public class PostController implements PostControllerDocs {
     @GetMapping("/posts/{id}")
     public ResponseEntity<CommonResponse<PostDetailResponse>> getDetail(@PathVariable Long id) {
         Long postId = Objects.requireNonNull(id);
-        postCommandService.increaseViewCount(postId);
         PostDetailResponse detail = postQueryService.getDetail(postId);
         return ResponseEntity.ok(CommonResponse.ok(detail));
+    }
+
+    @Override
+    @PostMapping("/posts/{id}/view")
+    public ResponseEntity<CommonResponse<Void>> increaseViewCount(@PathVariable Long id) {
+        postCommandService.increaseViewCount(Objects.requireNonNull(id));
+        return ResponseEntity.ok(CommonResponse.ok());
     }
 
     @Override
@@ -96,20 +103,38 @@ public class PostController implements PostControllerDocs {
     }
 
     @Override
-    @PostMapping("/posts/{id}/like")
-    public ResponseEntity<CommonResponse<LikeScrapToggleResponse>> toggleLike(
+    @PutMapping("/posts/{id}/like")
+    public ResponseEntity<CommonResponse<LikeScrapToggleResponse>> like(
             @PathVariable Long id,
             @CurrentUser User user) {
-        LikeScrapToggleResponse response = postLikeService.toggle(Objects.requireNonNull(id), Objects.requireNonNull(user));
+        LikeScrapToggleResponse response = postLikeService.like(Objects.requireNonNull(id), Objects.requireNonNull(user));
         return ResponseEntity.ok(CommonResponse.ok(response));
     }
 
     @Override
-    @PostMapping("/posts/{id}/scrap")
-    public ResponseEntity<CommonResponse<LikeScrapToggleResponse>> toggleScrap(
+    @DeleteMapping("/posts/{id}/like")
+    public ResponseEntity<CommonResponse<LikeScrapToggleResponse>> unlike(
             @PathVariable Long id,
             @CurrentUser User user) {
-        LikeScrapToggleResponse response = postScrapService.toggle(Objects.requireNonNull(id), Objects.requireNonNull(user));
+        LikeScrapToggleResponse response = postLikeService.unlike(Objects.requireNonNull(id), Objects.requireNonNull(user));
+        return ResponseEntity.ok(CommonResponse.ok(response));
+    }
+
+    @Override
+    @PutMapping("/posts/{id}/scrap")
+    public ResponseEntity<CommonResponse<LikeScrapToggleResponse>> scrap(
+            @PathVariable Long id,
+            @CurrentUser User user) {
+        LikeScrapToggleResponse response = postScrapService.scrap(Objects.requireNonNull(id), Objects.requireNonNull(user));
+        return ResponseEntity.ok(CommonResponse.ok(response));
+    }
+
+    @Override
+    @DeleteMapping("/posts/{id}/scrap")
+    public ResponseEntity<CommonResponse<LikeScrapToggleResponse>> unscrap(
+            @PathVariable Long id,
+            @CurrentUser User user) {
+        LikeScrapToggleResponse response = postScrapService.unscrap(Objects.requireNonNull(id), Objects.requireNonNull(user));
         return ResponseEntity.ok(CommonResponse.ok(response));
     }
 }

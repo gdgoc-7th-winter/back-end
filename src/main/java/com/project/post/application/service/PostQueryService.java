@@ -10,6 +10,7 @@ import com.project.post.domain.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,14 +24,20 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostQueryService {
 
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final BoardRepository boardRepository;
     private final PostRepository postRepository;
     @Transactional(readOnly = true)
     public Page<PostListResponse> getList(@NonNull String boardCode, @NonNull Pageable pageable) {
-        boardRepository.findByCode(boardCode)
+        boardRepository.findByCodeAndActiveTrue(boardCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시판을 찾을 수 없습니다."));
 
-        return postRepository.findPostList(boardCode, pageable);
+        Pageable safePageable = pageable.getPageSize() > MAX_PAGE_SIZE
+                ? PageRequest.of(pageable.getPageNumber(), MAX_PAGE_SIZE, pageable.getSort())
+                : pageable;
+
+        return postRepository.findPostList(boardCode, safePageable);
     }
 
     @Transactional(readOnly = true)

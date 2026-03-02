@@ -8,7 +8,7 @@ import com.project.post.domain.entity.QPostAttachment;
 import com.project.post.domain.entity.QPostTag;
 import com.project.post.domain.entity.QTag;
 import com.project.user.domain.entity.QUser;
-import com.querydsl.core.group.GroupBy;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +18,10 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
-import java.util.Map;
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 @RequiredArgsConstructor
@@ -73,47 +74,91 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
     public Optional<PostDetailQueryResult> findPostDetail(@NonNull Long postId) {
         QPost post = QPost.post;
         QUser user = QUser.user;
-        QPostTag postTag = QPostTag.postTag;
-        QTag tag = QTag.tag;
-        QPostAttachment attachment = QPostAttachment.postAttachment;
 
-        Map<Long, PostDetailQueryResult> result = queryFactory
+        Tuple base = queryFactory
+                .select(
+                        post.id,
+                        post.title,
+                        post.content,
+                        post.thumbnailUrl,
+                        user.nickname,
+                        user.id,
+                        post.viewCount,
+                        post.likeCount,
+                        post.scrapCount,
+                        post.commentCount,
+                        post.createdAt,
+                        post.updatedAt
+                )
                 .from(post)
                 .join(post.author, user)
-                .leftJoin(postTag).on(postTag.post.id.eq(post.id))
-                .leftJoin(tag).on(postTag.tag.id.eq(tag.id))
-                .leftJoin(attachment).on(attachment.post.id.eq(post.id))
                 .where(
                         post.id.eq(postId),
                         post.deletedAt.isNull()
                 )
-                .transform(GroupBy.groupBy(post.id).as(
-                        Projections.constructor(
-                                PostDetailQueryResult.class,
-                                post.id,
-                                post.title,
-                                post.content,
-                                post.thumbnailUrl,
-                                user.nickname,
-                                user.id,
-                                post.viewCount,
-                                post.likeCount,
-                                post.scrapCount,
-                                post.commentCount,
-                                post.createdAt,
-                                post.updatedAt,
-                                GroupBy.set(tag.name),
-                                GroupBy.set(Projections.constructor(
-                                        PostDetailQueryResult.AttachmentDto.class,
-                                        attachment.fileUrl,
-                                        attachment.fileName,
-                                        attachment.contentType,
-                                        attachment.fileSize,
-                                        attachment.sortOrder
-                                ))
-                        )
-                ));
+                .fetchOne();
 
-        return Optional.ofNullable(result.get(postId));
+        if (base == null) {
+            return Optional.empty();
+        }
+
+        Set<String> tagNames = fetchTagNames(postId);
+        Set<PostDetailQueryResult.AttachmentDto> attachments = fetchAttachments(postId);
+
+        return Optional.of(buildDetailResult(base, post, user, tagNames, attachments));
+    }
+
+    private Set<String> fetchTagNames(Long postId) {
+        QPostTag postTag = QPostTag.postTag;
+        QTag tag = QTag.tag;
+        Set<String> tagNames = new LinkedHashSet<>(queryFactory
+                .select(tag.name)
+                .from(postTag)
+                .join(postTag.tag, tag)
+                .where(postTag.post.id.eq(postId))
+                .fetch());
+        tagNames.remove(null);
+        return tagNames;
+    }
+
+    private Set<PostDetailQueryResult.AttachmentDto> fetchAttachments(Long postId) {
+        QPostAttachment attachment = QPostAttachment.postAttachment;
+        return new LinkedHashSet<>(queryFactory
+                .select(Projections.constructor(
+                        PostDetailQueryResult.AttachmentDto.class,
+                        attachment.fileUrl,
+                        attachment.fileName,
+                        attachment.contentType,
+                        attachment.fileSize,
+                        attachment.sortOrder
+                ))
+                .from(attachment)
+                .where(attachment.post.id.eq(postId))
+                .orderBy(attachment.sortOrder.asc())
+                .fetch());
+    }
+
+    private PostDetailQueryResult buildDetailResult(
+            Tuple base,
+            QPost post,
+            QUser user,
+            Set<String> tagNames,
+            Set<PostDetailQueryResult.AttachmentDto> attachments) {
+        return new PostDetailQueryResult(
+                base.get(post.id),
+                base.get(post.title),
+                base.get(post.content),
+                base.get(post.thumbnailUrl),
+                base.get(user.nickname),
+                base.get(user.id),
+                base.get(post.viewCount),
+                base.get(post.likeCount),
+                base.get(post.scrapCount),
+                base.get(post.commentCount),
+                base.get(post.createdAt),
+                base.get(post.updatedAt),
+                tagNames,
+                attachments
+        );
     }
 }

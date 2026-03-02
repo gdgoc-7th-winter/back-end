@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Service
@@ -25,6 +26,7 @@ public class PostTagService {
 
     private final TagRepository tagRepository;
     private final PostTagRepository postTagRepository;
+    private final TagCreationService tagCreationService;
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void replaceTags(@NonNull Post post, List<String> tagNames) {
@@ -52,16 +54,16 @@ public class PostTagService {
 
         List<Tag> result = new ArrayList<>();
         for (String name : uniqueNames) {
-            result.add(getOrCreateTag(name));
+            result.add(getOrCreateTag(Objects.requireNonNull(name)));
         }
         return result;
     }
 
-    private Tag getOrCreateTag(String name) {
+    private Tag getOrCreateTag(@NonNull String name) {
         return tagRepository.findByName(name)
                 .orElseGet(() -> {
                     try {
-                        return tagRepository.save(new Tag(name));
+                        return tagCreationService.createTag(name);
                     } catch (DataIntegrityViolationException ex) {
                         return tagRepository.findByName(name)
                                 .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "태그 생성에 실패했습니다."));

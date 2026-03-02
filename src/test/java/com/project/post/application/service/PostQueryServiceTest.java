@@ -45,7 +45,7 @@ class PostQueryServiceTest {
     @Test
     @DisplayName("게시판이 없으면 목록 조회는 예외를 던진다")
     void getListThrowsWhenBoardMissing() {
-        when(boardRepository.findByCode("general")).thenReturn(Optional.empty());
+        when(boardRepository.findByCodeAndActiveTrue("general")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> postQueryService.getList("general", PageRequest.of(0, 10)))
                 .isInstanceOf(BusinessException.class)
@@ -98,7 +98,7 @@ class PostQueryServiceTest {
     @Test
     @DisplayName("목록 조회는 레포지토리 결과를 그대로 반환한다")
     void getListReturnsRepositoryPage() {
-        when(boardRepository.findByCode("general")).thenReturn(Optional.of(Board.of("general", "자유게시판")));
+        when(boardRepository.findByCodeAndActiveTrue("general")).thenReturn(Optional.of(Board.of("general", "자유게시판")));
 
         Page<PostListResponse> expected = new PageImpl<>(Objects.requireNonNull(List.of(
                 new PostListResponse(1L, "t", "thumb", "nick", 0, 0, 0, Instant.now())

@@ -13,8 +13,6 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
-
 @Service
 @RequiredArgsConstructor
 public class PostCommentCommandService {
@@ -23,7 +21,6 @@ public class PostCommentCommandService {
     private final PostCommentRepository commentRepository;
 
     @Transactional
-    @SuppressWarnings("null")
     public Long create(Long postId, PostCommentRequest request, User user) {
         Post post = postRepository.findByIdForUpdate(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
@@ -43,9 +40,9 @@ public class PostCommentCommandService {
             comment = PostComment.createReply(post, user, parent, request.content());
         }
 
-        comment = Objects.requireNonNull(commentRepository.save(comment));
+        PostComment savedComment = commentRepository.save(comment);
         post.incrementCommentCount();
-        return comment.getId();
+        return savedComment.getId();
     }
 
     @Transactional

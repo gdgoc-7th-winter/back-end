@@ -1,5 +1,7 @@
 package com.project.post.application.service;
 
+import com.project.global.error.BusinessException;
+import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.PostAttachmentRequest;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.PostAttachment;
@@ -17,12 +19,17 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class PostAttachmentService {
 
+    private static final int MAX_ATTACHMENTS = 10;
+
     private final PostAttachmentRepository postAttachmentRepository;
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void replaceAttachments(@NonNull Post post, List<PostAttachmentRequest> dtos) {
         if (dtos == null) {
             return;
+        }
+        if (dtos.size() > MAX_ATTACHMENTS) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "첨부파일은 최대 10개까지 등록 가능합니다.");
         }
         postAttachmentRepository.deleteByPostId(post.getId());
         if (dtos.isEmpty()) {
@@ -32,18 +39,19 @@ public class PostAttachmentService {
     }
 
     private void saveAttachments(@NonNull Post post, List<PostAttachmentRequest> dtos) {
-        int order = 0;
+        int sortOrder = 0;
         for (PostAttachmentRequest dto : dtos) {
             if (dto == null || dto.fileUrl() == null) {
                 continue;
             }
+            int order = dto.sortOrder() >= 0 ? dto.sortOrder() : sortOrder++;
             PostAttachment attachment = PostAttachment.of(
                     post,
                     dto.fileUrl(),
                     dto.fileName(),
                     dto.contentType(),
                     dto.fileSize(),
-                    dto.sortOrder() >= 0 ? dto.sortOrder() : order++
+                    order
             );
             postAttachmentRepository.save(Objects.requireNonNull(attachment));
         }

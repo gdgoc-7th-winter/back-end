@@ -2,6 +2,7 @@ package com.project.post.application.service;
 
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
+import com.project.post.domain.entity.PostTag;
 import com.project.post.domain.entity.Tag;
 import com.project.post.domain.repository.PostTagRepository;
 import com.project.post.domain.repository.TagRepository;
@@ -9,12 +10,16 @@ import com.project.user.domain.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.lang.NonNull;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -24,7 +29,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@SuppressWarnings("null")
 class PostTagServiceTest {
 
     @Mock
@@ -32,6 +36,9 @@ class PostTagServiceTest {
 
     @Mock
     private PostTagRepository postTagRepository;
+
+    @Mock
+    private TagCreationService tagCreationService;
 
     @InjectMocks
     private PostTagService postTagService;
@@ -51,27 +58,48 @@ class PostTagServiceTest {
 
         when(tagRepository.findByName("java")).thenReturn(Optional.of(new Tag("java")));
         when(tagRepository.findByName("spring")).thenReturn(Optional.empty());
-        when(tagRepository.save(any(Tag.class))).thenReturn(new Tag("spring"));
+        when(tagCreationService.createTag("spring")).thenReturn(new Tag("spring"));
 
         postTagService.replaceTags(post, Arrays.asList(" java ", "spring", "java", "", null));
 
         verify(postTagRepository).deleteByPostId(1L);
         verify(tagRepository, times(2)).findByName(any(String.class));
-        verify(tagRepository, times(1)).save(any(Tag.class));
-        verify(postTagRepository, times(2)).save(any());
+        verify(tagCreationService, times(1)).createTag("spring");
+        ArgumentCaptor<PostTag> captor = ArgumentCaptor.forClass(PostTag.class);
+        verify(postTagRepository, times(2)).save(captor.capture());
     }
 
-    private static Post buildPost(Long id) {
+    @Test
+    @DisplayName("태그 생성 중 중복으로 실패하면 재조회한다")
+    void replaceTagsRecoversFromDuplicateTag() {
+        Post post = buildPost(1L);
+
+        when(tagRepository.findByName("spring"))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(new Tag("spring")));
+        when(tagCreationService.createTag("spring"))
+                .thenThrow(new DataIntegrityViolationException("duplicate tag"));
+
+        postTagService.replaceTags(post, Arrays.asList("spring"));
+
+        verify(postTagRepository).deleteByPostId(1L);
+        verify(tagRepository, times(2)).findByName("spring");
+        verify(tagCreationService, times(1)).createTag("spring");
+        ArgumentCaptor<PostTag> captor = ArgumentCaptor.forClass(PostTag.class);
+        verify(postTagRepository, times(1)).save(captor.capture());
+    }
+
+    private static @NonNull Post buildPost(Long id) {
         User user = new User("user@test.com", "pw");
         ReflectionTestUtils.setField(user, "id", 1L);
         Board board = Board.of("general", "자유게시판");
-        ReflectionTestUtils.setField(board, "id", 10L);
-        return Post.builder()
+        ReflectionTestUtils.setField(java.util.Objects.requireNonNull(board), "id", 10L);
+        return Objects.requireNonNull(Post.builder()
                 .id(id)
                 .board(board)
                 .author(user)
                 .title("title")
                 .content("content")
-                .build();
+                .build());
     }
 }

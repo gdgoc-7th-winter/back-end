@@ -14,8 +14,6 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
-
 @Service
 @RequiredArgsConstructor
 public class PostCommandService {
@@ -26,9 +24,8 @@ public class PostCommandService {
     private final PostAttachmentService postAttachmentService;
 
     @Transactional
-    @SuppressWarnings("null")
     public Long create(@NonNull String boardCode, @NonNull PostCreateRequest request, @NonNull User author) {
-        Board board = boardRepository.findByCode(boardCode)
+        Board board = boardRepository.findByCodeAndActiveTrue(boardCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시판을 찾을 수 없습니다."));
 
         Post post = Post.builder()
@@ -39,7 +36,7 @@ public class PostCommandService {
                 .thumbnailUrl(request.thumbnailUrl())
                 .build();
 
-        Post savedPost = Objects.requireNonNull(postRepository.save(post));
+        Post savedPost = postRepository.save(post);
 
         postTagService.replaceTags(savedPost, request.tagNames());
         postAttachmentService.replaceAttachments(savedPost, request.attachments());
@@ -76,8 +73,9 @@ public class PostCommandService {
 
     @Transactional
     public void increaseViewCount(@NonNull Long postId) {
-        Post post = postRepository.findByIdForUpdate(postId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
-        post.incrementViewCount();
+        int updated = postRepository.incrementViewCount(postId);
+        if (updated == 0) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다.");
+        }
     }
 }

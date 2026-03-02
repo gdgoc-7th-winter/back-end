@@ -17,11 +17,11 @@ public class UserSessionService {
 
     public User getCurrentUser(HttpSession session) {
         if (session == null) {
-            throw new BusinessException(ErrorCode.SESSION_NOT_FOUND, "로그인이 필요합니다.");
+            throw new BusinessException(ErrorCode.SESSION_EXPIRED, "로그인이 필요합니다.");
         }
         UserSession userSession = (UserSession) session.getAttribute("LOGIN_USER");
         if (userSession == null) {
-            throw new BusinessException(ErrorCode.SESSION_NOT_FOUND, "로그인이 필요합니다.");
+            throw new BusinessException(ErrorCode.SESSION_EXPIRED, "로그인이 필요합니다.");
         }
         return userRepository.findById(userSession.getUserId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "사용자를 찾을 수 없습니다."));
