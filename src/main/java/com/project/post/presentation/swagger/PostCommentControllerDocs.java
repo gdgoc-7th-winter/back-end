@@ -1,5 +1,6 @@
 package com.project.post.presentation.swagger;
 
+import com.project.post.application.dto.LikeScrapToggleResponse;
 import com.project.post.application.dto.PostCommentRequest;
 import com.project.post.application.dto.PostCommentResponse;
 import com.project.global.response.CommonResponse;
@@ -38,6 +39,22 @@ public interface PostCommentControllerDocs {
     @ApiResponse(responseCode = "200", description = "성공")
     @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
     ResponseEntity<CommonResponse<Void>> deleteComment(
+            @Parameter(description = "게시글 ID") @Positive @NonNull Long postId,
+            @Parameter(description = "댓글 ID") @Positive @NonNull Long commentId,
+            @Parameter(hidden = true) @NonNull User user);
+
+    @Operation(summary = "댓글 좋아요 추가", description = "댓글에 좋아요를 추가합니다.")
+    @ApiResponse(responseCode = "200", description = "성공")
+    @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
+    ResponseEntity<CommonResponse<LikeScrapToggleResponse>> likeComment(
+            @Parameter(description = "게시글 ID") @Positive @NonNull Long postId,
+            @Parameter(description = "댓글 ID") @Positive @NonNull Long commentId,
+            @Parameter(hidden = true) @NonNull User user);
+
+    @Operation(summary = "댓글 좋아요 취소", description = "댓글 좋아요를 취소합니다.")
+    @ApiResponse(responseCode = "200", description = "성공")
+    @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
+    ResponseEntity<CommonResponse<LikeScrapToggleResponse>> unlikeComment(
             @Parameter(description = "게시글 ID") @Positive @NonNull Long postId,
             @Parameter(description = "댓글 ID") @Positive @NonNull Long commentId,
             @Parameter(hidden = true) @NonNull User user);

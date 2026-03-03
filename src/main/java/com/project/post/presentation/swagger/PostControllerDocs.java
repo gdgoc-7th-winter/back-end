@@ -24,10 +24,13 @@ import org.springframework.lang.NonNull;
 @Tag(name = "Post", description = "게시글 API")
 public interface PostControllerDocs {
 
-    @Operation(summary = "게시글 목록 조회", description = "게시판 코드로 게시글 목록을 페이징하여 조회합니다.")
+    @Operation(summary = "게시글 목록 조회", description = "게시판 코드로 게시글 목록을 페이징하여 조회합니다. 목록 응답에 tagNames가 포함됩니다.")
     @ApiResponse(responseCode = "200", description = "성공")
     ResponseEntity<CommonResponse<Page<PostListResponse>>> getList(
             @Parameter(description = "게시판 코드") @NotBlank @NonNull String code,
+            @Parameter(description = "검색 키워드 (제목/본문/태그 부분 일치)") String keyword,
+            @Parameter(description = "태그 필터 (복수 가능)") java.util.List<String> tags,
+            @Parameter(description = "정렬 기준 (latest|views|likes)") String order,
             @NonNull Pageable pageable);
 
     @Operation(summary = "게시글 상세 조회", description = "게시글 ID로 상세 정보를 조회합니다.")
