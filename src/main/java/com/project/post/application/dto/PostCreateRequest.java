@@ -10,6 +10,7 @@ public record PostCreateRequest(
         @NotBlank(message = "제목은 필수입니다.")
         @Size(max = 200)
         String title,
+        @NotBlank(message = "본문은 필수입니다.")
         @Size(max = 50_000, message = "본문은 50,000자를 초과할 수 없습니다.")
         String content,
         String thumbnailUrl,

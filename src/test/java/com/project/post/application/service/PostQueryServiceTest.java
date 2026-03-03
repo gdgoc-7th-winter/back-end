@@ -8,8 +8,11 @@ import com.project.post.domain.entity.Board;
 import com.project.post.application.service.impl.PostQueryServiceImpl;
 import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.PostRepository;
+import com.project.post.domain.repository.PostTagRepository;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
 import com.project.post.domain.repository.dto.PostListQueryResult;
+import com.project.post.domain.repository.dto.PostSearchCondition;
+import com.project.post.domain.enums.PostListSort;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -40,6 +44,9 @@ class PostQueryServiceTest {
     @Mock
     private PostRepository postRepository;
 
+    @Mock
+    private PostTagRepository postTagRepository;
+
     @InjectMocks
     private PostQueryServiceImpl postQueryService;
 
@@ -48,7 +55,7 @@ class PostQueryServiceTest {
     void getListThrowsWhenBoardMissing() {
         when(boardRepository.findByCodeAndActiveTrue("general")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postQueryService.getList("general", PageRequest.of(0, 10)))
+        assertThatThrownBy(() -> postQueryService.getList("general", PageRequest.of(0, 10), null, null, null))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
@@ -102,11 +109,14 @@ class PostQueryServiceTest {
         when(boardRepository.findByCodeAndActiveTrue("general")).thenReturn(Optional.of(Board.of("general", "자유게시판")));
 
         Page<PostListQueryResult> queryPage = new PageImpl<>(Objects.requireNonNull(List.of(
-                new PostListQueryResult(1L, "t", "thumb", "nick", 0, 0, 0, Instant.now())
+                new PostListQueryResult(1L, "t", "thumb", "nick", 0, 0, 0, 0, Instant.now())
         )));
-        when(postRepository.findPostList("general", PageRequest.of(0, 10))).thenReturn(queryPage);
+        PostSearchCondition condition = new PostSearchCondition(null, null, PostListSort.LATEST);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(postRepository.findPostList("general", pageable, condition)).thenReturn(queryPage);
+        when(postTagRepository.findByPostIdIn(List.of(1L))).thenReturn(List.of());
 
-        Page<PostListResponse> result = postQueryService.getList("general", PageRequest.of(0, 10));
+        Page<PostListResponse> result = postQueryService.getList("general", PageRequest.of(0, 10), null, null, null);
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).postId()).isEqualTo(1L);
