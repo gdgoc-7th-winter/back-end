@@ -24,7 +24,7 @@ import org.springframework.lang.NonNull;
 @Tag(name = "Post", description = "게시글 API")
 public interface PostControllerDocs {
 
-    @Operation(summary = "게시글 목록 조회", description = "게시판 코드로 게시글 목록을 페이징하여 조회합니다.")
+    @Operation(summary = "게시글 목록 조회", description = "게시판 코드로 게시글 목록을 페이징하여 조회합니다. 목록 응답에 tagNames가 포함됩니다.")
     @ApiResponse(responseCode = "200", description = "성공")
     ResponseEntity<CommonResponse<Page<PostListResponse>>> getList(
             @Parameter(description = "게시판 코드") @NotBlank @NonNull String code,

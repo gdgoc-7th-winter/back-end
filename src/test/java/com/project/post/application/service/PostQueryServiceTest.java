@@ -8,8 +8,11 @@ import com.project.post.domain.entity.Board;
 import com.project.post.application.service.impl.PostQueryServiceImpl;
 import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.PostRepository;
+import com.project.post.domain.repository.PostTagRepository;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
 import com.project.post.domain.repository.dto.PostListQueryResult;
+import com.project.post.domain.repository.dto.PostSearchCondition;
+import com.project.post.domain.enums.PostListSort;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +22,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -28,8 +33,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -41,6 +44,9 @@ class PostQueryServiceTest {
 
     @Mock
     private PostRepository postRepository;
+
+    @Mock
+    private PostTagRepository postTagRepository;
 
     @InjectMocks
     private PostQueryServiceImpl postQueryService;
@@ -106,7 +112,10 @@ class PostQueryServiceTest {
         Page<PostListQueryResult> queryPage = new PageImpl<>(Objects.requireNonNull(List.of(
                 new PostListQueryResult(1L, "t", "thumb", "nick", 0, 0, 0, 0, Instant.now())
         )));
-        when(postRepository.findPostList(eq("general"), any(), any())).thenReturn(queryPage);
+        PostSearchCondition condition = new PostSearchCondition(null, null, PostListSort.LATEST);
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
+        when(postRepository.findPostList("general", pageable, condition)).thenReturn(queryPage);
+        when(postTagRepository.findByPostIdIn(List.of(1L))).thenReturn(List.of());
 
         Page<PostListResponse> result = postQueryService.getList("general", PageRequest.of(0, 10), null, null, null);
 

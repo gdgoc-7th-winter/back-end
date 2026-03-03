@@ -14,6 +14,8 @@ import com.querydsl.core.Tuple;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
@@ -200,11 +202,11 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         where.and(post.deletedAt.isNull());
 
         if (condition.hasKeyword()) {
-            String keyword = condition.keyword();
-            var keywordMatch = post.title.containsIgnoreCase(keyword)
-                    .or(post.content.containsIgnoreCase(keyword));
+            String escapedKeyword = escapeLikeWildcard(condition.keyword());
+            BooleanExpression keywordMatch = likeIgnoreCaseWithEscape(post.title, escapedKeyword)
+                    .or(likeIgnoreCaseWithEscape(post.content, escapedKeyword));
             if (needsTagJoin) {
-                keywordMatch = keywordMatch.or(tag.name.containsIgnoreCase(keyword));
+                keywordMatch = keywordMatch.or(likeIgnoreCaseWithEscape(tag.name, escapedKeyword));
             }
             where.and(keywordMatch);
         }
@@ -229,5 +231,25 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         }
         specifiers.add(post.id.desc());
         return specifiers.toArray(new OrderSpecifier<?>[0]);
+    }
+
+    private static String escapeLikeWildcard(String value) {
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+        return value
+                .replace("!", "!!")
+                .replace("%", "!%")
+                .replace("_", "!_");
+    }
+
+    private static BooleanExpression likeIgnoreCaseWithEscape(
+            com.querydsl.core.types.dsl.StringExpression expr,
+            String escapedKeyword) {
+        return Expressions.booleanTemplate(
+                "LOWER({0}) LIKE LOWER(CONCAT('%', {1}, '%')) ESCAPE '!'",
+                expr,
+                escapedKeyword
+        );
     }
 }
