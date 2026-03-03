@@ -9,11 +9,14 @@ import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
 import com.project.post.domain.repository.dto.PostListQueryResult;
 import com.project.post.domain.repository.PostRepository;
+import com.project.post.domain.enums.PostListSort;
+import com.project.post.domain.repository.dto.PostSearchCondition;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,15 +34,27 @@ public class PostQueryServiceImpl implements PostQueryService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PostListResponse> getList(@NonNull String boardCode, @NonNull Pageable pageable) {
+    public Page<PostListResponse> getList(
+            @NonNull String boardCode,
+            @NonNull Pageable pageable,
+            String keyword,
+            List<String> tagNames,
+            String order) {
         boardRepository.findByCodeAndActiveTrue(boardCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시판을 찾을 수 없습니다."));
 
-        Pageable safePageable = pageable.getPageSize() > MAX_PAGE_SIZE
-                ? PageRequest.of(pageable.getPageNumber(), MAX_PAGE_SIZE, pageable.getSort())
-                : pageable;
+        PostListSort sortType = PostListSort.from(order);
+        Sort sort = toSort(sortType);
+        int pageSize = Math.min(pageable.getPageSize(), MAX_PAGE_SIZE);
+        Pageable safePageable = PageRequest.of(pageable.getPageNumber(), pageSize, sort);
 
-        return postRepository.findPostList(boardCode, safePageable)
+        PostSearchCondition condition = new PostSearchCondition(
+                keyword,
+                tagNames,
+                sortType
+        );
+
+        return postRepository.findPostList(boardCode, safePageable, condition)
                 .map(this::toListResponse);
     }
 
@@ -51,9 +66,18 @@ public class PostQueryServiceImpl implements PostQueryService {
                 result.authorNickname(),
                 result.viewCount(),
                 result.likeCount(),
+                result.scrapCount(),
                 result.commentCount(),
                 result.createdAt()
         );
+    }
+
+    private Sort toSort(PostListSort sortType) {
+        return switch (sortType) {
+            case VIEWS -> Sort.by(Sort.Direction.DESC, "viewCount").and(Sort.by(Sort.Direction.DESC, "createdAt"));
+            case LIKES -> Sort.by(Sort.Direction.DESC, "likeCount").and(Sort.by(Sort.Direction.DESC, "createdAt"));
+            case LATEST -> Sort.by(Sort.Direction.DESC, "createdAt");
+        };
     }
 
     @Override

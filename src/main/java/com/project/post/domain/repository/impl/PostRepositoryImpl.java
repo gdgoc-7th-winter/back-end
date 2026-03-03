@@ -1,14 +1,18 @@
 package com.project.post.domain.repository.impl;
 
-import com.project.post.domain.repository.PostRepositoryCustom;
-import com.project.post.domain.repository.dto.PostDetailQueryResult;
-import com.project.post.domain.repository.dto.PostListQueryResult;
 import com.project.post.domain.entity.QPost;
 import com.project.post.domain.entity.QPostAttachment;
 import com.project.post.domain.entity.QPostTag;
 import com.project.post.domain.entity.QTag;
+import com.project.post.domain.repository.PostRepositoryCustom;
+import com.project.post.domain.repository.dto.PostDetailQueryResult;
+import com.project.post.domain.repository.dto.PostListQueryResult;
+import com.project.post.domain.enums.PostListSort;
+import com.project.post.domain.repository.dto.PostSearchCondition;
 import com.project.user.domain.entity.QUser;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -30,12 +34,20 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<PostListQueryResult> findPostList(@NonNull String boardCode, @NonNull Pageable pageable) {
+    public Page<PostListQueryResult> findPostList(
+            @NonNull String boardCode,
+            @NonNull Pageable pageable,
+            @NonNull PostSearchCondition condition) {
         QPost post = QPost.post;
         QUser user = QUser.user;
+        QPostTag postTag = QPostTag.postTag;
+        QTag tag = QTag.tag;
 
-        var content = queryFactory
-                .select(Projections.constructor(
+        boolean needsTagJoin = condition.hasKeyword() || condition.hasTags();
+        BooleanBuilder where = buildPostListWhere(boardCode, condition, post, tag, needsTagJoin);
+
+        var listQuery = queryFactory
+                .selectDistinct(Projections.constructor(
                         PostListQueryResult.class,
                         post.id,
                         post.title,
@@ -43,31 +55,46 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         user.nickname,
                         post.viewCount,
                         post.likeCount,
+                        post.scrapCount,
                         post.commentCount,
                         post.createdAt
                 ))
                 .from(post)
-                .join(post.author, user)
-                .where(
-                        post.board.code.eq(boardCode),
-                        post.deletedAt.isNull()
-                )
-                .orderBy(post.createdAt.desc())
+                .join(post.author, user);
+
+        if (needsTagJoin) {
+            listQuery.leftJoin(postTag).on(postTag.post.eq(post))
+                    .leftJoin(postTag.tag, tag);
+        }
+
+        var content = listQuery
+                .where(where)
+                .orderBy(toOrderSpecifiers(condition.sort(), post))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        Long total = queryFactory
-                .select(post.count())
-                .from(post)
-                .where(
-                        post.board.code.eq(boardCode),
-                        post.deletedAt.isNull()
-                )
-                .fetchOne();
-
-        long totalCount = total == null ? 0L : total;
+        long totalCount = fetchPostListCount(post, postTag, tag, where, needsTagJoin);
         return new PageImpl<>(Objects.requireNonNull(content), pageable, totalCount);
+    }
+
+    private long fetchPostListCount(
+            QPost post,
+            QPostTag postTag,
+            QTag tag,
+            BooleanBuilder where,
+            boolean needsTagJoin) {
+        var countQuery = queryFactory
+                .select(post.id.countDistinct())
+                .from(post);
+
+        if (needsTagJoin) {
+            countQuery.leftJoin(postTag).on(postTag.post.eq(post))
+                    .leftJoin(postTag.tag, tag);
+        }
+
+        Long total = countQuery.where(where).fetchOne();
+        return total == null ? 0L : total;
     }
 
     @Override
@@ -160,5 +187,47 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 tagNames,
                 attachments
         );
+    }
+
+    private BooleanBuilder buildPostListWhere(
+            String boardCode,
+            PostSearchCondition condition,
+            QPost post,
+            QTag tag,
+            boolean needsTagJoin) {
+        BooleanBuilder where = new BooleanBuilder();
+        where.and(post.board.code.eq(boardCode));
+        where.and(post.deletedAt.isNull());
+
+        if (condition.hasKeyword()) {
+            String keyword = condition.keyword();
+            var keywordMatch = post.title.containsIgnoreCase(keyword)
+                    .or(post.content.containsIgnoreCase(keyword));
+            if (needsTagJoin) {
+                keywordMatch = keywordMatch.or(tag.name.containsIgnoreCase(keyword));
+            }
+            where.and(keywordMatch);
+        }
+
+        if (condition.hasTags()) {
+            where.and(tag.name.in(condition.tagNames()));
+        }
+
+        return where;
+    }
+
+    private OrderSpecifier<?>[] toOrderSpecifiers(PostListSort sort, QPost post) {
+        List<OrderSpecifier<?>> specifiers = new ArrayList<>();
+        if (sort == PostListSort.VIEWS) {
+            specifiers.add(post.viewCount.desc());
+            specifiers.add(post.createdAt.desc());
+        } else if (sort == PostListSort.LIKES) {
+            specifiers.add(post.likeCount.desc());
+            specifiers.add(post.createdAt.desc());
+        } else {
+            specifiers.add(post.createdAt.desc());
+        }
+        specifiers.add(post.id.desc());
+        return specifiers.toArray(new OrderSpecifier<?>[0]);
     }
 }

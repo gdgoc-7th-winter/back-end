@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -50,8 +51,11 @@ public class PostController implements PostControllerDocs {
     @GetMapping("/boards/{code}/posts")
     public ResponseEntity<CommonResponse<Page<PostListResponse>>> getList(
             @PathVariable @NotBlank @NonNull String code,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, name = "tags") java.util.List<String> tags,
+            @RequestParam(required = false, defaultValue = "latest") String order,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) @NonNull Pageable pageable) {
-        Page<PostListResponse> list = postQueryService.getList(code, pageable);
+        Page<PostListResponse> list = postQueryService.getList(code, pageable, keyword, tags, order);
         return ResponseEntity.ok(CommonResponse.ok(list));
     }
 

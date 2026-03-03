@@ -28,6 +28,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -48,7 +50,7 @@ class PostQueryServiceTest {
     void getListThrowsWhenBoardMissing() {
         when(boardRepository.findByCodeAndActiveTrue("general")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postQueryService.getList("general", PageRequest.of(0, 10)))
+        assertThatThrownBy(() -> postQueryService.getList("general", PageRequest.of(0, 10), null, null, null))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
@@ -102,11 +104,11 @@ class PostQueryServiceTest {
         when(boardRepository.findByCodeAndActiveTrue("general")).thenReturn(Optional.of(Board.of("general", "자유게시판")));
 
         Page<PostListQueryResult> queryPage = new PageImpl<>(Objects.requireNonNull(List.of(
-                new PostListQueryResult(1L, "t", "thumb", "nick", 0, 0, 0, Instant.now())
+                new PostListQueryResult(1L, "t", "thumb", "nick", 0, 0, 0, 0, Instant.now())
         )));
-        when(postRepository.findPostList("general", PageRequest.of(0, 10))).thenReturn(queryPage);
+        when(postRepository.findPostList(eq("general"), any(), any())).thenReturn(queryPage);
 
-        Page<PostListResponse> result = postQueryService.getList("general", PageRequest.of(0, 10));
+        Page<PostListResponse> result = postQueryService.getList("general", PageRequest.of(0, 10), null, null, null);
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).postId()).isEqualTo(1L);
