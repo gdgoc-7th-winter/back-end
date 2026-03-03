@@ -56,6 +56,7 @@ class PostLikeServiceTest {
 
         when(postRepository.existsActiveById(1L)).thenReturn(true);
         when(postLikeRepository.insertIfAbsent(1L, 1L)).thenReturn(1);
+        when(postRepository.incrementLikeCount(1L)).thenReturn(1);
         when(postRepository.findLikeCountById(1L)).thenReturn(Optional.of(1L));
 
         LikeScrapToggleResponse result = postLikeService.like(1L, user);
@@ -88,6 +89,7 @@ class PostLikeServiceTest {
 
         when(postRepository.existsActiveById(1L)).thenReturn(true);
         when(postLikeRepository.deleteByPostIdAndUserId(1L, 1L)).thenReturn(1);
+        when(postRepository.decrementLikeCount(1L)).thenReturn(1);
         when(postRepository.findLikeCountById(1L)).thenReturn(Optional.of(0L));
 
         LikeScrapToggleResponse result = postLikeService.unlike(1L, user);

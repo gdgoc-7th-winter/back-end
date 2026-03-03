@@ -1,21 +1,28 @@
 package com.project.post.domain.repository.impl;
 
-import com.project.post.domain.repository.PostRepositoryCustom;
-import com.project.post.domain.repository.dto.PostDetailQueryResult;
-import com.project.post.domain.repository.dto.PostListQueryResult;
 import com.project.post.domain.entity.QPost;
 import com.project.post.domain.entity.QPostAttachment;
 import com.project.post.domain.entity.QPostTag;
 import com.project.post.domain.entity.QTag;
+import com.project.post.domain.repository.PostRepositoryCustom;
+import com.project.post.domain.repository.dto.PostDetailQueryResult;
+import com.project.post.domain.repository.dto.PostListQueryResult;
+import com.project.post.domain.enums.PostListSort;
+import com.project.post.domain.repository.dto.PostSearchCondition;
 import com.project.user.domain.entity.QUser;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -30,44 +37,53 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<PostListQueryResult> findPostList(@NonNull String boardCode, @NonNull Pageable pageable) {
+    public Page<PostListQueryResult> findPostList(
+            @NonNull String boardCode,
+            @NonNull Pageable pageable,
+            @NonNull PostSearchCondition condition) {
         QPost post = QPost.post;
         QUser user = QUser.user;
 
+        BooleanBuilder where = buildPostListWhere(boardCode, condition, post);
+
+        var projection = Projections.constructor(
+                PostListQueryResult.class,
+                post.id,
+                post.title,
+                post.thumbnailUrl,
+                user.nickname,
+                post.viewCount,
+                post.likeCount,
+                post.scrapCount,
+                post.commentCount,
+                post.createdAt
+        );
         var content = queryFactory
-                .select(Projections.constructor(
-                        PostListQueryResult.class,
-                        post.id,
-                        post.title,
-                        post.thumbnailUrl,
-                        user.nickname,
-                        post.viewCount,
-                        post.likeCount,
-                        post.commentCount,
-                        post.createdAt
-                ))
+                .select(projection)
                 .from(post)
                 .join(post.author, user)
-                .where(
-                        post.board.code.eq(boardCode),
-                        post.deletedAt.isNull()
-                )
-                .orderBy(post.createdAt.desc())
+                .where(where)
+                .orderBy(toOrderSpecifiers(condition.sort(), post))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        Long total = queryFactory
-                .select(post.count())
-                .from(post)
-                .where(
-                        post.board.code.eq(boardCode),
-                        post.deletedAt.isNull()
-                )
-                .fetchOne();
+        return PageableExecutionUtils.getPage(
+                Objects.requireNonNull(content),
+                pageable,
+                () -> fetchPostListCount(post, where)
+        );
+    }
 
-        long totalCount = total == null ? 0L : total;
-        return new PageImpl<>(Objects.requireNonNull(content), pageable, totalCount);
+    private long fetchPostListCount(QPost post, BooleanBuilder where) {
+        QUser user = QUser.user;
+        Long total = queryFactory
+                .select(post.id.count())
+                .from(post)
+                .join(post.author, user)
+                .where(where)
+                .fetchOne();
+        return total == null ? 0L : total;
     }
 
     @Override
@@ -159,6 +175,83 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 base.get(post.updatedAt),
                 tagNames,
                 attachments
+        );
+    }
+
+    private BooleanBuilder buildPostListWhere(
+            String boardCode,
+            PostSearchCondition condition,
+            QPost post) {
+        BooleanBuilder where = new BooleanBuilder();
+        where.and(post.board.code.eq(boardCode));
+        where.and(post.deletedAt.isNull());
+
+        if (condition.hasKeyword()) {
+            String escapedKeyword = escapeLikeWildcard(condition.keyword());
+            BooleanExpression keywordMatch = likeIgnoreCaseWithEscape(post.title, escapedKeyword)
+                    .or(likeIgnoreCaseWithEscape(post.content, escapedKeyword));
+            QPostTag keywordPostTag = new QPostTag("keywordPostTag");
+            QTag keywordTag = new QTag("keywordTag");
+            BooleanExpression tagKeywordMatch = JPAExpressions.selectOne()
+                    .from(keywordPostTag)
+                    .join(keywordPostTag.tag, keywordTag)
+                    .where(
+                            keywordPostTag.post.eq(post),
+                            likeIgnoreCaseWithEscape(keywordTag.name, escapedKeyword)
+                    )
+                    .exists();
+            keywordMatch = keywordMatch.or(tagKeywordMatch);
+            where.and(keywordMatch);
+        }
+
+        if (condition.hasTags()) {
+            QPostTag tagFilter = new QPostTag("tagFilter");
+            QTag tagFilterTag = new QTag("tagFilterTag");
+            where.and(JPAExpressions.selectOne()
+                    .from(tagFilter)
+                    .join(tagFilter.tag, tagFilterTag)
+                    .where(
+                            tagFilter.post.eq(post),
+                            tagFilterTag.name.in(condition.tagNames())
+                    )
+                    .exists());
+        }
+
+        return where;
+    }
+
+    private OrderSpecifier<?>[] toOrderSpecifiers(PostListSort sort, QPost post) {
+        List<OrderSpecifier<?>> specifiers = new ArrayList<>();
+        if (sort == PostListSort.VIEWS) {
+            specifiers.add(post.viewCount.desc());
+            specifiers.add(post.createdAt.desc());
+        } else if (sort == PostListSort.LIKES) {
+            specifiers.add(post.likeCount.desc());
+            specifiers.add(post.createdAt.desc());
+        } else {
+            specifiers.add(post.createdAt.desc());
+        }
+        specifiers.add(post.id.desc());
+        return specifiers.toArray(new OrderSpecifier<?>[0]);
+    }
+
+    private static String escapeLikeWildcard(String value) {
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+        return value
+                .replace("!", "!!")
+                .replace("%", "!%")
+                .replace("_", "!_");
+    }
+
+    private static BooleanExpression likeIgnoreCaseWithEscape(
+            com.querydsl.core.types.dsl.StringExpression expr,
+            String escapedKeyword) {
+        return Expressions.booleanTemplate(
+                "LOWER({0}) LIKE LOWER(CONCAT('%', {1}, '%')) ESCAPE '!'",
+                expr,
+                escapedKeyword
         );
     }
 }

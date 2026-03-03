@@ -9,6 +9,7 @@ public record PostListQueryResult(
         String authorNickname,
         long viewCount,
         long likeCount,
+        long scrapCount,
         long commentCount,
         Instant createdAt
 ) {
