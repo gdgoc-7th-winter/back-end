@@ -1,10 +1,12 @@
 package com.project.post.presentation.controller;
 
 import com.project.post.presentation.swagger.PostCommentControllerDocs;
+import com.project.post.application.dto.LikeScrapToggleResponse;
 import com.project.post.application.dto.PostCommentRequest;
 import com.project.post.application.dto.PostCommentResponse;
 import com.project.global.annotation.CurrentUser;
 import com.project.post.application.service.PostCommentCommandService;
+import com.project.post.application.service.PostCommentLikeService;
 import com.project.post.application.service.PostCommentQueryService;
 import com.project.user.domain.entity.User;
 import com.project.global.response.CommonResponse;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,6 +38,7 @@ public class PostCommentController implements PostCommentControllerDocs {
 
     private final PostCommentCommandService postCommentCommandService;
     private final PostCommentQueryService postCommentQueryService;
+    private final PostCommentLikeService postCommentLikeService;
 
     @Override
     @PostMapping("/posts/{postId}/comments")
@@ -66,5 +70,25 @@ public class PostCommentController implements PostCommentControllerDocs {
                 commentId,
                 user);
         return ResponseEntity.ok(CommonResponse.ok());
+    }
+
+    @Override
+    @PutMapping("/posts/{postId}/comments/{commentId}/like")
+    public ResponseEntity<CommonResponse<LikeScrapToggleResponse>> likeComment(
+            @PathVariable @Positive @NonNull Long postId,
+            @PathVariable @Positive @NonNull Long commentId,
+            @CurrentUser @NonNull User user) {
+        LikeScrapToggleResponse response = postCommentLikeService.like(postId, commentId, user);
+        return ResponseEntity.ok(CommonResponse.ok(response));
+    }
+
+    @Override
+    @DeleteMapping("/posts/{postId}/comments/{commentId}/like")
+    public ResponseEntity<CommonResponse<LikeScrapToggleResponse>> unlikeComment(
+            @PathVariable @Positive @NonNull Long postId,
+            @PathVariable @Positive @NonNull Long commentId,
+            @CurrentUser @NonNull User user) {
+        LikeScrapToggleResponse response = postCommentLikeService.unlike(postId, commentId, user);
+        return ResponseEntity.ok(CommonResponse.ok(response));
     }
 }
