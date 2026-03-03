@@ -31,8 +31,7 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom {
                 .join(comment.post).fetchJoin()
                 .where(
                         comment.post.id.eq(postId),
-                        comment.parentComment.isNull(),
-                        comment.deletedAt.isNull()
+                        comment.parentComment.isNull()
                 )
                 .orderBy(comment.createdAt.asc())
                 .offset(pageable.getOffset())
@@ -44,8 +43,7 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom {
                 .from(comment)
                 .where(
                         comment.post.id.eq(postId),
-                        comment.parentComment.isNull(),
-                        comment.deletedAt.isNull()
+                        comment.parentComment.isNull()
                 )
                 .fetchOne();
 
@@ -65,8 +63,7 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom {
                 .join(comment.post).fetchJoin()
                 .join(comment.parentComment).fetchJoin()
                 .where(
-                        comment.parentComment.id.eq(parentId),
-                        comment.deletedAt.isNull()
+                        comment.parentComment.id.eq(parentId)
                 )
                 .orderBy(comment.createdAt.asc())
                 .limit(limit)
@@ -85,8 +82,7 @@ public class PostCommentRepositoryImpl implements PostCommentRepositoryCustom {
                 .join(comment.post).fetchJoin()
                 .join(comment.parentComment).fetchJoin()
                 .where(
-                        comment.parentComment.id.in(parentIds),
-                        comment.deletedAt.isNull()
+                        comment.parentComment.id.in(parentIds)
                 )
                 .orderBy(
                         comment.parentComment.id.asc(),

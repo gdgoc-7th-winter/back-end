@@ -9,6 +9,7 @@ public record PostListResponse(
         String authorNickname,
         long viewCount,
         long likeCount,
+        long scrapCount,
         long commentCount,
         Instant createdAt
 ) {
