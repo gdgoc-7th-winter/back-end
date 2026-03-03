@@ -43,11 +43,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
             @NonNull PostSearchCondition condition) {
         QPost post = QPost.post;
         QUser user = QUser.user;
-        QPostTag postTag = QPostTag.postTag;
-        QTag tag = QTag.tag;
 
-        boolean needsTagJoin = condition.hasKeyword();
-        BooleanBuilder where = buildPostListWhere(boardCode, condition, post, tag);
+        BooleanBuilder where = buildPostListWhere(boardCode, condition, post);
 
         var projection = Projections.constructor(
                 PostListQueryResult.class,
@@ -61,45 +58,26 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 post.commentCount,
                 post.createdAt
         );
-        var listQuery = (needsTagJoin
-                ? queryFactory.selectDistinct(projection)
-                : queryFactory.select(projection))
+        var content = queryFactory
+                .select(projection)
                 .from(post)
-                .join(post.author, user);
-
-        if (needsTagJoin) {
-            listQuery.leftJoin(postTag).on(postTag.post.eq(post))
-                    .leftJoin(postTag.tag, tag);
-        }
-
-        var content = listQuery
+                .join(post.author, user)
                 .where(where)
                 .orderBy(toOrderSpecifiers(condition.sort(), post))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        long totalCount = fetchPostListCount(post, postTag, tag, where, needsTagJoin);
+        long totalCount = fetchPostListCount(post, where);
         return new PageImpl<>(Objects.requireNonNull(content), pageable, totalCount);
     }
 
-    private long fetchPostListCount(
-            QPost post,
-            QPostTag postTag,
-            QTag tag,
-            BooleanBuilder where,
-            boolean needsTagJoin) {
-        var countQuery = (needsTagJoin
-                ? queryFactory.select(post.id.countDistinct())
-                : queryFactory.select(post.id.count()))
-                .from(post);
-
-        if (needsTagJoin) {
-            countQuery.leftJoin(postTag).on(postTag.post.eq(post))
-                    .leftJoin(postTag.tag, tag);
-        }
-
-        Long total = countQuery.where(where).fetchOne();
+    private long fetchPostListCount(QPost post, BooleanBuilder where) {
+        Long total = queryFactory
+                .select(post.id.count())
+                .from(post)
+                .where(where)
+                .fetchOne();
         return total == null ? 0L : total;
     }
 
@@ -198,8 +176,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
     private BooleanBuilder buildPostListWhere(
             String boardCode,
             PostSearchCondition condition,
-            QPost post,
-            QTag tag) {
+            QPost post) {
         BooleanBuilder where = new BooleanBuilder();
         where.and(post.board.code.eq(boardCode));
         where.and(post.deletedAt.isNull());
@@ -208,7 +185,17 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
             String escapedKeyword = escapeLikeWildcard(condition.keyword());
             BooleanExpression keywordMatch = likeIgnoreCaseWithEscape(post.title, escapedKeyword)
                     .or(likeIgnoreCaseWithEscape(post.content, escapedKeyword));
-            keywordMatch = keywordMatch.or(likeIgnoreCaseWithEscape(tag.name, escapedKeyword));
+            QPostTag keywordPostTag = new QPostTag("keywordPostTag");
+            QTag keywordTag = new QTag("keywordTag");
+            BooleanExpression tagKeywordMatch = JPAExpressions.selectOne()
+                    .from(keywordPostTag)
+                    .join(keywordPostTag.tag, keywordTag)
+                    .where(
+                            keywordPostTag.post.eq(post),
+                            likeIgnoreCaseWithEscape(keywordTag.name, escapedKeyword)
+                    )
+                    .exists();
+            keywordMatch = keywordMatch.or(tagKeywordMatch);
             where.and(keywordMatch);
         }
 
