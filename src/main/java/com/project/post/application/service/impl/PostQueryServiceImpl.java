@@ -18,7 +18,6 @@ import org.springframework.lang.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,9 +49,8 @@ public class PostQueryServiceImpl implements PostQueryService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시판을 찾을 수 없습니다."));
 
         PostListSort sortType = PostListSort.from(order);
-        Sort sort = toSort(sortType);
         int pageSize = Math.min(pageable.getPageSize(), MAX_PAGE_SIZE);
-        Pageable safePageable = PageRequest.of(pageable.getPageNumber(), pageSize, sort);
+        Pageable safePageable = PageRequest.of(pageable.getPageNumber(), pageSize);
 
         PostSearchCondition condition = new PostSearchCondition(
                 keyword,
@@ -110,14 +108,6 @@ public class PostQueryServiceImpl implements PostQueryService {
                 .sorted()
                 .toList());
         return tagsByPostId;
-    }
-
-    private @NonNull Sort toSort(PostListSort sortType) {
-        return switch (sortType) {
-            case VIEWS -> Sort.by(Sort.Direction.DESC, "viewCount").and(Sort.by(Sort.Direction.DESC, "createdAt"));
-            case LIKES -> Sort.by(Sort.Direction.DESC, "likeCount").and(Sort.by(Sort.Direction.DESC, "createdAt"));
-            case LATEST -> Sort.by(Sort.Direction.DESC, "createdAt");
-        };
     }
 
     @Override

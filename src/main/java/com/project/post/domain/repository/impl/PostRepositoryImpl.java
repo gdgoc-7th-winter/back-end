@@ -16,6 +16,7 @@ import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
@@ -45,8 +46,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         QPostTag postTag = QPostTag.postTag;
         QTag tag = QTag.tag;
 
-        boolean needsTagJoin = condition.hasKeyword() || condition.hasTags();
-        BooleanBuilder where = buildPostListWhere(boardCode, condition, post, tag, needsTagJoin);
+        boolean needsTagJoin = condition.hasKeyword();
+        BooleanBuilder where = buildPostListWhere(boardCode, condition, post, tag);
 
         var listQuery = queryFactory
                 .selectDistinct(Projections.constructor(
@@ -195,8 +196,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
             String boardCode,
             PostSearchCondition condition,
             QPost post,
-            QTag tag,
-            boolean needsTagJoin) {
+            QTag tag) {
         BooleanBuilder where = new BooleanBuilder();
         where.and(post.board.code.eq(boardCode));
         where.and(post.deletedAt.isNull());
@@ -205,14 +205,21 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
             String escapedKeyword = escapeLikeWildcard(condition.keyword());
             BooleanExpression keywordMatch = likeIgnoreCaseWithEscape(post.title, escapedKeyword)
                     .or(likeIgnoreCaseWithEscape(post.content, escapedKeyword));
-            if (needsTagJoin) {
-                keywordMatch = keywordMatch.or(likeIgnoreCaseWithEscape(tag.name, escapedKeyword));
-            }
+            keywordMatch = keywordMatch.or(likeIgnoreCaseWithEscape(tag.name, escapedKeyword));
             where.and(keywordMatch);
         }
 
         if (condition.hasTags()) {
-            where.and(tag.name.in(condition.tagNames()));
+            QPostTag tagFilter = new QPostTag("tagFilter");
+            QTag tagFilterTag = new QTag("tagFilterTag");
+            where.and(JPAExpressions.selectOne()
+                    .from(tagFilter)
+                    .join(tagFilter.tag, tagFilterTag)
+                    .where(
+                            tagFilter.post.eq(post),
+                            tagFilterTag.name.in(condition.tagNames())
+                    )
+                    .exists());
         }
 
         return where;

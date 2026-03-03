@@ -23,7 +23,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -113,7 +112,7 @@ class PostQueryServiceTest {
                 new PostListQueryResult(1L, "t", "thumb", "nick", 0, 0, 0, 0, Instant.now())
         )));
         PostSearchCondition condition = new PostSearchCondition(null, null, PostListSort.LATEST);
-        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(0, 10);
         when(postRepository.findPostList("general", pageable, condition)).thenReturn(queryPage);
         when(postTagRepository.findByPostIdIn(List.of(1L))).thenReturn(List.of());
 
