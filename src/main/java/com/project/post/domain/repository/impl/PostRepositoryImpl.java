@@ -49,19 +49,21 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         boolean needsTagJoin = condition.hasKeyword();
         BooleanBuilder where = buildPostListWhere(boardCode, condition, post, tag);
 
-        var listQuery = queryFactory
-                .selectDistinct(Projections.constructor(
-                        PostListQueryResult.class,
-                        post.id,
-                        post.title,
-                        post.thumbnailUrl,
-                        user.nickname,
-                        post.viewCount,
-                        post.likeCount,
-                        post.scrapCount,
-                        post.commentCount,
-                        post.createdAt
-                ))
+        var projection = Projections.constructor(
+                PostListQueryResult.class,
+                post.id,
+                post.title,
+                post.thumbnailUrl,
+                user.nickname,
+                post.viewCount,
+                post.likeCount,
+                post.scrapCount,
+                post.commentCount,
+                post.createdAt
+        );
+        var listQuery = (needsTagJoin
+                ? queryFactory.selectDistinct(projection)
+                : queryFactory.select(projection))
                 .from(post)
                 .join(post.author, user);
 
