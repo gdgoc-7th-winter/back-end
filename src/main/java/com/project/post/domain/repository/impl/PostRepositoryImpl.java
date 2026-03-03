@@ -21,8 +21,8 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -68,8 +68,11 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        long totalCount = fetchPostListCount(post, where);
-        return new PageImpl<>(Objects.requireNonNull(content), pageable, totalCount);
+        return PageableExecutionUtils.getPage(
+                Objects.requireNonNull(content),
+                pageable,
+                () -> fetchPostListCount(post, where)
+        );
     }
 
     private long fetchPostListCount(QPost post, BooleanBuilder where) {
