@@ -5,7 +5,9 @@ import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.PostDetailResponse;
 import com.project.post.application.dto.PostListResponse;
 import com.project.post.application.service.PostQueryService;
+import com.project.post.domain.entity.PostTag;
 import com.project.post.domain.repository.BoardRepository;
+import com.project.post.domain.repository.PostTagRepository;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
 import com.project.post.domain.repository.dto.PostListQueryResult;
 import com.project.post.domain.repository.PostRepository;
@@ -20,7 +22,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -31,6 +36,7 @@ public class PostQueryServiceImpl implements PostQueryService {
 
     private final BoardRepository boardRepository;
     private final PostRepository postRepository;
+    private final PostTagRepository postTagRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -54,11 +60,15 @@ public class PostQueryServiceImpl implements PostQueryService {
                 sortType
         );
 
-        return postRepository.findPostList(boardCode, safePageable, condition)
-                .map(this::toListResponse);
+        Page<PostListQueryResult> page = postRepository.findPostList(boardCode, safePageable, condition);
+        Map<Long, List<String>> tagNamesByPostId = loadTagNamesByPostIds(page);
+        return page.map(result -> toListResponse(
+                result,
+                tagNamesByPostId.getOrDefault(result.postId(), List.of())
+        ));
     }
 
-    private PostListResponse toListResponse(PostListQueryResult result) {
+    private PostListResponse toListResponse(PostListQueryResult result, List<String> tagNames) {
         return new PostListResponse(
                 result.postId(),
                 result.title(),
@@ -68,11 +78,41 @@ public class PostQueryServiceImpl implements PostQueryService {
                 result.likeCount(),
                 result.scrapCount(),
                 result.commentCount(),
+                tagNames,
                 result.createdAt()
         );
     }
 
-    private Sort toSort(PostListSort sortType) {
+    private Map<Long, List<String>> loadTagNamesByPostIds(Page<PostListQueryResult> page) {
+        List<Long> postIds = page.getContent().stream()
+                .map(PostListQueryResult::postId)
+                .toList();
+        if (postIds.isEmpty()) {
+            return Map.of();
+        }
+
+        List<PostTag> postTags = postTagRepository.findByPostIdIn(postIds);
+        Map<Long, List<String>> tagsByPostId = new HashMap<>();
+        for (PostTag postTag : postTags) {
+            Long postId = postTag.getPost().getId();
+            String tagName = postTag.getTag() == null ? null : postTag.getTag().getName();
+            if (tagName == null) {
+                continue;
+            }
+            tagsByPostId
+                    .computeIfAbsent(postId, id -> new ArrayList<>())
+                    .add(tagName);
+        }
+
+        tagsByPostId.replaceAll((id, names) -> names.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted()
+                .toList());
+        return tagsByPostId;
+    }
+
+    private @NonNull Sort toSort(PostListSort sortType) {
         return switch (sortType) {
             case VIEWS -> Sort.by(Sort.Direction.DESC, "viewCount").and(Sort.by(Sort.Direction.DESC, "createdAt"));
             case LIKES -> Sort.by(Sort.Direction.DESC, "likeCount").and(Sort.by(Sort.Direction.DESC, "createdAt"));
