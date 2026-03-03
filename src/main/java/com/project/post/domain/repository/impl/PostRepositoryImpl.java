@@ -89,8 +89,9 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
             QTag tag,
             BooleanBuilder where,
             boolean needsTagJoin) {
-        var countQuery = queryFactory
-                .select(post.id.countDistinct())
+        var countQuery = (needsTagJoin
+                ? queryFactory.select(post.id.countDistinct())
+                : queryFactory.select(post.id.count()))
                 .from(post);
 
         if (needsTagJoin) {
