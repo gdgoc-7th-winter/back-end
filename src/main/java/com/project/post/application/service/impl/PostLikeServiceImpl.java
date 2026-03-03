@@ -28,9 +28,13 @@ public class PostLikeServiceImpl implements PostLikeService {
 
         int inserted = postLikeRepository.insertIfAbsent(postId, user.getId());
         if (inserted > 0) {
-            postRepository.incrementLikeCount(postId);
+            int updated = postRepository.incrementLikeCount(postId);
+            if (updated != 1) {
+                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다.");
+            }
         }
-        long count = postRepository.findLikeCountById(postId).orElse(0L);
+        long count = postRepository.findLikeCountById(postId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
         return new LikeScrapToggleResponse(true, count);
     }
 
@@ -43,9 +47,13 @@ public class PostLikeServiceImpl implements PostLikeService {
 
         int deleted = postLikeRepository.deleteByPostIdAndUserId(postId, user.getId());
         if (deleted > 0) {
-            postRepository.decrementLikeCount(postId);
+            int updated = postRepository.decrementLikeCount(postId);
+            if (updated != 1) {
+                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다.");
+            }
         }
-        long count = postRepository.findLikeCountById(postId).orElse(0L);
+        long count = postRepository.findLikeCountById(postId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
         return new LikeScrapToggleResponse(false, count);
     }
 }

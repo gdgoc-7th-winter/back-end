@@ -31,9 +31,13 @@ public class PostCommentLikeServiceImpl implements PostCommentLikeService {
 
         int inserted = commentLikeRepository.insertIfAbsent(comment.getId(), user.getId());
         if (inserted > 0) {
-            commentRepository.incrementLikeCount(comment.getId());
+            int updated = commentRepository.incrementLikeCount(comment.getId());
+            if (updated != 1) {
+                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "댓글을 찾을 수 없습니다.");
+            }
         }
-        long count = commentRepository.findLikeCountById(comment.getId()).orElse(0L);
+        long count = commentRepository.findLikeCountById(comment.getId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "댓글을 찾을 수 없습니다."));
         return new LikeScrapToggleResponse(true, count);
     }
 
@@ -46,9 +50,13 @@ public class PostCommentLikeServiceImpl implements PostCommentLikeService {
 
         int deleted = commentLikeRepository.deleteByCommentIdAndUserId(comment.getId(), user.getId());
         if (deleted > 0) {
-            commentRepository.decrementLikeCount(comment.getId());
+            int updated = commentRepository.decrementLikeCount(comment.getId());
+            if (updated != 1) {
+                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "댓글을 찾을 수 없습니다.");
+            }
         }
-        long count = commentRepository.findLikeCountById(comment.getId()).orElse(0L);
+        long count = commentRepository.findLikeCountById(comment.getId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "댓글을 찾을 수 없습니다."));
         return new LikeScrapToggleResponse(false, count);
     }
 
