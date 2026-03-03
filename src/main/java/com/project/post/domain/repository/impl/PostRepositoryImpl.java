@@ -76,9 +76,11 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
     }
 
     private long fetchPostListCount(QPost post, BooleanBuilder where) {
+        QUser user = QUser.user;
         Long total = queryFactory
                 .select(post.id.count())
                 .from(post)
+                .join(post.author, user)
                 .where(where)
                 .fetchOne();
         return total == null ? 0L : total;
