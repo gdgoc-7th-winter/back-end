@@ -3,6 +3,7 @@ package com.project.post.presentation.controller;
 import com.project.global.annotation.CurrentUser;
 import com.project.global.response.CommonResponse;
 import com.project.post.application.dto.PromotionPostCreateRequest;
+import com.project.post.application.dto.PromotionPostCreateResponse;
 import com.project.post.application.service.PromotionPostCommandService;
 import com.project.user.domain.entity.User;
 import jakarta.validation.Valid;
@@ -22,11 +23,13 @@ public class PromotionPostController {
     private final PromotionPostCommandService promotionPostCommandService;
 
     @PostMapping("/promotions")
-    public ResponseEntity<CommonResponse<Long>> create(
+    public ResponseEntity<PromotionPostCreateResponse> create(
             @RequestBody @Valid @NonNull PromotionPostCreateRequest request,
             @CurrentUser @NonNull User user
     ) {
         Long postId = promotionPostCommandService.create(request, user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.ok(postId));
+
+        PromotionPostCreateResponse response = new PromotionPostCreateResponse(postId, "게시글이 성공적으로 등록되었습니다.");
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
