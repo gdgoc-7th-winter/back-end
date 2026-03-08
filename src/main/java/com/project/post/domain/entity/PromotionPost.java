@@ -1,13 +1,7 @@
 package com.project.post.domain.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.MapsId;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import com.project.post.domain.enums.PromotionCategory;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,6 +23,7 @@ public class PromotionPost {
     @JoinColumn(name = "post_id", nullable = false)
     private Post post;
 
-    @Column(name = "category", nullable = false, length = 20)
-    private String category;
+    @Column(name = "category", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private PromotionCategory category;
 }

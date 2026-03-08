@@ -38,7 +38,7 @@ Thumbs.db
 .env-prod
 *.env.local
 
-application-local.yml
+src/main/resources/application-local.yml
 
 # PEM
 *.pem
