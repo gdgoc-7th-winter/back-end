@@ -4,6 +4,7 @@ import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.PostCreateRequest;
 import com.project.post.application.dto.PromotionPost.PromotionPostCreateRequest;
+import com.project.post.application.dto.PromotionPost.PromotionPostUpdateRequest;
 import com.project.post.application.service.PostCommandService;
 import com.project.post.application.service.PromotionPostCommandService;
 import com.project.post.domain.entity.Post;
@@ -50,5 +51,19 @@ public class PromotionPostCommandServiceImpl implements PromotionPostCommandServ
         promotionPostRepository.save(promotionPost);
 
         return postId;
+    }
+
+    @Override
+    @Transactional
+    public void update(@NonNull Long postId, @NonNull PromotionPostUpdateRequest request, @NonNull User author) {
+        PromotionPost promotionPost = promotionPostRepository.findById(postId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "홍보글을 찾을 수 없습니다."));
+
+        if (request.post() != null) {
+            postCommandService.update(postId, request.post(), author);
+        }
+
+        promotionPost.updateCategory(request.category());
+        promotionPostRepository.save(promotionPost);
     }
 }

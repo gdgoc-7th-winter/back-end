@@ -26,4 +26,10 @@ public class PromotionPost {
     @Column(name = "category", nullable = false)
     @Enumerated(EnumType.STRING)
     private PromotionCategory category;
+
+    public void updateCategory(PromotionCategory category) {
+        if (category != null) {
+            this.category = category;
+        }
+    }
 }

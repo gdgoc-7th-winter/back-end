@@ -2,10 +2,7 @@ package com.project.post.presentation.controller;
 
 import com.project.global.annotation.CurrentUser;
 import com.project.global.response.CommonResponse;
-import com.project.post.application.dto.PromotionPost.PromotionPostCreateRequest;
-import com.project.post.application.dto.PromotionPost.PromotionPostCreateResponse;
-import com.project.post.application.dto.PromotionPost.PromotionPostDetailResponse;
-import com.project.post.application.dto.PromotionPost.PromotionPostListResponse;
+import com.project.post.application.dto.PromotionPost.*;
 import com.project.post.application.service.PromotionPostCommandService;
 import com.project.post.application.service.PromotionPostQueryService;
 import com.project.post.domain.enums.PromotionCategory;
@@ -59,5 +56,15 @@ public class PromotionPostController {
     ) {
         Page<PromotionPostListResponse> list = promotionPostQueryService.getList(category, pageable);
         return ResponseEntity.ok(CommonResponse.ok(list));
+    }
+
+    @PatchMapping("/promotions/{id}")
+    public ResponseEntity<CommonResponse<Void>> update(
+            @PathVariable Long id,
+            @RequestBody @Valid @NonNull PromotionPostUpdateRequest request,
+            @CurrentUser @NonNull User user
+    ) {
+        promotionPostCommandService.update(id, request, user);
+        return ResponseEntity.ok(CommonResponse.ok());
     }
 }
