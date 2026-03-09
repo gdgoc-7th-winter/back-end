@@ -1,4 +1,8 @@
 # 운영 서버
+cors:
+  allowed-origins:
+    - https://hufs.dev
+
 spring:
   datasource:
     url: ${DB_URL}
