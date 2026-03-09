@@ -9,4 +9,5 @@ public interface PromotionPostCommandService {
 
     Long create(@NonNull PromotionPostCreateRequest request, @NonNull User author);
     void update(@NonNull Long postId, @NonNull PromotionPostUpdateRequest request, @NonNull User author);
+    void delete(@NonNull Long postId, @NonNull User author);
 }

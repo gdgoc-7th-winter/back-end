@@ -67,4 +67,13 @@ public class PromotionPostController {
         promotionPostCommandService.update(id, request, user);
         return ResponseEntity.ok(CommonResponse.ok());
     }
+
+    @DeleteMapping("/promotions/{id}")
+    public ResponseEntity<CommonResponse<Void>> delete(
+            @PathVariable @NonNull Long id,
+            @CurrentUser @NonNull User user
+    ) {
+        promotionPostCommandService.delete(id, user);
+        return ResponseEntity.ok(CommonResponse.ok());
+    }
 }

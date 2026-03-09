@@ -66,4 +66,13 @@ public class PromotionPostCommandServiceImpl implements PromotionPostCommandServ
         promotionPost.updateCategory(request.category());
         promotionPostRepository.save(promotionPost);
     }
+
+    @Override
+    @Transactional
+    public void delete(@NonNull Long postId, @NonNull User author) {
+        PromotionPost promotionPost = promotionPostRepository.findById(postId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "홍보글을 찾을 수 없습니다."));
+
+        postCommandService.softDelete(promotionPost.getPost().getId(), author);
+    }
 }
