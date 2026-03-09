@@ -5,11 +5,17 @@ import com.project.global.response.CommonResponse;
 import com.project.post.application.dto.PromotionPost.PromotionPostCreateRequest;
 import com.project.post.application.dto.PromotionPost.PromotionPostCreateResponse;
 import com.project.post.application.dto.PromotionPost.PromotionPostDetailResponse;
+import com.project.post.application.dto.PromotionPost.PromotionPostListResponse;
 import com.project.post.application.service.PromotionPostCommandService;
 import com.project.post.application.service.PromotionPostQueryService;
+import com.project.post.domain.enums.PromotionCategory;
 import com.project.user.domain.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
@@ -44,5 +50,14 @@ public class PromotionPostController {
     ) {
         PromotionPostDetailResponse response = promotionPostQueryService.getDetail(postId);
         return ResponseEntity.ok(CommonResponse.ok(response));
+    }
+
+    @GetMapping("/promotions")
+    public ResponseEntity<CommonResponse<Page<PromotionPostListResponse>>> getList(
+            @RequestParam(required = false) PromotionCategory category,
+            @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<PromotionPostListResponse> list = promotionPostQueryService.getList(category, pageable);
+        return ResponseEntity.ok(CommonResponse.ok(list));
     }
 }
