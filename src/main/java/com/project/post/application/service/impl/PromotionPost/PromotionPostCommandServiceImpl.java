@@ -1,9 +1,9 @@
-package com.project.post.application.service.impl;
+package com.project.post.application.service.impl.PromotionPost;
 
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.PostCreateRequest;
-import com.project.post.application.dto.PromotionPostCreateRequest;
+import com.project.post.application.dto.PromotionPost.PromotionPostCreateRequest;
 import com.project.post.application.service.PostCommandService;
 import com.project.post.application.service.PromotionPostCommandService;
 import com.project.post.domain.entity.Post;
@@ -30,11 +30,11 @@ public class PromotionPostCommandServiceImpl implements PromotionPostCommandServ
     @Transactional
     public Long create(@NonNull PromotionPostCreateRequest request, @NonNull User author) {
         PostCreateRequest postCreateRequest = new PostCreateRequest(
-                request.title(),
-                request.content(),
-                request.thumbnailUrl(),
-                request.tags(),
-                request.attachments()
+                request.post().title(),
+                request.post().content(),
+                request.post().thumbnailUrl(),
+                request.post().tagNames(),
+                request.post().attachments()
         );
 
         Long postId = postCommandService.create(PROMOTION_BOARD_CODE, postCreateRequest, author);

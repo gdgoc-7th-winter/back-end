@@ -1,6 +1,6 @@
 package com.project.post.application.service;
 
-import com.project.post.application.dto.PromotionPostCreateRequest;
+import com.project.post.application.dto.PromotionPost.PromotionPostCreateRequest;
 import com.project.user.domain.entity.User;
 import org.springframework.lang.NonNull;
 
