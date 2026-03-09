@@ -1,4 +1,8 @@
 # 테스트
+cors:
+  allowed-origins:
+    - http://localhost:5173
+
 spring:
   cache:
     type: none
