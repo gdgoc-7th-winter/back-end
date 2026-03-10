@@ -6,6 +6,7 @@ import com.project.post.application.dto.PromotionPost.*;
 import com.project.post.application.service.PromotionPostCommandService;
 import com.project.post.application.service.PromotionPostQueryService;
 import com.project.post.domain.enums.PromotionCategory;
+import com.project.post.presentation.swagger.PromotionPostControllerDocs;
 import com.project.user.domain.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,11 +24,12 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1")
 @Validated
 @RequiredArgsConstructor
-public class PromotionPostController {
+public class PromotionPostController implements PromotionPostControllerDocs {
 
     private final PromotionPostCommandService promotionPostCommandService;
     private final PromotionPostQueryService promotionPostQueryService;
 
+    @Override
     @PostMapping("/promotions")
     public ResponseEntity<CommonResponse<PromotionPostCreateResponse>> create(
             @RequestBody @Valid @NonNull PromotionPostCreateRequest request,
@@ -41,6 +43,7 @@ public class PromotionPostController {
                 .body(CommonResponse.ok(response));
     }
 
+    @Override
     @GetMapping("/promotions/{postId}")
     public ResponseEntity<CommonResponse<PromotionPostDetailResponse>> getDetail(
             @PathVariable @NonNull Long postId
@@ -49,6 +52,7 @@ public class PromotionPostController {
         return ResponseEntity.ok(CommonResponse.ok(response));
     }
 
+    @Override
     @GetMapping("/promotions")
     public ResponseEntity<CommonResponse<Page<PromotionPostListResponse>>> getList(
             @RequestParam(required = false) PromotionCategory category,
@@ -58,6 +62,7 @@ public class PromotionPostController {
         return ResponseEntity.ok(CommonResponse.ok(list));
     }
 
+    @Override
     @PatchMapping("/promotions/{id}")
     public ResponseEntity<CommonResponse<Void>> update(
             @PathVariable Long id,
@@ -68,6 +73,7 @@ public class PromotionPostController {
         return ResponseEntity.ok(CommonResponse.ok());
     }
 
+    @Override
     @DeleteMapping("/promotions/{id}")
     public ResponseEntity<CommonResponse<Void>> delete(
             @PathVariable @NonNull Long id,
