@@ -69,6 +69,7 @@ public class PostCommandServiceImpl implements PostCommandService {
 
         postTagService.replaceTags(post, request.tagNames());
         postAttachmentService.replaceAttachments(post, request.attachments());
+        postRepository.saveAndFlush(post);
     }
 
     @Override
