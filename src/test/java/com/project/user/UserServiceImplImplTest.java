@@ -3,8 +3,8 @@ package com.project.user;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.user.application.dto.UserSession;
-import com.project.user.application.dto.request.UserPromotionEvent;
-import com.project.user.application.service.UserService;
+import com.project.global.event.UserPromotionEvent;
+import com.project.user.application.service.impl.UserServiceImpl;
 import com.project.user.domain.entity.User;
 import com.project.user.domain.enums.Authority;
 import com.project.user.domain.enums.Track;
@@ -45,7 +45,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.spy;
 
 @ExtendWith(MockitoExtension.class)
-class UserServiceTest {
+class UserServiceImplImplTest {
 
     @Mock
     private UserRepository userRepository;
@@ -59,7 +59,7 @@ class UserServiceTest {
     private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
-    private UserService userService;
+    private UserServiceImpl userServiceImpl;
 
     private MockHttpSession session;
 
@@ -88,7 +88,7 @@ class UserServiceTest {
         given(passwordEncoder.matches(password, user.getPassword())).willReturn(true);
 
         // when
-        userService.login(request, session, servletRequest);
+        userServiceImpl.login(request, session, servletRequest);
 
         // then
         // 세션에 LOGIN_USER가 저장되었는지 확인
@@ -124,10 +124,10 @@ class UserServiceTest {
                 .userId(1L).email(email).authority(Authority.DUMMY).needsProfile(true).build();
         session.setAttribute("LOGIN_USER", oldSession);
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
 
         // when
-        userService.completeInitialProfile(email, request, session);
+        userServiceImpl.completeInitialProfile(user.getId(), request, session);
 
         // then
         // 1. 엔티티 상태 변경 확인
@@ -135,7 +135,6 @@ class UserServiceTest {
         verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
 
         UserPromotionEvent publishedEvent = eventCaptor.getValue();
-        assertThat(publishedEvent.email()).isEqualTo(email);
         assertThat(publishedEvent.userId()).isEqualTo(user.getId());
     }
 
@@ -148,7 +147,7 @@ class UserServiceTest {
         given(userRepository.findByEmail(anyString())).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> userService.login(loginRequest, session, httpRequest))
+        assertThatThrownBy(() -> userServiceImpl.login(loginRequest, session, httpRequest))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.LOGIN_FAILED);
     }

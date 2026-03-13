@@ -1,20 +1,26 @@
 package com.project.user.domain.entity;
+
+import com.project.contribution.domain.entity.UserContribution;
 import com.project.user.domain.enums.Authority;
 import com.project.user.domain.enums.Interest;
 import com.project.user.domain.enums.TechStack;
 import com.project.user.domain.enums.Track;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.Id;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Id;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.CollectionTable;
-import jakarta.persistence.JoinColumn;
+import jakarta.persistence.FetchType;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -24,7 +30,9 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -53,13 +61,9 @@ public class User {
     @Column(name = "department", length = 50)
     private String department;
 
-
     @Enumerated(EnumType.STRING)
     @Column(name = "track")
     private Track track;
-
-    @Column(name = "user_badge", nullable = false)
-    private String userBadge = "DUMMY";
 
     // 프로필 사진 S3 url
     @Column(name = "profile_img_url", columnDefinition = "TEXT")
@@ -69,6 +73,17 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(name="authority", nullable = false, length = 30)
     private Authority authority = Authority.DUMMY;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserContribution> userContributions = new ArrayList<>();
+
+    @Column(name = "total_point")
+    private int totalPoint = 0;
+
+    // 유저 레벨 뱃지 (객체 매핑)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="levelId")
+    private LevelBadge levelBadge;
 
     // 회원가입 시점
     @CreationTimestamp
@@ -104,10 +119,6 @@ public class User {
         return this.authority == Authority.DUMMY;
     }
 
-    public void promoteToUser() {
-        this.authority = Authority.USER;
-    }
-
     public void updateProfile(String nickname, String studentId, String department,
                               Track track, String profileImgUrl, Set<TechStack> techStacks, Set<Interest> interests) {
         this.nickname = nickname;
@@ -123,5 +134,22 @@ public class User {
         if (interests != null) this.interests.addAll(interests);
 
         this.authority = Authority.USER;
+    }
+
+    public void initializeLevelBadge(LevelBadge initialBadge) {
+        this.levelBadge = initialBadge;
+    }
+
+    public void updatePoint(int point) {
+        this.totalPoint += point;
+    }
+
+    public void updateBadge(LevelBadge levelBadge) {
+        this.levelBadge = levelBadge;
+    }
+
+    public LevelBadge getLevelBadge() {
+        if (this.levelBadge == null) return null;
+        return this.levelBadge;
     }
 }

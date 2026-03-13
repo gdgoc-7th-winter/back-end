@@ -1,0 +1,11 @@
+[
+  { "name": "뉴페이스", "badgeDescription": "회원가입 및 프로필 작성 완료", "badgeImage": "profile.png", "point": 10 },
+  { "name": "게시글 작성", "badgeDescription": "게시글 작성에 따른 포인트", "badgeImage": "post.png", "point": 5 },
+  { "name": "댓글 작성", "badgeDescription": "댓글 작성에 따른 포인트", "badgeImage": "comment.png", "point": 2 },
+  { "name": "채택된 답변(질문 해결)", "badgeDescription": "답변 채택에 따른 포인트", "badgeImage": "select.png", "point": 20 },
+  { "name": "추천 1개 받음", "badgeDescription": "추천 획득에 따른 포인트", "badgeImage": "like.png", "point": 2 },
+  { "name": "북마크 1개 받음", "badgeDescription": "북마크 획득에 따른 포인트", "badgeImage": "bookmark.png", "point": 3 },
+  { "name": "자료가 주간 인기글 선정", "badgeDescription": "주간 인기글 선정에 따른 포인트", "badgeImage": "popular.png", "point": 40 },
+  { "name": "부적절 신고 누적 3회", "badgeDescription": "부적절 신고 누적에 따른 차감", "badgeImage": "report.png", "point": -30 },
+  { "name": "게시글 삭제(관리자)", "badgeDescription": "관리자에 의한 게시글 삭제", "badgeImage": "delete.png", "point": -50 }
+]
