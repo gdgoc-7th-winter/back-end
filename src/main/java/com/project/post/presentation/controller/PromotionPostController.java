@@ -2,7 +2,12 @@ package com.project.post.presentation.controller;
 
 import com.project.global.annotation.CurrentUser;
 import com.project.global.response.CommonResponse;
-import com.project.post.application.dto.PromotionPost.*;
+
+import com.project.post.application.dto.PromotionPost.PromotionPostCreateRequest;
+import com.project.post.application.dto.PromotionPost.PromotionPostCreateResponse;
+import com.project.post.application.dto.PromotionPost.PromotionPostDetailResponse;
+import com.project.post.application.dto.PromotionPost.PromotionPostListResponse;
+import com.project.post.application.dto.PromotionPost.PromotionPostUpdateRequest;
 import com.project.post.application.service.PromotionPostCommandService;
 import com.project.post.application.service.PromotionPostQueryService;
 import com.project.post.domain.enums.PromotionCategory;
@@ -18,8 +23,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+
 import jakarta.validation.constraints.Positive;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 @RestController
 @RequestMapping("/api/v1")
