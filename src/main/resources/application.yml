@@ -1,4 +1,8 @@
 # 공통 설정
+cors:
+  allowed-origins:
+    - http://localhost:5173
+
 spring:
   application:
     name: REDACTED_DB_PASSWORD
