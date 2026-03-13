@@ -1,31 +1,31 @@
 package com.project.post.domain.entity;
 
+import com.project.global.entity.SoftDeleteEntity;
 import com.project.post.domain.enums.PromotionCategory;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.MapsId;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.EnumType;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(name = "promotion_posts")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
-public class PromotionPost {
-
-    @Id
-    @Column(name = "post_id")
-    private Long id;
+@AttributeOverride(name = "id", column = @Column(name = "post_id"))
+@SQLRestriction("deleted_at IS NULL")
+public class PromotionPost extends SoftDeleteEntity {
 
     @MapsId
     @OneToOne(fetch = FetchType.LAZY)

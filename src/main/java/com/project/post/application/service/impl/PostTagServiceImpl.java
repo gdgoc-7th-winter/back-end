@@ -36,7 +36,7 @@ public class PostTagServiceImpl implements PostTagService {
         }
         List<Tag> tags = getOrCreateTags(tagNames);
         for (Tag tag : tags) {
-            postTagRepository.save(new PostTag(post, tag));
+            postTagRepository.saveAndFlush(new PostTag(post, tag));
         }
     }
 

@@ -56,7 +56,7 @@ public class PromotionPostCommandServiceImpl implements PromotionPostCommandServ
     @Override
     @Transactional
     public void update(@NonNull Long postId, @NonNull PromotionPostUpdateRequest request, @NonNull User author) {
-        PromotionPost promotionPost = promotionPostRepository.findById(postId)
+        PromotionPost promotionPost = promotionPostRepository.findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "홍보글을 찾을 수 없습니다."));
 
         if (request.post() != null) {
@@ -70,9 +70,10 @@ public class PromotionPostCommandServiceImpl implements PromotionPostCommandServ
     @Override
     @Transactional
     public void delete(@NonNull Long postId, @NonNull User author) {
-        PromotionPost promotionPost = promotionPostRepository.findById(postId)
+        PromotionPost promotionPost = promotionPostRepository.findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "홍보글을 찾을 수 없습니다."));
 
+        promotionPost.softDelete();
         postCommandService.softDelete(promotionPost.getPost().getId(), author);
     }
 }
