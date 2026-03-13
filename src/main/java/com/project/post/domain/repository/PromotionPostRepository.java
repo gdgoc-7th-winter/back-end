@@ -7,12 +7,17 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 
 public interface PromotionPostRepository extends JpaRepository<PromotionPost, Long> {
 
     Optional<PromotionPost> findByIdAndDeletedAtIsNull(Long id);
 
+    @EntityGraph(attributePaths = {"post", "post.author"})
     Page<PromotionPost> findByCategoryAndDeletedAtIsNull(PromotionCategory category, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"post", "post.author"})
     Page<PromotionPost> findByDeletedAtIsNull(Pageable pageable);
+
     List<PromotionPost> findByCategoryAndDeletedAtIsNull(PromotionCategory category);
 }
