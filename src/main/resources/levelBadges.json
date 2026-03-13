@@ -1,0 +1,65 @@
+[
+  {
+    "levelName": "Dummy",
+    "levelDescription": "가입자(프로필 미작성 신규 가입)",
+    "levelImage": "dummy.png",
+    "minimumPoint": 0,
+    "maximumPoint": 9
+  },
+  {
+    "levelName": "Wood",
+    "levelDescription": "커뮤니티 사용 가능",
+    "levelImage": "wood.png",
+    "minimumPoint": 10,
+    "maximumPoint": 79
+  },
+  {
+    "levelName": "Bronze",
+    "levelDescription": "커뮤니티 적응 시작",
+    "levelImage": "bronze.png",
+    "minimumPoint": 80,
+    "maximumPoint": 249
+  },
+  {
+    "levelName": "Silver",
+    "levelDescription": "활동 유저",
+    "levelImage": "silver.png",
+    "minimumPoint": 250,
+    "maximumPoint": 599
+  },
+  {
+    "levelName": "Gold",
+    "levelDescription": "기여 유저",
+    "levelImage": "gold.png",
+    "minimumPoint": 600,
+    "maximumPoint": 1199
+  },
+  {
+    "levelName": "Platinum",
+    "levelDescription": "핵심 기여자",
+    "levelImage": "platinum.png",
+    "minimumPoint": 1200,
+    "maximumPoint": 2199
+  },
+  {
+    "levelName": "Emerald",
+    "levelDescription": "커뮤니티 영향력 유저",
+    "levelImage": "emerald.png",
+    "minimumPoint": 2200,
+    "maximumPoint": 3799
+  },
+  {
+    "levelName": "Diamond",
+    "levelDescription": "지식 제공자(멘토급)",
+    "levelImage": "diamond.png",
+    "minimumPoint": 3800,
+    "maximumPoint": 5999
+  },
+  {
+    "levelName": "Ruby",
+    "levelDescription": "커뮤니티 핵심 인물 (운영자급 영향력)",
+    "levelImage": "ruby.png",
+    "minimumPoint": 6000,
+    "maximumPoint": 999999
+  }
+]

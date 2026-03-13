@@ -1,7 +1,7 @@
 package com.project.user.application.listener;
 
 import com.project.user.application.dto.UserSession;
-import com.project.user.application.dto.request.UserPromotionEvent;
+import com.project.global.event.UserPromotionEvent;
 import com.project.user.application.service.UserService;
 import com.project.user.domain.enums.Authority;
 import lombok.RequiredArgsConstructor;
@@ -19,12 +19,12 @@ public class UserPromotionListener {
     public void handleUserPromotion(UserPromotionEvent event) {
         UserSession updatedSession = UserSession.builder()
                 .userId(event.userId())
-                .email(event.email())
                 .authority(Authority.USER)
                 .needsProfile(false)
                 .build();
         event.session().setAttribute("LOGIN_USER", updatedSession);
+        System.out.println("updatedSession = " + updatedSession);
 
-        userService.updateSecurityContext(event.email());
+        userService.updateSecurityContext(event.userId());
     }
 }

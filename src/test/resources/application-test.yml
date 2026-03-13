@@ -4,7 +4,7 @@ spring:
     type: none
 
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:mem:testdb;
     username: sa
     password:
     driver-class-name: org.h2.Driver
@@ -32,11 +32,12 @@ spring:
             enable: true
 
   jpa:
+    show-sql: true
     hibernate:
       ddl-auto: create-drop
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   session:
     store-type: none
