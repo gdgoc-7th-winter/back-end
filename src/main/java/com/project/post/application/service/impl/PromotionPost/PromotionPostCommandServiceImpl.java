@@ -59,6 +59,12 @@ public class PromotionPostCommandServiceImpl implements PromotionPostCommandServ
         PromotionPost promotionPost = promotionPostRepository.findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "홍보글을 찾을 수 없습니다."));
 
+        Post post = promotionPost.getPost();
+
+        if (!post.getAuthor().getId().equals(author.getId())) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "수정 권한이 없습니다.");
+        }
+
         if (request.post() != null) {
             postCommandService.update(postId, request.post(), author);
         }
