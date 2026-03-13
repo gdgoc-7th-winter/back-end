@@ -1,6 +1,6 @@
 package com.project.user.application.service.impl;
 
-import com.project.contribution.domain.entity.ContributionBadge;
+import com.project.contribution.domain.entity.ContributionScore;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 
@@ -151,11 +151,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void earnABadge(Long id, ContributionBadge contributionBadge) {
+    public User earnAScore(Long id, ContributionScore contributionScore) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "회원 정보가 없습니다."));
-        user.updatePoint(contributionBadge.getPoint());
-        entityManager.merge(user);
-        entityManager.flush();
+        user.updatePoint(contributionScore.getPoint());
+        return user;
     }
 }

@@ -15,7 +15,7 @@ public class ContributionEventListener {
     private final ContributionService contributionService;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleUserPromotionForBadge(ActivityEvent activityEvent) {
-        contributionService.checkAndGrantBadges(activityEvent.userId(), activityEvent.activityType());
+    public void handleUserPromotionForScore(ActivityEvent activityEvent) {
+        contributionService.checkAndGrantScores(activityEvent.userId(), activityEvent.activityType());
     }
 }

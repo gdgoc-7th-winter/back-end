@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @Repository
 public interface LevelBadgeRepository extends JpaRepository<LevelBadge, Long> {
-    Optional<LevelBadge> getLevelBadgeById(Integer id);
+    Optional<LevelBadge> getLevelBadgeById(Long id);
 
     @Query("SELECT lb FROM LevelBadge lb WHERE :point BETWEEN lb.minimumPoint AND lb.maximumPoint")
     Optional<LevelBadge> findByPointWithinRange(@Param("point") Integer point);

@@ -13,45 +13,31 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name="contributionBadge")
+@Table(name="contributionscore")
 @Getter
 @Setter
 @NoArgsConstructor
-public class ContributionBadge {
+public class ContributionScore {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="cont_id")
     private Long id;
 
-    @Column(name="cont_name")
+    @Column(name="cont_name", unique=true, nullable=false)
     private String name;
-
-    @Column(name="cont_description")
-    private String badgeDescription;
-
-    @Column(name="cont_image")
-    private String badgeImage;
 
     @Column(name="cont_point")
     private Integer point;
 
     @Builder
-    public ContributionBadge(String name, String badgeDescription, String badgeImage, Integer point) {
+    public ContributionScore(String name, Integer point) {
         this.name = name;
-        this.badgeDescription = badgeDescription;
-        this.badgeImage = badgeImage;
         this.point = point;
     }
 
-    public void update(String name, String description, String image, Integer point) {
+    public void update(String name, Integer point) {
         if (name != null) {
             this.name = name;
-        }
-        if (description != null) {
-            this.badgeDescription = description;
-        }
-        if (image != null) {
-            this.badgeImage = image;
         }
         if (point != null) {
             this.point = point;
