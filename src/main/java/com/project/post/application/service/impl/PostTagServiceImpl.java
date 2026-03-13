@@ -47,7 +47,7 @@ public class PostTagServiceImpl implements PostTagService {
 
         List<Tag> result = new ArrayList<>();
         for (String name : uniqueNames) {
-            result.add(tagCreationService.getOrCreate(Objects.requireNonNull(name)));
+            result.add(tagCreationService.getOrCreate(name));
         }
         return result;
     }
