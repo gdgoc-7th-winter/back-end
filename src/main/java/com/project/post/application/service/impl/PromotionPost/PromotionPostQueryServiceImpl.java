@@ -38,7 +38,7 @@ public class PromotionPostQueryServiceImpl implements PromotionPostQueryService 
 
     @Override
     public PromotionPostDetailResponse getDetail(@NonNull Long postId) {
-        PromotionPost promotionPost = promotionPostRepository.findById(postId)
+        PromotionPost promotionPost = promotionPostRepository.findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.RESOURCE_NOT_FOUND,
                         "홍보글을 찾을 수 없습니다."
@@ -58,8 +58,8 @@ public class PromotionPostQueryServiceImpl implements PromotionPostQueryService 
             Pageable pageable
     ) {
         Page<PromotionPost> promotionPosts = (category == null)
-                ? promotionPostRepository.findAll(pageable)
-                : promotionPostRepository.findByCategory(category, pageable);
+                ? promotionPostRepository.findByDeletedAtIsNull(pageable)
+                : promotionPostRepository.findByCategoryAndDeletedAtIsNull(category, pageable);
 
         List<Long> postIds = promotionPosts.getContent().stream()
                 .map(promotionPost -> promotionPost.getPost().getId())
