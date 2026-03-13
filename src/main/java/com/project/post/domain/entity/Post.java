@@ -20,7 +20,12 @@ import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Entity
 @Table(name = "posts")
@@ -85,13 +90,54 @@ public class Post extends SoftDeleteEntity {
     }
 
     public void replaceTags(List<Tag> tags) {
-        this.postTags.clear();
-        if (tags == null || tags.isEmpty()) {
+        if (tags == null) {
             return;
         }
+
+        // 입력 태그를 식별자 기준으로 중복 제거
+        Map<String, Tag> incomingByTagIdentity = new LinkedHashMap<>();
         for (Tag tag : tags) {
-            addPostTag(tag);
+            String identity = tagIdentity(tag);
+            if (identity == null) {
+                continue;
+            }
+            incomingByTagIdentity.putIfAbsent(identity, tag);
         }
+
+        Set<String> incomingTagIds = new LinkedHashSet<>(incomingByTagIdentity.keySet());
+        Iterator<PostTag> iterator = this.postTags.iterator();
+        while (iterator.hasNext()) {
+            PostTag postTag = iterator.next();
+            String existingTagId = tagIdentity(postTag.getTag());
+            if (!incomingTagIds.contains(existingTagId)) {
+                iterator.remove();
+            }
+        }
+
+        Set<String> existingTagIds = new LinkedHashSet<>();
+        for (PostTag postTag : this.postTags) {
+            existingTagIds.add(tagIdentity(postTag.getTag()));
+        }
+
+        for (Map.Entry<String, Tag> entry : incomingByTagIdentity.entrySet()) {
+            if (existingTagIds.contains(entry.getKey())) {
+                continue;
+            }
+            addPostTag(entry.getValue());
+        }
+    }
+
+    private String tagIdentity(Tag tag) {
+        if (tag == null) {
+            return null;
+        }
+        if (tag.getId() != null) {
+            return "ID:" + tag.getId();
+        }
+        if (tag.getName() == null) {
+            return null;
+        }
+        return "NAME:" + tag.getName();
     }
 
     private void addPostTag(Tag tag) {
