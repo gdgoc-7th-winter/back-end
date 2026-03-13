@@ -48,6 +48,8 @@ public class PostCommandServiceImpl implements PostCommandService {
         postTagService.replaceTags(Objects.requireNonNull(savedPost), request.tagNames());
         postAttachmentService.replaceAttachments(Objects.requireNonNull(savedPost), request.attachments());
 
+        postRepository.saveAndFlush(savedPost);
+
         return Objects.requireNonNull(savedPost.getId());
     }
 

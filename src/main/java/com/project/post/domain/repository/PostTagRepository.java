@@ -9,13 +9,14 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface PostTagRepository extends JpaRepository<PostTag, PostTag.PostTagId> {
+public interface PostTagRepository extends JpaRepository<PostTag, Long> {
 
     @EntityGraph(attributePaths = {"tag"})
     @Query("SELECT pt FROM PostTag pt WHERE pt.post.id = :postId")
     List<PostTag> findByPostId(@Param("postId") Long postId);
 
-    @Query("SELECT pt FROM PostTag pt JOIN FETCH pt.post JOIN FETCH pt.tag WHERE pt.post.id IN :postIds")
+    @EntityGraph(attributePaths = {"tag"})
+    @Query("SELECT pt FROM PostTag pt WHERE pt.post.id IN :postIds")
     List<PostTag> findByPostIdIn(@Param("postIds") List<Long> postIds);
 
     @Modifying(clearAutomatically = true)
