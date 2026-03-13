@@ -3,9 +3,7 @@ package com.project.post.application.service.impl;
 import com.project.post.application.service.PostTagService;
 import com.project.post.application.service.TagCreationService;
 import com.project.post.domain.entity.Post;
-import com.project.post.domain.entity.PostTag;
 import com.project.post.domain.entity.Tag;
-import com.project.post.domain.repository.PostTagRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
@@ -15,13 +13,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 public class PostTagServiceImpl implements PostTagService {
 
-    private final PostTagRepository postTagRepository;
     private final TagCreationService tagCreationService;
 
     @Override
@@ -30,14 +28,12 @@ public class PostTagServiceImpl implements PostTagService {
         if (tagNames == null) {
             return;
         }
-        postTagRepository.deleteByPostId(post.getId());
         if (tagNames.isEmpty()) {
+            post.replaceTags(List.of());
             return;
         }
         List<Tag> tags = getOrCreateTags(tagNames);
-        for (Tag tag : tags) {
-            postTagRepository.save(new PostTag(post, tag));
-        }
+        post.replaceTags(tags);
     }
 
     private List<Tag> getOrCreateTags(List<String> tagNames) {
@@ -51,7 +47,7 @@ public class PostTagServiceImpl implements PostTagService {
 
         List<Tag> result = new ArrayList<>();
         for (String name : uniqueNames) {
-            result.add(tagCreationService.getOrCreate(name));
+            result.add(tagCreationService.getOrCreate(Objects.requireNonNull(name)));
         }
         return result;
     }
