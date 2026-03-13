@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.constraints.Positive;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -46,7 +47,7 @@ public class PromotionPostController implements PromotionPostControllerDocs {
     @Override
     @GetMapping("/promotions/{postId}")
     public ResponseEntity<CommonResponse<PromotionPostDetailResponse>> getDetail(
-            @PathVariable @NonNull Long postId
+            @PathVariable @Positive @NonNull Long postId
     ) {
         PromotionPostDetailResponse response = promotionPostQueryService.getDetail(postId);
         return ResponseEntity.ok(CommonResponse.ok(response));
@@ -65,7 +66,7 @@ public class PromotionPostController implements PromotionPostControllerDocs {
     @Override
     @PatchMapping("/promotions/{id}")
     public ResponseEntity<CommonResponse<Void>> update(
-            @PathVariable Long id,
+            @PathVariable @Positive @NonNull Long id,
             @RequestBody @Valid @NonNull PromotionPostUpdateRequest request,
             @CurrentUser @NonNull User user
     ) {
@@ -76,7 +77,7 @@ public class PromotionPostController implements PromotionPostControllerDocs {
     @Override
     @DeleteMapping("/promotions/{id}")
     public ResponseEntity<CommonResponse<Void>> delete(
-            @PathVariable @NonNull Long id,
+            @PathVariable @Positive @NonNull Long id,
             @CurrentUser @NonNull User user
     ) {
         promotionPostCommandService.delete(id, user);

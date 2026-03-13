@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,7 +29,7 @@ public interface PromotionPostControllerDocs {
     @ApiResponse(responseCode = "201", description = "생성됨")
     @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
     ResponseEntity<CommonResponse<PromotionPostCreateResponse>> create(
-            @RequestBody(description = "홍보글 작성 요청") @NonNull PromotionPostCreateRequest request,
+            @RequestBody(description = "홍보글 작성 요청") @Valid @NonNull PromotionPostCreateRequest request,
             @Parameter(hidden = true) @NonNull User user
     );
 
@@ -50,7 +51,7 @@ public interface PromotionPostControllerDocs {
     @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
     ResponseEntity<CommonResponse<Void>> update(
             @Parameter(description = "홍보글 ID") @Positive @NonNull Long id,
-            @RequestBody(description = "홍보글 수정 요청") @NonNull PromotionPostUpdateRequest request,
+            @RequestBody(description = "홍보글 수정 요청") @Valid @NonNull PromotionPostUpdateRequest request,
             @Parameter(hidden = true) @NonNull User user
     );
 
