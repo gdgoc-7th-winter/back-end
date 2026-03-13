@@ -1,4 +1,4 @@
-package com.project.user;
+package com.project.user.application.service;
 
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
@@ -8,7 +8,6 @@ import com.project.user.application.service.impl.UserServiceImpl;
 import com.project.user.domain.entity.User;
 import com.project.user.domain.enums.Authority;
 import com.project.user.domain.enums.Track;
-import com.project.user.domain.repository.EmailAuthRepository;
 import com.project.user.domain.repository.UserRepository;
 import com.project.user.presentation.dto.request.LoginRequest;
 import com.project.user.presentation.dto.request.ProfileUpdateRequest;
@@ -23,7 +22,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.core.Authentication;
@@ -45,21 +43,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.spy;
 
 @ExtendWith(MockitoExtension.class)
-class UserServiceImplImplTest {
+class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
     @Mock
-    private EmailAuthRepository emailAuthRepository;
-    @Mock
     private PasswordEncoder passwordEncoder;
-    @Mock
-    private RedisTemplate<String, Object> redisTemplate;
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
-    private UserServiceImpl userServiceImpl;
+    private UserServiceImpl userService;
 
     private MockHttpSession session;
 
@@ -88,7 +82,7 @@ class UserServiceImplImplTest {
         given(passwordEncoder.matches(password, user.getPassword())).willReturn(true);
 
         // when
-        userServiceImpl.login(request, session, servletRequest);
+        userService.login(request, session, servletRequest);
 
         // then
         // 세션에 LOGIN_USER가 저장되었는지 확인
@@ -127,7 +121,7 @@ class UserServiceImplImplTest {
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
 
         // when
-        userServiceImpl.completeInitialProfile(user.getId(), request, session);
+        userService.completeInitialProfile(user.getId(), request, session);
 
         // then
         // 1. 엔티티 상태 변경 확인
@@ -147,17 +141,19 @@ class UserServiceImplImplTest {
         given(userRepository.findByEmail(anyString())).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> userServiceImpl.login(loginRequest, session, httpRequest))
+        assertThatThrownBy(() -> userService.login(loginRequest, session, httpRequest))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.LOGIN_FAILED);
     }
 
     private ProfileUpdateRequest createProfileUpdateRequest() {
+
         return ProfileUpdateRequest.builder()
                 .nickname("닉네임")
                 .studentId("202001234")
                 .department("컴퓨터공학")
                 .track(Track.BACKEND)
                 .build();
+
     }
 }
