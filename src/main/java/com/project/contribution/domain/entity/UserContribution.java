@@ -9,18 +9,26 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.UniqueConstraint;
 
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Setter
-@Table(name="userAchievement")
+@Table(
+        name = "userAchievement",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "UK_USER_CONTRIBUTION_USER_SCORE",
+                        columnNames = {"user_id", "contributionId"}
+                )
+        }
+)
 @NoArgsConstructor
 public class UserContribution {
     @Id
@@ -32,13 +40,15 @@ public class UserContribution {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name= "achieveId")
-    private ContributionBadge contributionBadge;
+    @JoinColumn(name= "contributionId")
+    private ContributionScore contributionScore;
+
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
     @Builder
-    public UserContribution(User user, ContributionBadge contributionBadge) {
+    public UserContribution(User user, ContributionScore contributionScore) {
         this.user = user;
-        this.contributionBadge = contributionBadge;
+        this.contributionScore = contributionScore;
     }
 }

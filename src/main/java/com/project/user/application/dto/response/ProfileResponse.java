@@ -27,7 +27,7 @@ public record ProfileResponse(
                 user.getDepartment(),
                 user.getTrack() != null ? user.getTrack().name() : null,
                 user.getTotalPoint(),
-                user.getLevelBadge().getLevelName(),
+                user.getLevelBadge() != null ? user.getLevelBadge().getLevelName() : null,
                 user.getProfileImgUrl(),
                 user.getAuthority(),
                 user.getTechStacks().stream().map(Enum::name).collect(Collectors.toSet()),
