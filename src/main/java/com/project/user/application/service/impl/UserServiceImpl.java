@@ -1,13 +1,14 @@
 package com.project.user.application.service.impl;
 
 import com.project.contribution.domain.entity.ContributionScore;
+import com.project.contribution.domain.entity.UserContribution;
+import com.project.contribution.domain.repository.ContributionScoreRepository;
+import com.project.contribution.domain.repository.UserContributionRepository;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 
-import com.project.global.event.ActivityEvent;
-import com.project.global.event.ActivityType;
 import com.project.user.application.dto.UserSession;
-import com.project.global.event.UserPromotionEvent;
+import com.project.global.event.Impl.UserPromotionEvent;
 import com.project.user.application.dto.response.ProfileResponse;
 import com.project.user.application.service.UserService;
 import com.project.user.domain.entity.LevelBadge;
@@ -25,6 +26,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -38,17 +40,19 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final EmailAuthRepository emailAuthRepository;
     private final LevelBadgeRepository levelBadgeRepository;
+    private final UserContributionRepository userContributionRepository;
     private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher eventPublisher;
+    private final ContributionScoreRepository contributionScoreRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -68,7 +72,7 @@ public class UserServiceImpl implements UserService {
         }
 
         // 비밀번호 암호화 및 엔티티 생성
-        try{
+        try {
             String encodedPassword = passwordEncoder.encode(request.getPassword());
             User user = new User(request.getEmail(), encodedPassword);
             userRepository.save(user);
@@ -76,7 +80,7 @@ public class UserServiceImpl implements UserService {
                     .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
             user.initializeLevelBadge(initialBadge);
             emailAuthRepository.deleteRegisterSession(request.getEmail());
-        } catch (DataIntegrityViolationException e){
+        } catch (DataIntegrityViolationException e) {
             throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS);
         }
     }
@@ -129,8 +133,8 @@ public class UserServiceImpl implements UserService {
                 request.getNickname(), request.getStudentId(), request.getDepartment(), request.getTrack(),
                 request.getProfilePicture(), request.getTechStacks(), request.getInterests()
         );
-        eventPublisher.publishEvent(new UserPromotionEvent(user.getId(), session));
-        eventPublisher.publishEvent(new ActivityEvent(user.getId(),ActivityType.PROFILE_SETUP_COMPLETED,true,LocalDateTime.now()));
+        log.info("이벤트 발행 직전: userId={}, profileId={}", user.getId(), user.getId());
+        eventPublisher.publishEvent(new UserPromotionEvent(user.getId(), user.getId()));
     }
 
     @Override
@@ -151,10 +155,25 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public User earnAScore(Long id, ContributionScore contributionScore) {
+    public User earnAScore(Long id, String scoreName, Long referenceId) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "회원 정보가 없습니다."));
+        ContributionScore contributionScore = contributionScoreRepository.findByName(scoreName)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
         user.updatePoint(contributionScore.getPoint());
+
+        try {
+            UserContribution contribution = UserContribution.builder()
+                    .user(user)
+                    .contributionScore(contributionScore)
+                    .referenceId(referenceId)
+                    .build();
+            userContributionRepository.save(contribution);
+            userContributionRepository.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS);
+        }
         return user;
     }
 }

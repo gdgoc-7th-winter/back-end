@@ -10,12 +10,10 @@ import jakarta.persistence.GenerationType;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name="contributionscore")
 @Getter
-@Setter
 @NoArgsConstructor
 public class ContributionScore {
     @Id
@@ -26,7 +24,7 @@ public class ContributionScore {
     @Column(name="cont_name", unique=true, nullable=false)
     private String name;
 
-    @Column(name="cont_point")
+    @Column(name="cont_point", nullable=false)
     private Integer point;
 
     @Builder

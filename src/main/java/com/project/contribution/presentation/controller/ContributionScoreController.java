@@ -24,11 +24,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/scores")
 @RequiredArgsConstructor
 public class ContributionScoreController {
-
     private final ContributionScoreService scoreService;
 
-    @PostMapping("/scoreCreate")
-    public ResponseEntity<ContributionScore> addScore(Long id, ScoreCreateRequest request) {
+    @PostMapping("/scoreCreate/{id}")
+    public ResponseEntity<ContributionScore> addScore(@PathVariable Long id, @RequestBody ScoreCreateRequest request) {
         ContributionScore score = scoreService.addScore(id,request);
         return new ResponseEntity<>(score, HttpStatus.CREATED);
     }

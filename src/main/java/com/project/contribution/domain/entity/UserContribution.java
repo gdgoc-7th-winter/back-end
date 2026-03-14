@@ -1,15 +1,17 @@
 package com.project.contribution.domain.entity;
 
 import com.project.user.domain.entity.User;
-import jakarta.persistence.Table;
-import jakarta.persistence.Entity;
+
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.FetchType;
+import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Column;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.GenerationType;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -21,11 +23,11 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Table(
-        name = "userAchievement",
+        name = "userContribution",
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "UK_USER_CONTRIBUTION_USER_SCORE",
-                        columnNames = {"user_id", "contributionId"}
+                        columnNames = {"user_id", "contributionId", "referenceId"}
                 )
         }
 )
@@ -40,15 +42,19 @@ public class UserContribution {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name= "contributionId")
+    @JoinColumn(name= "contribution_id")
     private ContributionScore contributionScore;
+
+    @Column(nullable = false, name="reference_id")
+    private Long referenceId;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
 
     @Builder
-    public UserContribution(User user, ContributionScore contributionScore) {
+    public UserContribution(User user, ContributionScore contributionScore,  Long referenceId) {
         this.user = user;
         this.contributionScore = contributionScore;
+        this.referenceId = referenceId;
     }
 }

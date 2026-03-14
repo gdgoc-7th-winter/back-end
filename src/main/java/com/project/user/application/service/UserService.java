@@ -1,6 +1,5 @@
 package com.project.user.application.service;
 
-import com.project.contribution.domain.entity.ContributionScore;
 import com.project.user.application.dto.response.ProfileResponse;
 import com.project.user.domain.entity.User;
 import com.project.user.presentation.dto.request.LoginRequest;
@@ -15,5 +14,5 @@ public interface UserService {
     public void completeInitialProfile(Long id, ProfileUpdateRequest request, HttpSession session);
     public void updateSecurityContext(Long id);
     public ProfileResponse getUserProfile(Long id);
-    public User earnAScore(Long id, ContributionScore contributionScore);
+    public User earnAScore(Long id, String scoreName, Long referenceId);
 }
