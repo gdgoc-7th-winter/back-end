@@ -3,7 +3,7 @@ package com.project.user.application.service;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.user.application.dto.UserSession;
-import com.project.global.event.UserPromotionEvent;
+import com.project.global.event.Impl.UserPromotionEvent;
 import com.project.user.application.service.impl.UserServiceImpl;
 import com.project.user.domain.entity.User;
 import com.project.user.domain.enums.Authority;

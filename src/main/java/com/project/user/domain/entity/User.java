@@ -82,7 +82,7 @@ public class User {
 
     // 유저 레벨 뱃지 (객체 매핑)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="levelId")
+    @JoinColumn(name="level_id")
     private LevelBadge levelBadge;
 
     // 회원가입 시점
@@ -144,8 +144,11 @@ public class User {
         this.totalPoint += point;
     }
 
-    public void updateBadge(LevelBadge levelBadge) {
-        this.levelBadge = levelBadge;
+    public void updateBadge(LevelBadge newBadge) {
+        if (newBadge == null) {
+            throw new IllegalArgumentException("뱃지 정보가 없습니다!");
+        }
+        this.levelBadge = newBadge;
     }
 
     public LevelBadge getLevelBadge() {

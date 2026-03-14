@@ -16,6 +16,6 @@ public class ContributionEventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleUserPromotionForScore(ActivityEvent activityEvent) {
-        contributionService.checkAndGrantScores(activityEvent.userId(), activityEvent.activityType());
+        contributionService.checkAndGrantScores(activityEvent.getUserId(),activityEvent.getActivityType(), activityEvent.getReferenceId());
     }
 }

@@ -56,7 +56,7 @@ public class EmailServiceImpl implements com.project.user.application.service.Em
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject("[HUFS Community] 회원가입 인증번호");
-        message.setText("인증번호는 [" + authCode + "] 입니다. [" + authCodeTtl + " ]분 이내에 입력해주세요.");
+        message.setText("인증번호는 [" + authCode + "] 입니다. [" + authCodeTtl + "]분 이내에 입력해주세요.");
 
         // 이메일 발송 로직 2: 인증번호 정보 Redis DB 저장 (TTL 5분)
         try {

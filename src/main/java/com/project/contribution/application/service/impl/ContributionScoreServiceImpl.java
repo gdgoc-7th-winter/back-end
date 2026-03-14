@@ -18,7 +18,7 @@ public class ContributionScoreServiceImpl implements ContributionScoreService {
     private final ContributionScoreRepository scoreRepository;
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = BusinessException.class)
     public ContributionScore addScore(Long userId, ScoreCreateRequest request) {
         try {
             ContributionScore score = new ContributionScore(
@@ -32,7 +32,7 @@ public class ContributionScoreServiceImpl implements ContributionScoreService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = BusinessException.class)
     public ContributionScore getScore(Long id) {
         ContributionScore score = scoreRepository.findById(id)
                 .orElseThrow(()-> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
@@ -41,6 +41,7 @@ public class ContributionScoreServiceImpl implements ContributionScoreService {
 
 
     @Override
+    @Transactional(rollbackFor = BusinessException.class)
     public void deleteScore(Long id) {
         ContributionScore score = scoreRepository.findById(id)
                         .orElseThrow(()-> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "score not exists."));
@@ -48,6 +49,7 @@ public class ContributionScoreServiceImpl implements ContributionScoreService {
     }
 
     @Override
+    @Transactional(rollbackFor = BusinessException.class)
     public ContributionScore editScore(Long id, ScoreUpdateRequest request) {
         ContributionScore score = scoreRepository.findById(id)
                         .orElseThrow(()-> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "score not exists"));

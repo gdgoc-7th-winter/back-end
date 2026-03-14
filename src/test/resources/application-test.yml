@@ -8,7 +8,7 @@ spring:
     type: none
 
   datasource:
-    url: jdbc:h2:mem:testdb;
+    url: "jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;INIT=CREATE TYPE IF NOT EXISTS TIMESTAMPTZ AS TIMESTAMP WITH TIME ZONE"
     username: sa
     password:
     driver-class-name: org.h2.Driver
@@ -41,7 +41,7 @@ spring:
       ddl-auto: create-drop
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
+        query.substitutions: TIMESTAMPTZ=TIMESTAMP WITH TIME ZONE
 
   session:
     store-type: none
