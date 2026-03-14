@@ -10,6 +10,9 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 
 @Component
@@ -19,12 +22,9 @@ public class BadgeUpdateEventListener {
     private final LevelBadgeRepository levelBadgeRepository;
     private final UserRepository userRepository;
 
-    @PostConstruct
-    public void init() {
-        System.out.println(">>> BadgeUpdateEventListener 빈이 등록되었습니다.");
-    }
-
     @EventListener
+    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handlePointChanged(UserPointChangeEvent event) {
         User user = userRepository.findById(event.getUserId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "사용자 없음"));

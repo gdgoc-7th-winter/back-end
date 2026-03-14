@@ -5,6 +5,9 @@ import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.PostDetailResponse;
 import com.project.post.application.dto.PostListResponse;
 import com.project.post.domain.entity.Board;
+import com.project.post.domain.entity.Post;
+import com.project.post.domain.entity.PostTag;
+import com.project.post.domain.entity.Tag;
 import com.project.post.application.service.impl.PostQueryServiceImpl;
 import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.PostRepository;
@@ -114,7 +117,16 @@ class PostQueryServiceTest {
         PostSearchCondition condition = new PostSearchCondition(null, null, PostListSort.LATEST);
         Pageable pageable = PageRequest.of(0, 10);
         when(postRepository.findPostList("general", pageable, condition)).thenReturn(queryPage);
-        when(postTagRepository.findByPostIdIn(List.of(1L))).thenReturn(List.of());
+        Post post = Post.builder()
+                .id(1L)
+                .board(Board.of("general", "자유게시판"))
+                .author(new com.project.user.domain.entity.User("user@test.com", "pw"))
+                .title("t")
+                .content("content")
+                .build();
+        when(postTagRepository.findByPostIdIn(List.of(1L))).thenReturn(List.of(
+                new PostTag(post, new Tag("java"))
+        ));
 
         Page<PostListResponse> result = postQueryService.getList("general", PageRequest.of(0, 10), null, null, null);
 
