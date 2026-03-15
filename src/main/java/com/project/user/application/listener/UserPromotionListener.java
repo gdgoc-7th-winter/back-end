@@ -33,7 +33,8 @@ public class UserPromotionListener {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "회원 정보를 찾을 수 없습니다."))).get();
 
         UserSession updatedSession = UserSession.builder()
-                .userId(event.getUserId())
+                .userId(user.getId())
+                .email(user.getEmail())
                 .authority(user.getAuthority())
                 .needsProfile(user.needsInitialSetup())
                 .build();
