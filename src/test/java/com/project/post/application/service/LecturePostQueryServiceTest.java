@@ -2,11 +2,9 @@ package com.project.post.application.service;
 
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
-import com.project.post.application.dto.LecturePost.LecturePostBoardMetadataResponse;
 import com.project.post.application.dto.LecturePost.LecturePostDetailResponse;
 import com.project.post.application.dto.LecturePost.LecturePostListResponse;
 import com.project.post.application.service.impl.LecturePost.LecturePostQueryServiceImpl;
-import com.project.post.domain.enums.BoardType;
 import com.project.post.domain.enums.Campus;
 import com.project.post.domain.repository.LecturePostRepository;
 import com.project.post.domain.repository.dto.LecturePostDetailQueryResult;
@@ -135,14 +133,6 @@ class LecturePostQueryServiceTest {
         assertThat(response.department()).isEqualTo("컴퓨터공학과");
         assertThat(response.campus()).isEqualTo(Campus.SEOUL);
         assertThat(response.tagNames()).containsExactly("Java", "Spring");
-    }
-
-    @Test
-    @DisplayName("게시판 메타데이터를 반환한다")
-    void getBoardMetadataReturnsMetadata() {
-        LecturePostBoardMetadataResponse metadata = lecturePostQueryService.getBoardMetadata();
-
-        assertThat(metadata.boardCode()).isEqualTo(BoardType.LECTURE.getCode());
     }
 
     @Test

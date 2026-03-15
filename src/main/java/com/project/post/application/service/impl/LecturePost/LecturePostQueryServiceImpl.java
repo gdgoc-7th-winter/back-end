@@ -3,13 +3,11 @@ package com.project.post.application.service.impl.LecturePost;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.PostDetailResponse;
-import com.project.post.application.dto.LecturePost.LecturePostBoardMetadataResponse;
 import com.project.post.application.dto.LecturePost.LecturePostDetailResponse;
 import com.project.post.application.dto.LecturePost.LecturePostListResponse;
 import com.project.post.application.service.LecturePostQueryService;
 import com.project.post.application.service.PostTagQueryService;
 import com.project.post.domain.constants.PostConstants;
-import com.project.post.domain.enums.BoardType;
 import com.project.post.domain.enums.Campus;
 import com.project.post.domain.enums.PostListSort;
 import com.project.post.domain.repository.LecturePostRepository;
@@ -67,12 +65,6 @@ public class LecturePostQueryServiceImpl implements LecturePostQueryService {
         LecturePostDetailQueryResult result = lecturePostRepository.findLecturePostDetail(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "강의/수업 게시글을 찾을 수 없습니다."));
         return toDetailResponse(result);
-    }
-
-    @Override
-    public LecturePostBoardMetadataResponse getBoardMetadata() {
-        BoardType boardType = BoardType.LECTURE;
-        return new LecturePostBoardMetadataResponse(boardType.getCode());
     }
 
     private LecturePostListResponse toListResponse(LecturePostListQueryResult result, List<String> tagNames) {

@@ -3,7 +3,6 @@ package com.project.post.presentation.controller;
 import com.project.global.annotation.CurrentUser;
 import com.project.global.response.CommonResponse;
 import com.project.global.response.PageResponse;
-import com.project.post.application.dto.LecturePost.LecturePostBoardMetadataResponse;
 import com.project.post.application.dto.LecturePost.LecturePostCreateRequest;
 import com.project.post.application.dto.LecturePost.LecturePostDetailResponse;
 import com.project.post.application.dto.LecturePost.LecturePostListResponse;
@@ -97,12 +96,5 @@ public class LecturePostController implements LecturePostControllerDocs {
             @CurrentUser @NonNull User user) {
         lecturePostCommandService.delete(id, user);
         return ResponseEntity.ok(CommonResponse.ok());
-    }
-
-    @Override
-    @GetMapping("/metadata")
-    public ResponseEntity<CommonResponse<LecturePostBoardMetadataResponse>> getBoardMetadata() {
-        LecturePostBoardMetadataResponse metadata = lecturePostQueryService.getBoardMetadata();
-        return ResponseEntity.ok(CommonResponse.ok(metadata));
     }
 }
