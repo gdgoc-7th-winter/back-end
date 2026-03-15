@@ -13,7 +13,6 @@ import com.project.user.application.dto.response.ProfileResponse;
 import com.project.user.application.service.UserService;
 import com.project.user.domain.entity.LevelBadge;
 import com.project.user.domain.entity.User;
-import com.project.user.domain.enums.Authority;
 import com.project.user.domain.repository.EmailAuthRepository;
 import com.project.user.domain.repository.LevelBadgeRepository;
 import com.project.user.domain.repository.UserRepository;
@@ -173,7 +172,6 @@ public class UserServiceImpl implements UserService {
                     .referenceId(referenceId)
                     .build();
             userContributionRepository.save(contribution);
-            userContributionRepository.flush();
         } catch (DataIntegrityViolationException e) {
             throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS);
         }
