@@ -2,10 +2,12 @@ package com.project.post.presentation.swagger;
 
 import com.project.post.application.dto.LikeScrapToggleResponse;
 import com.project.post.application.dto.PostCreateRequest;
+import com.project.post.application.dto.PostCreateResponse;
 import com.project.post.application.dto.PostDetailResponse;
 import com.project.post.application.dto.PostListResponse;
 import com.project.post.application.dto.PostUpdateRequest;
 import com.project.global.response.CommonResponse;
+import com.project.global.response.PageResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
@@ -17,7 +19,6 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
@@ -27,11 +28,11 @@ public interface PostControllerDocs {
 
     @Operation(summary = "게시글 목록 조회", description = "게시판 코드로 게시글 목록을 페이징하여 조회합니다. 목록 응답에 tagNames가 포함됩니다.")
     @ApiResponse(responseCode = "200", description = "성공")
-    ResponseEntity<CommonResponse<Page<PostListResponse>>> getList(
+    ResponseEntity<CommonResponse<PageResponse<PostListResponse>>> getList(
             @Parameter(description = "게시판 코드") @NotBlank @NonNull String code,
             @Parameter(description = "검색 키워드 (제목/본문/태그 부분 일치)") String keyword,
             @Parameter(description = "태그 필터 (복수 가능)") java.util.List<String> tags,
-            @Parameter(description = "정렬 기준 (latest|views|likes)") String order,
+            @Parameter(description = "정렬 기준 (latest: 최신, views: 조회수, likes: 좋아요)") String order,
             @NonNull Pageable pageable);
 
     @Operation(summary = "게시글 상세 조회", description = "게시글 ID로 상세 정보를 조회합니다.")
@@ -47,7 +48,7 @@ public interface PostControllerDocs {
     @Operation(summary = "게시글 작성", description = "새 게시글을 작성합니다.")
     @ApiResponse(responseCode = "201", description = "생성됨")
     @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
-    ResponseEntity<CommonResponse<Long>> create(
+    ResponseEntity<CommonResponse<PostCreateResponse>> create(
             @Parameter(description = "게시판 코드") @NotBlank @NonNull String code,
             @RequestBody(description = "게시글 작성 요청") @Valid @NonNull PostCreateRequest request,
             @Parameter(hidden = true) @NonNull User user);
