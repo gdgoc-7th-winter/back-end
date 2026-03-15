@@ -9,7 +9,6 @@ import com.project.post.application.service.impl.LecturePost.LecturePostQuerySer
 import com.project.post.domain.enums.BoardType;
 import com.project.post.domain.enums.Campus;
 import com.project.post.domain.repository.LecturePostRepository;
-import com.project.post.domain.repository.PostTagRepository;
 import com.project.post.domain.repository.dto.LecturePostDetailQueryResult;
 import com.project.post.domain.repository.dto.LecturePostListQueryResult;
 import com.project.post.domain.repository.dto.LecturePostSearchCondition;
@@ -41,7 +40,7 @@ class LecturePostQueryServiceTest {
     private LecturePostRepository lecturePostRepository;
 
     @Mock
-    private PostTagRepository postTagRepository;
+    private PostTagQueryService postTagQueryService;
 
     @InjectMocks
     private LecturePostQueryServiceImpl lecturePostQueryService;
@@ -59,7 +58,7 @@ class LecturePostQueryServiceTest {
         Page<LecturePostListQueryResult> queryPage = new PageImpl<>(List.of(result), pageable, 1);
         when(lecturePostRepository.findLecturePostList(any(Pageable.class), any(LecturePostSearchCondition.class)))
                 .thenReturn(queryPage);
-        when(postTagRepository.findByPostIdIn(List.of(1L))).thenReturn(List.of());
+        when(postTagQueryService.getTagNamesByPostIds(List.of(1L))).thenReturn(java.util.Map.of());
 
         Page<LecturePostListResponse> response = lecturePostQueryService.getList(
                 pageable, null, null, null, null, "latest");
@@ -78,6 +77,7 @@ class LecturePostQueryServiceTest {
         Page<LecturePostListQueryResult> emptyPage = new PageImpl<>(List.of(), pageable, 0);
         when(lecturePostRepository.findLecturePostList(any(Pageable.class), any(LecturePostSearchCondition.class)))
                 .thenReturn(emptyPage);
+        when(postTagQueryService.getTagNamesByPostIds(List.of())).thenReturn(java.util.Map.of());
 
         lecturePostQueryService.getList(pageable, null, null, Campus.GLOBAL, null, "latest");
 
@@ -93,6 +93,7 @@ class LecturePostQueryServiceTest {
         Page<LecturePostListQueryResult> emptyPage = new PageImpl<>(List.of(), pageable, 0);
         when(lecturePostRepository.findLecturePostList(any(Pageable.class), any(LecturePostSearchCondition.class)))
                 .thenReturn(emptyPage);
+        when(postTagQueryService.getTagNamesByPostIds(List.of())).thenReturn(java.util.Map.of());
 
         lecturePostQueryService.getList(pageable, null, null, null,
                 List.of("컴퓨터공학과", "경영학과"), "latest");
@@ -103,8 +104,8 @@ class LecturePostQueryServiceTest {
     }
 
     @Test
-    @DisplayName("강의/수업 게시글이 없으면 상세 조회 시 예외를 던진다")
-    void getDetailThrowsWhenMissing() {
+    @DisplayName("삭제된/없는 강의 게시글은 상세 조회 시 RESOURCE_NOT_FOUND (findLecturePostDetail은 deleted_at 제외)")
+    void getDetailThrowsWhenMissingOrDeleted() {
         when(lecturePostRepository.findLecturePostDetail(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> lecturePostQueryService.getDetail(1L))
@@ -151,6 +152,7 @@ class LecturePostQueryServiceTest {
         Page<LecturePostListQueryResult> emptyPage = new PageImpl<>(List.of(), PageRequest.of(0, 100), 0);
         when(lecturePostRepository.findLecturePostList(any(Pageable.class), any(LecturePostSearchCondition.class)))
                 .thenReturn(emptyPage);
+        when(postTagQueryService.getTagNamesByPostIds(List.of())).thenReturn(java.util.Map.of());
 
         lecturePostQueryService.getList(largePage, null, null, null, null, "latest");
 
