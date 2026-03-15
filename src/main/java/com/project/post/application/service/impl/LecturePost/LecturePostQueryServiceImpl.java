@@ -7,12 +7,12 @@ import com.project.post.application.dto.LecturePost.LecturePostBoardMetadataResp
 import com.project.post.application.dto.LecturePost.LecturePostDetailResponse;
 import com.project.post.application.dto.LecturePost.LecturePostListResponse;
 import com.project.post.application.service.LecturePostQueryService;
+import com.project.post.application.service.PostTagQueryService;
+import com.project.post.domain.constants.PostConstants;
 import com.project.post.domain.enums.BoardType;
 import com.project.post.domain.enums.Campus;
 import com.project.post.domain.enums.PostListSort;
-import com.project.post.domain.entity.PostTag;
 import com.project.post.domain.repository.LecturePostRepository;
-import com.project.post.domain.repository.PostTagRepository;
 import com.project.post.domain.repository.dto.LecturePostDetailQueryResult;
 import com.project.post.domain.repository.dto.LecturePostListQueryResult;
 import com.project.post.domain.repository.dto.LecturePostSearchCondition;
@@ -24,23 +24,18 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class LecturePostQueryServiceImpl implements LecturePostQueryService {
 
-    private static final int MAX_PAGE_SIZE = 100;
-
     private final LecturePostRepository lecturePostRepository;
-    private final PostTagRepository postTagRepository;
+    private final PostTagQueryService postTagQueryService;
 
     @Override
-    @Transactional(readOnly = true)
     public Page<LecturePostListResponse> getList(
             @NonNull Pageable pageable,
             String keyword,
@@ -50,7 +45,7 @@ public class LecturePostQueryServiceImpl implements LecturePostQueryService {
             String order) {
 
         PostListSort sortType = PostListSort.from(order);
-        int pageSize = Math.min(pageable.getPageSize(), MAX_PAGE_SIZE);
+        int pageSize = Math.min(pageable.getPageSize(), PostConstants.MAX_PAGE_SIZE);
         Pageable safePageable = PageRequest.of(pageable.getPageNumber(), pageSize);
 
         LecturePostSearchCondition condition = new LecturePostSearchCondition(
@@ -58,7 +53,8 @@ public class LecturePostQueryServiceImpl implements LecturePostQueryService {
         );
 
         Page<LecturePostListQueryResult> page = lecturePostRepository.findLecturePostList(safePageable, condition);
-        Map<Long, List<String>> tagNamesByPostId = loadTagNamesByPostIds(page);
+        var tagNamesByPostId = postTagQueryService.getTagNamesByPostIds(
+                page.getContent().stream().map(LecturePostListQueryResult::postId).toList());
 
         return page.map(result -> toListResponse(
                 result,
@@ -67,7 +63,6 @@ public class LecturePostQueryServiceImpl implements LecturePostQueryService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public LecturePostDetailResponse getDetail(@NonNull Long postId) {
         LecturePostDetailQueryResult result = lecturePostRepository.findLecturePostDetail(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "강의/수업 게시글을 찾을 수 없습니다."));
@@ -137,34 +132,5 @@ public class LecturePostQueryServiceImpl implements LecturePostQueryService {
                 tagList,
                 attachmentList
         );
-    }
-
-    private Map<Long, List<String>> loadTagNamesByPostIds(Page<LecturePostListQueryResult> page) {
-        List<Long> postIds = page.getContent().stream()
-                .map(LecturePostListQueryResult::postId)
-                .toList();
-        if (postIds.isEmpty()) {
-            return Map.of();
-        }
-
-        List<PostTag> postTags = postTagRepository.findByPostIdIn(postIds);
-        Map<Long, List<String>> tagsByPostId = new HashMap<>();
-        for (PostTag postTag : postTags) {
-            Long postId = postTag.getPost().getId();
-            String tagName = postTag.getTag() == null ? null : postTag.getTag().getName();
-            if (tagName == null) {
-                continue;
-            }
-            tagsByPostId
-                    .computeIfAbsent(postId, id -> new ArrayList<>())
-                    .add(tagName);
-        }
-
-        tagsByPostId.replaceAll((id, names) -> names.stream()
-                .filter(Objects::nonNull)
-                .distinct()
-                .sorted()
-                .toList());
-        return tagsByPostId;
     }
 }

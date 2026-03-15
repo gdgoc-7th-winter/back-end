@@ -73,7 +73,7 @@ public class PromotionPostController implements PromotionPostControllerDocs {
     @GetMapping("/promotions")
     public ResponseEntity<CommonResponse<PageResponse<PromotionPostListResponse>>> getList(
             @RequestParam(required = false) PromotionCategory category,
-            @ParameterObject @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) @NonNull Pageable pageable
+            @ParameterObject @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) @NonNull Pageable pageable
     ) {
         Page<PromotionPostListResponse> list = promotionPostQueryService.getList(category, pageable);
         return ResponseEntity.ok(CommonResponse.ok(PageResponse.of(list)));

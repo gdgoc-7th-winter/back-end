@@ -4,12 +4,13 @@ import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.LecturePost.LecturePostCreateRequest;
 import com.project.post.application.dto.LecturePost.LecturePostUpdateRequest;
+import com.project.post.application.dto.PostCreateRequest;
+import com.project.post.application.dto.PostUpdateRequest;
 import com.project.post.application.service.impl.LecturePost.LecturePostCommandServiceImpl;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.LecturePost;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.enums.Campus;
-import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.LecturePostRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
@@ -28,6 +29,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,7 +38,7 @@ import static org.mockito.Mockito.when;
 class LecturePostCommandServiceTest {
 
     @Mock
-    private BoardRepository boardRepository;
+    private PostCommandService postCommandService;
 
     @Mock
     private PostRepository postRepository;
@@ -44,19 +46,14 @@ class LecturePostCommandServiceTest {
     @Mock
     private LecturePostRepository lecturePostRepository;
 
-    @Mock
-    private PostTagService postTagService;
-
-    @Mock
-    private PostAttachmentService postAttachmentService;
-
     @InjectMocks
     private LecturePostCommandServiceImpl lecturePostCommandService;
 
     @Test
     @DisplayName("강의/수업 게시판이 없으면 생성 시 예외를 던진다")
     void createThrowsWhenBoardMissing() {
-        when(boardRepository.findByCodeAndActiveTrue("lecture")).thenReturn(Optional.empty());
+        when(postCommandService.create(eq("LECTURE"), any(PostCreateRequest.class), any(User.class)))
+                .thenThrow(new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시판을 찾을 수 없습니다."));
 
         LecturePostCreateRequest request = new LecturePostCreateRequest(
                 "제목", "본문", null, "컴퓨터공학과", Campus.SEOUL, null, null);
@@ -66,19 +63,19 @@ class LecturePostCommandServiceTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
 
-        verify(postRepository, never()).save(any());
+        verify(lecturePostRepository, never()).save(any());
     }
 
     @Test
     @DisplayName("강의/수업 게시글을 정상적으로 생성한다")
     void createSavesLecturePost() {
-        Board board = Board.of("lecture", "강의/수업 게시판");
+        Board board = Board.of("LECTURE", "강의/수업 게시판");
         ReflectionTestUtils.setField(board, "id", 10L);
         User author = buildUser(1L);
         Post post = buildPost(1L, board, author);
 
-        when(boardRepository.findByCodeAndActiveTrue("lecture")).thenReturn(Optional.of(board));
-        when(postRepository.save(any(Post.class))).thenReturn(post);
+        when(postCommandService.create(eq("LECTURE"), any(PostCreateRequest.class), eq(author))).thenReturn(1L);
+        when(postRepository.findActiveById(1L)).thenReturn(Optional.of(post));
 
         LecturePostCreateRequest request = new LecturePostCreateRequest(
                 "알고리즘 과제 질문", "동적 프로그래밍 문제입니다.",
@@ -89,16 +86,15 @@ class LecturePostCommandServiceTest {
 
         assertThat(result).isEqualTo(1L);
 
-        ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
-        verify(postRepository).save(postCaptor.capture());
-        assertThat(postCaptor.getValue().getTitle()).isEqualTo("알고리즘 과제 질문");
+        ArgumentCaptor<PostCreateRequest> postCreateCaptor = ArgumentCaptor.forClass(PostCreateRequest.class);
+        verify(postCommandService).create(eq("LECTURE"), postCreateCaptor.capture(), eq(author));
+        assertThat(postCreateCaptor.getValue().title()).isEqualTo("알고리즘 과제 질문");
+        assertThat(postCreateCaptor.getValue().tagNames()).containsExactly("알고리즘", "과제");
 
         ArgumentCaptor<LecturePost> lectureCaptor = ArgumentCaptor.forClass(LecturePost.class);
         verify(lecturePostRepository).save(lectureCaptor.capture());
         assertThat(lectureCaptor.getValue().getDepartment()).isEqualTo("컴퓨터공학과");
         assertThat(lectureCaptor.getValue().getCampus()).isEqualTo(Campus.SEOUL);
-
-        verify(postTagService).replaceTags(post, List.of("알고리즘", "과제"));
     }
 
     @Test
@@ -120,7 +116,7 @@ class LecturePostCommandServiceTest {
     void updateThrowsWhenNotAuthor() {
         User author = buildUser(1L);
         User other = buildUser(2L);
-        Board board = Board.of("lecture", "강의/수업 게시판");
+        Board board = Board.of("LECTURE", "강의/수업 게시판");
         Post post = buildPost(1L, board, author);
         LecturePost lecturePost = buildLecturePost(post);
 
@@ -133,13 +129,16 @@ class LecturePostCommandServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ACCESS_DENIED);
+
+        assertThat(lecturePost.isDeleted()).isFalse();
+        assertThat(post.isDeleted()).isFalse();
     }
 
     @Test
-    @DisplayName("수정 시 학과와 캠퍼스도 갱신한다")
+    @DisplayName("수정 시 학과와 캠퍼스도 갱신하고 PostCommandService에 공통 로직을 위임한다")
     void updateModifiesLecturePost() {
         User author = buildUser(1L);
-        Board board = Board.of("lecture", "강의/수업 게시판");
+        Board board = Board.of("LECTURE", "강의/수업 게시판");
         Post post = buildPost(1L, board, author);
         LecturePost lecturePost = buildLecturePost(post);
 
@@ -152,12 +151,14 @@ class LecturePostCommandServiceTest {
 
         lecturePostCommandService.update(1L, request, author);
 
-        assertThat(post.getTitle()).isEqualTo("수정 제목");
-        assertThat(post.getContent()).isEqualTo("수정 본문");
         assertThat(lecturePost.getDepartment()).isEqualTo("경영학과");
         assertThat(lecturePost.getCampus()).isEqualTo(Campus.GLOBAL);
 
-        verify(postTagService).replaceTags(post, List.of("경영"));
+        ArgumentCaptor<PostUpdateRequest> postUpdateCaptor = ArgumentCaptor.forClass(PostUpdateRequest.class);
+        verify(postCommandService).update(eq(1L), postUpdateCaptor.capture(), eq(author));
+        assertThat(postUpdateCaptor.getValue().title()).isEqualTo("수정 제목");
+        assertThat(postUpdateCaptor.getValue().content()).isEqualTo("수정 본문");
+        assertThat(postUpdateCaptor.getValue().tagNames()).containsExactly("경영");
     }
 
     @Test
@@ -176,7 +177,7 @@ class LecturePostCommandServiceTest {
     void deleteThrowsWhenNotAuthor() {
         User author = buildUser(1L);
         User other = buildUser(2L);
-        Board board = Board.of("lecture", "강의/수업 게시판");
+        Board board = Board.of("LECTURE", "강의/수업 게시판");
         Post post = buildPost(1L, board, author);
         LecturePost lecturePost = buildLecturePost(post);
 
@@ -195,7 +196,7 @@ class LecturePostCommandServiceTest {
     @DisplayName("삭제 시 LecturePost와 Post 모두 소프트 삭제한다")
     void deleteSoftDeletesBoth() {
         User author = buildUser(1L);
-        Board board = Board.of("lecture", "강의/수업 게시판");
+        Board board = Board.of("LECTURE", "강의/수업 게시판");
         Post post = buildPost(1L, board, author);
         LecturePost lecturePost = buildLecturePost(post);
 
@@ -204,7 +205,7 @@ class LecturePostCommandServiceTest {
         lecturePostCommandService.delete(1L, author);
 
         assertThat(lecturePost.isDeleted()).isTrue();
-        assertThat(post.isDeleted()).isTrue();
+        verify(postCommandService).softDelete(1L, author);
     }
 
     private static User buildUser(Long id) {
