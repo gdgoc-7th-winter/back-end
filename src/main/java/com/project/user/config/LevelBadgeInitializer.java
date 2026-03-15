@@ -49,7 +49,6 @@ public class LevelBadgeInitializer implements CommandLineRunner {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "levelBadges.json is empty or invalid.");
             }
 
-            // 2. DTO -> Entity 변환
             List<LevelBadge> badges = badgeRequests.stream()
                     .map(req -> new LevelBadge(
                             req.levelName(),

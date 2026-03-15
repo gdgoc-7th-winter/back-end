@@ -34,11 +34,15 @@ public class ContributionScoreInitializer implements CommandLineRunner {
         }
 
         try {
-            List<ContributionScore> scores = objectMapper.readValue(
+            List<ContributionScoreData> scores = objectMapper.readValue(
                     resource.getInputStream(),
-                    new TypeReference<List<ContributionScore>>() {}
+                    new TypeReference<List<ContributionScoreData>>() {}
             );
-            for (ContributionScore score : scores) {
+            for (ContributionScoreData data : scores) {
+                ContributionScore score = ContributionScore.builder()
+                        .name(data.name())
+                        .point(data.point())
+                        .build();
                 upsertScore(score);
             }
             log.info("Successfully initialized scores from JSON.");

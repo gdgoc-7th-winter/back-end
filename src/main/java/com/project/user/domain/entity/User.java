@@ -6,21 +6,7 @@ import com.project.user.domain.enums.Interest;
 import com.project.user.domain.enums.TechStack;
 import com.project.user.domain.enums.Track;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Table;
-import jakarta.persistence.Column;
-import jakarta.persistence.Id;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.FetchType;
+import jakarta.persistence.*;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -46,6 +32,10 @@ public class User {
     @Column(name="user_id")
     private Long id;
 
+    // 프로필 사진 S3 url
+    @Column(name = "profile_img_url", columnDefinition = "TEXT")
+    private String profileImgUrl;
+
     @Column(name="email",nullable = false, unique = true)
     private String email;
 
@@ -65,10 +55,6 @@ public class User {
     @Column(name = "track")
     private Track track;
 
-    // 프로필 사진 S3 url
-    @Column(name = "profile_img_url", columnDefinition = "TEXT")
-    private String profileImgUrl;
-
     // 권한 레벨 (Dummy, User, Manager, Admin)
     @Enumerated(EnumType.STRING)
     @Column(name="authority", nullable = false, length = 30)
@@ -77,7 +63,7 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserContribution> userContributions = new ArrayList<>();
 
-    @Column(name = "total_point")
+    @Column(name = "total_point", nullable = false)
     private int totalPoint = 0;
 
     // 유저 레벨 뱃지 (객체 매핑)
@@ -116,7 +102,11 @@ public class User {
     }
 
     public boolean needsInitialSetup() {
-        return this.authority == Authority.DUMMY;
+        return this.getDepartment() == null || this.getTrack() == null || this.getStudentId() == null;
+    }
+
+    public void grantUserAuthority() {
+        this.authority = Authority.USER;
     }
 
     public void updateProfile(String nickname, String studentId, String department,
@@ -132,8 +122,6 @@ public class User {
 
         this.interests.clear();
         if (interests != null) this.interests.addAll(interests);
-
-        this.authority = Authority.USER;
     }
 
     public void initializeLevelBadge(LevelBadge initialBadge) {

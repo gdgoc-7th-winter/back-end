@@ -13,6 +13,7 @@ import com.project.user.application.dto.response.ProfileResponse;
 import com.project.user.application.service.UserService;
 import com.project.user.domain.entity.LevelBadge;
 import com.project.user.domain.entity.User;
+import com.project.user.domain.enums.Authority;
 import com.project.user.domain.repository.EmailAuthRepository;
 import com.project.user.domain.repository.LevelBadgeRepository;
 import com.project.user.domain.repository.UserRepository;
@@ -133,15 +134,17 @@ public class UserServiceImpl implements UserService {
                 request.getNickname(), request.getStudentId(), request.getDepartment(), request.getTrack(),
                 request.getProfilePicture(), request.getTechStacks(), request.getInterests()
         );
-        log.info("이벤트 발행 직전: userId={}, profileId={}", user.getId(), user.getId());
+        user.grantUserAuthority();
         eventPublisher.publishEvent(new UserPromotionEvent(user.getId(), user.getId()));
     }
 
     @Override
     @Transactional
     public void updateSecurityContext(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         Authentication newAuth = new UsernamePasswordAuthenticationToken(
-                id, null, List.of(new SimpleGrantedAuthority("USER")));
+                id, null, List.of(new SimpleGrantedAuthority(user.getAuthority().name())));
         SecurityContextHolder.getContext().setAuthentication(newAuth);
     }
 
