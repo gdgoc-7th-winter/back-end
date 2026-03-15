@@ -47,14 +47,15 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
     @Mock
     private PasswordEncoder passwordEncoder;
+
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private UserServiceImpl userService;
-
     private MockHttpSession session;
 
     @BeforeEach
