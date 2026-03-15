@@ -2,6 +2,7 @@ package com.project.post.presentation.controller;
 
 import com.project.post.presentation.swagger.PostCommentControllerDocs;
 import com.project.post.application.dto.LikeScrapToggleResponse;
+import com.project.post.application.dto.PostCommentCreateResponse;
 import com.project.post.application.dto.PostCommentRequest;
 import com.project.post.application.dto.PostCommentResponse;
 import com.project.global.annotation.CurrentUser;
@@ -10,9 +11,11 @@ import com.project.post.application.service.PostCommentLikeService;
 import com.project.post.application.service.PostCommentQueryService;
 import com.project.user.domain.entity.User;
 import com.project.global.response.CommonResponse;
+import com.project.global.response.PageResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -42,21 +45,21 @@ public class PostCommentController implements PostCommentControllerDocs {
 
     @Override
     @PostMapping("/posts/{postId}/comments")
-    public ResponseEntity<CommonResponse<Long>> createComment(
+    public ResponseEntity<CommonResponse<PostCommentCreateResponse>> createComment(
             @PathVariable @Positive @NonNull Long postId,
             @RequestBody @Valid @NonNull PostCommentRequest request,
             @CurrentUser @NonNull User user) {
         Long commentId = postCommentCommandService.create(postId, request, user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.ok(commentId));
+        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.ok(new PostCommentCreateResponse(commentId)));
     }
 
     @Override
     @GetMapping("/posts/{postId}/comments")
-    public ResponseEntity<CommonResponse<Page<PostCommentResponse>>> getComments(
+    public ResponseEntity<CommonResponse<PageResponse<PostCommentResponse>>> getComments(
             @PathVariable @Positive @NonNull Long postId,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.ASC) @NonNull Pageable pageable) {
+            @ParameterObject @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.ASC) @NonNull Pageable pageable) {
         Page<PostCommentResponse> comments = postCommentQueryService.getComments(postId, pageable);
-        return ResponseEntity.ok(CommonResponse.ok(comments));
+        return ResponseEntity.ok(CommonResponse.ok(PageResponse.of(comments)));
     }
 
     @Override

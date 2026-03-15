@@ -48,7 +48,7 @@ public class SecurityConfig {
                             response.setContentType("application/json;charset=UTF-8");
                             try{
                                 response.setStatus(HttpServletResponse.SC_OK);
-                                String jsonResponse = "{\"success\": true, \"data\": \"로그아웃 되었습니다.\", \"message\": null}";
+                                String jsonResponse = "{\"success\": true, \"data\": null}";
                                 response.getWriter().write(jsonResponse);
                             } catch (IOException e) {
                                 LOG.error("Logout success response writing failed", e); throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "서버 내부에 문제가 있습니다. 관리팀에 문의하세요.");
@@ -66,8 +66,12 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/users/signup","/api/users/login","/api/users/logout").permitAll()
-                        // 비로그인 허용: 메인 홈 게시글 목록 조회만
+                        // 비로그인 허용: 게시글 목록/상세 조회
                         .requestMatchers(HttpMethod.GET, "/api/v1/boards/*/posts").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/lectures").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/lectures/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/promotions").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/promotions/{postId}").permitAll()
                         // 그 외 모든 요청은 인증 필요 (Redis 세션 기반 인증 적용 예정)
                         .anyRequest().authenticated()
                 )

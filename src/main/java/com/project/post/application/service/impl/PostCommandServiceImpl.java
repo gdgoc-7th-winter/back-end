@@ -18,8 +18,6 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
-
 @Service
 @RequiredArgsConstructor
 public class PostCommandServiceImpl implements PostCommandService {
@@ -31,7 +29,7 @@ public class PostCommandServiceImpl implements PostCommandService {
 
     @Override
     @Transactional
-    public Long create(@NonNull String boardCode, @NonNull PostCreateRequest request, @NonNull User author) {
+    public Post create(@NonNull String boardCode, @NonNull PostCreateRequest request, @NonNull User author) {
         Board board = boardRepository.findByCodeAndActiveTrue(boardCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시판을 찾을 수 없습니다."));
 
@@ -43,14 +41,12 @@ public class PostCommandServiceImpl implements PostCommandService {
                 .thumbnailUrl(request.thumbnailUrl())
                 .build();
 
-        Post savedPost = postRepository.save(Objects.requireNonNull(post));
+        Post savedPost = postRepository.save(post);
+        postTagService.replaceTags(savedPost, request.tagNames());
+        postAttachmentService.replaceAttachments(savedPost, request.attachments());
+        postRepository.flush();
 
-        postTagService.replaceTags(Objects.requireNonNull(savedPost), request.tagNames());
-        postAttachmentService.replaceAttachments(Objects.requireNonNull(savedPost), request.attachments());
-
-        postRepository.saveAndFlush(savedPost);
-
-        return Objects.requireNonNull(savedPost.getId());
+        return savedPost;
     }
 
     @Override
@@ -71,7 +67,7 @@ public class PostCommandServiceImpl implements PostCommandService {
 
         postTagService.replaceTags(post, request.tagNames());
         postAttachmentService.replaceAttachments(post, request.attachments());
-        postRepository.saveAndFlush(post);
+        postRepository.flush();
     }
 
     @Override

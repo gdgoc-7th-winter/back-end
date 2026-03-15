@@ -17,6 +17,10 @@ import lombok.experimental.SuperBuilder;
 
 import java.util.Objects;
 
+/**
+ * 댓글. 게시글과 달리 @SQLRestriction 없음.
+ * 삭제 시 content null로 마스킹해서 목록에는 남지만 원문은 안 보임.
+ */
 @Entity
 @Table(name = "post_comments")
 @Getter
@@ -48,6 +52,7 @@ public class PostComment extends SoftDeleteEntity {
     @lombok.Builder.Default
     private long likeCount = 0;
 
+    /** 삭제 시 content null 처리 (원문 비노출). softDelete는 서비스에서만 호출. */
     @Override
     public void softDelete() {
         super.softDelete();

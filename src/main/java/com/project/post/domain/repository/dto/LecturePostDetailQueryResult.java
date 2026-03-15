@@ -1,0 +1,26 @@
+package com.project.post.domain.repository.dto;
+
+import com.project.post.domain.enums.Campus;
+
+import java.time.Instant;
+import java.util.List;
+
+public record LecturePostDetailQueryResult(
+        Long postId,
+        String title,
+        String content,
+        String thumbnailUrl,
+        String authorNickname,
+        Long authorId,
+        String department,
+        Campus campus,
+        long viewCount,
+        long likeCount,
+        long scrapCount,
+        long commentCount,
+        Instant createdAt,
+        Instant updatedAt,
+        List<String> tagNames,
+        List<PostDetailQueryResult.AttachmentDto> attachments
+) {
+}
