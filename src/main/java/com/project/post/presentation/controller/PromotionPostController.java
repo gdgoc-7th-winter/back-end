@@ -2,12 +2,13 @@ package com.project.post.presentation.controller;
 
 import com.project.global.annotation.CurrentUser;
 import com.project.global.response.CommonResponse;
+import com.project.global.response.PageResponse;
 
 import com.project.post.application.dto.PromotionPost.PromotionPostCreateRequest;
-import com.project.post.application.dto.PromotionPost.PromotionPostCreateResponse;
 import com.project.post.application.dto.PromotionPost.PromotionPostDetailResponse;
 import com.project.post.application.dto.PromotionPost.PromotionPostListResponse;
 import com.project.post.application.dto.PromotionPost.PromotionPostUpdateRequest;
+import com.project.post.application.dto.PostCreateResponse;
 import com.project.post.application.service.PromotionPostCommandService;
 import com.project.post.application.service.PromotionPostQueryService;
 import com.project.post.domain.enums.PromotionCategory;
@@ -15,6 +16,7 @@ import com.project.post.presentation.swagger.PromotionPostControllerDocs;
 import com.project.user.domain.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -46,13 +48,13 @@ public class PromotionPostController implements PromotionPostControllerDocs {
 
     @Override
     @PostMapping("/promotions")
-    public ResponseEntity<CommonResponse<PromotionPostCreateResponse>> create(
+    public ResponseEntity<CommonResponse<PostCreateResponse>> create(
             @RequestBody @Valid @NonNull PromotionPostCreateRequest request,
             @CurrentUser @NonNull User user
     ) {
         Long postId = promotionPostCommandService.create(request, user);
 
-        PromotionPostCreateResponse response = new PromotionPostCreateResponse(postId, "게시글이 성공적으로 등록되었습니다.");
+        PostCreateResponse response = new PostCreateResponse(postId);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(CommonResponse.ok(response));
@@ -69,32 +71,32 @@ public class PromotionPostController implements PromotionPostControllerDocs {
 
     @Override
     @GetMapping("/promotions")
-    public ResponseEntity<CommonResponse<Page<PromotionPostListResponse>>> getList(
+    public ResponseEntity<CommonResponse<PageResponse<PromotionPostListResponse>>> getList(
             @RequestParam(required = false) PromotionCategory category,
-            @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
+            @ParameterObject @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) @NonNull Pageable pageable
     ) {
         Page<PromotionPostListResponse> list = promotionPostQueryService.getList(category, pageable);
-        return ResponseEntity.ok(CommonResponse.ok(list));
+        return ResponseEntity.ok(CommonResponse.ok(PageResponse.of(list)));
     }
 
     @Override
-    @PatchMapping("/promotions/{id}")
+    @PatchMapping("/promotions/{postId}")
     public ResponseEntity<CommonResponse<Void>> update(
-            @PathVariable @Positive @NonNull Long id,
+            @PathVariable @Positive @NonNull Long postId,
             @RequestBody @Valid @NonNull PromotionPostUpdateRequest request,
             @CurrentUser @NonNull User user
     ) {
-        promotionPostCommandService.update(id, request, user);
+        promotionPostCommandService.update(postId, request, user);
         return ResponseEntity.ok(CommonResponse.ok());
     }
 
     @Override
-    @DeleteMapping("/promotions/{id}")
+    @DeleteMapping("/promotions/{postId}")
     public ResponseEntity<CommonResponse<Void>> delete(
-            @PathVariable @Positive @NonNull Long id,
+            @PathVariable @Positive @NonNull Long postId,
             @CurrentUser @NonNull User user
     ) {
-        promotionPostCommandService.delete(id, user);
+        promotionPostCommandService.delete(postId, user);
         return ResponseEntity.ok(CommonResponse.ok());
     }
 }

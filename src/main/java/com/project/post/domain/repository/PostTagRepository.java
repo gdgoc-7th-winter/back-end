@@ -11,11 +11,11 @@ import java.util.List;
 
 public interface PostTagRepository extends JpaRepository<PostTag, Long> {
 
-    @EntityGraph(attributePaths = {"tag"})
+    @EntityGraph(attributePaths = {"tag", "post"})
     @Query("SELECT pt FROM PostTag pt WHERE pt.post.id = :postId")
     List<PostTag> findByPostId(@Param("postId") Long postId);
 
-    @EntityGraph(attributePaths = {"tag"})
+    @EntityGraph(attributePaths = {"tag", "post"})
     @Query("SELECT pt FROM PostTag pt WHERE pt.post.id IN :postIds")
     List<PostTag> findByPostIdIn(@Param("postIds") List<Long> postIds);
 
