@@ -69,7 +69,6 @@ public class SecurityConfig {
                         // 비로그인 허용: 게시글 목록/상세 조회
                         .requestMatchers(HttpMethod.GET, "/api/v1/boards/*/posts").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/lectures").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/lectures/metadata").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/lectures/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/promotions").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/promotions/{postId}").permitAll()
