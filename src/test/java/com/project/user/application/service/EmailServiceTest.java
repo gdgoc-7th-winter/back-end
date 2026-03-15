@@ -1,6 +1,6 @@
-package com.project.user;
+package com.project.user.application.service;
 
-import com.project.user.application.service.EmailService;
+import com.project.user.application.service.impl.EmailServiceImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,7 +22,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 class EmailServiceTest {
 
     @Autowired
-    private EmailService emailService;
+    private EmailServiceImpl emailService;
 
     @MockitoBean
     private JavaMailSender mailSender;
