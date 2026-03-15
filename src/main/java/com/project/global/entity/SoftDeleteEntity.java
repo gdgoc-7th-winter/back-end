@@ -24,8 +24,4 @@ public abstract class SoftDeleteEntity extends AuditEntity {
     public boolean isDeleted() {
         return deletedAt != null;
     }
-
-    public void restore() {
-        this.deletedAt = null;
-    }
 }

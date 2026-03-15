@@ -1,8 +1,9 @@
 package com.project.global.interceptor;
 
+import com.project.global.error.BusinessException;
+import com.project.global.error.ErrorCode;
 import com.project.user.application.dto.UserSession;
 import com.project.user.domain.enums.Authority;
-import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @ExtendWith(MockitoExtension.class)
 class OnboardingInterceptorTest {
@@ -32,7 +34,7 @@ class OnboardingInterceptorTest {
     }
 
     @Test
-    @DisplayName("DUMMY 권한 유저가 일반 API 접근 시 차단(false)되고 403 응답을 반환해야 한다")
+    @DisplayName("DUMMY 권한 유저가 일반 API 접근 시 ACCESS_DENIED 예외를 던진다")
     void preHandleBlockDummyUser() throws Exception {
         // given
         UserSession dummySession = UserSession.builder()
@@ -45,13 +47,11 @@ class OnboardingInterceptorTest {
         request.setRequestURI("/api/users/me");
         request.getSession().setAttribute("LOGIN_USER", dummySession);
 
-        // when
-        boolean result = onboardingInterceptor.preHandle(request, response, handler);
-
-        // then
-        assertThat(result).isFalse();
-        assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_FORBIDDEN);
-        assertThat(response.getContentAsString()).contains("프로필 설정을 먼저 완료해주세요.");
+        // when & then
+        assertThatThrownBy(() -> onboardingInterceptor.preHandle(request, response, handler))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ACCESS_DENIED);
     }
 
     @Test

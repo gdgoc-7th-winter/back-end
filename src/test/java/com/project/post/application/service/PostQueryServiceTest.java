@@ -5,13 +5,9 @@ import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.PostDetailResponse;
 import com.project.post.application.dto.PostListResponse;
 import com.project.post.domain.entity.Board;
-import com.project.post.domain.entity.Post;
-import com.project.post.domain.entity.PostTag;
-import com.project.post.domain.entity.Tag;
 import com.project.post.application.service.impl.PostQueryServiceImpl;
 import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.PostRepository;
-import com.project.post.domain.repository.PostTagRepository;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
 import com.project.post.domain.repository.dto.PostListQueryResult;
 import com.project.post.domain.repository.dto.PostSearchCondition;
@@ -48,7 +44,7 @@ class PostQueryServiceTest {
     private PostRepository postRepository;
 
     @Mock
-    private PostTagRepository postTagRepository;
+    private PostTagQueryService postTagQueryService;
 
     @InjectMocks
     private PostQueryServiceImpl postQueryService;
@@ -56,14 +52,25 @@ class PostQueryServiceTest {
     @Test
     @DisplayName("게시판이 없으면 목록 조회는 예외를 던진다")
     void getListThrowsWhenBoardMissing() {
-        when(boardRepository.findByCodeAndActiveTrue("general")).thenReturn(Optional.empty());
+        when(boardRepository.findByCodeAndActiveTrue("GENERAL")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postQueryService.getList("general", PageRequest.of(0, 10), null, null, null))
+        assertThatThrownBy(() -> postQueryService.getList("GENERAL", PageRequest.of(0, 10), null, null, null))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
 
         verifyNoInteractions(postRepository);
+    }
+
+    @Test
+    @DisplayName("삭제된 게시글은 상세 조회 시 RESOURCE_NOT_FOUND (findPostDetail은 deleted_at 제외)")
+    void getDetailThrowsWhenPostDeletedOrMissing() {
+        when(postRepository.findPostDetail(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> postQueryService.getDetail(1L))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
     }
 
     @Test
@@ -109,26 +116,18 @@ class PostQueryServiceTest {
     @Test
     @DisplayName("목록 조회는 레포지토리 결과를 Response DTO로 변환하여 반환한다")
     void getListReturnsRepositoryPage() {
-        when(boardRepository.findByCodeAndActiveTrue("general")).thenReturn(Optional.of(Board.of("general", "자유게시판")));
+        when(boardRepository.findByCodeAndActiveTrue("GENERAL")).thenReturn(Optional.of(Board.of("GENERAL", "자유/정보 게시판")));
 
         Page<PostListQueryResult> queryPage = new PageImpl<>(Objects.requireNonNull(List.of(
                 new PostListQueryResult(1L, "t", "thumb", "nick", 0, 0, 0, 0, Instant.now())
         )));
         PostSearchCondition condition = new PostSearchCondition(null, null, PostListSort.LATEST);
         Pageable pageable = PageRequest.of(0, 10);
-        when(postRepository.findPostList("general", pageable, condition)).thenReturn(queryPage);
-        Post post = Post.builder()
-                .id(1L)
-                .board(Board.of("general", "자유게시판"))
-                .author(new com.project.user.domain.entity.User("user@test.com", "pw"))
-                .title("t")
-                .content("content")
-                .build();
-        when(postTagRepository.findByPostIdIn(List.of(1L))).thenReturn(List.of(
-                new PostTag(post, new Tag("java"))
-        ));
+        when(postRepository.findPostList("GENERAL", pageable, condition)).thenReturn(queryPage);
+        when(postTagQueryService.getTagNamesByPostIds(List.of(1L))).thenReturn(
+                java.util.Map.of(1L, List.of("java")));
 
-        Page<PostListResponse> result = postQueryService.getList("general", PageRequest.of(0, 10), null, null, null);
+        Page<PostListResponse> result = postQueryService.getList("GENERAL", PageRequest.of(0, 10), null, null, null);
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).postId()).isEqualTo(1L);
