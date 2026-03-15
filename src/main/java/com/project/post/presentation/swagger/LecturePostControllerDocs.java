@@ -2,7 +2,6 @@ package com.project.post.presentation.swagger;
 
 import com.project.global.response.CommonResponse;
 import com.project.global.response.PageResponse;
-import com.project.post.application.dto.LecturePost.LecturePostBoardMetadataResponse;
 import com.project.post.application.dto.LecturePost.LecturePostCreateRequest;
 import com.project.post.application.dto.LecturePost.LecturePostDetailResponse;
 import com.project.post.application.dto.LecturePost.LecturePostListResponse;
@@ -76,8 +75,4 @@ public interface LecturePostControllerDocs {
             @Parameter(description = "게시글 ID") @Positive @NonNull Long id,
             @Parameter(hidden = true) @NonNull User user
     );
-
-    @Operation(summary = "강의/수업 게시판 메타데이터 조회", description = "게시판 코드 메타정보를 조회합니다.")
-    @ApiResponse(responseCode = "200", description = "성공")
-    ResponseEntity<CommonResponse<LecturePostBoardMetadataResponse>> getBoardMetadata();
 }

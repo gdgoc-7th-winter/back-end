@@ -1,6 +1,5 @@
 package com.project.post.application.service;
 
-import com.project.post.application.dto.LecturePost.LecturePostBoardMetadataResponse;
 import com.project.post.application.dto.LecturePost.LecturePostDetailResponse;
 import com.project.post.application.dto.LecturePost.LecturePostListResponse;
 import com.project.post.domain.enums.Campus;
@@ -21,6 +20,4 @@ public interface LecturePostQueryService {
             String order);
 
     LecturePostDetailResponse getDetail(@NonNull Long postId);
-
-    LecturePostBoardMetadataResponse getBoardMetadata();
 }
