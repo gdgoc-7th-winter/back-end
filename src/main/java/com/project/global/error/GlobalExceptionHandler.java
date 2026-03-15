@@ -7,6 +7,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.List;
+
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -25,10 +27,23 @@ public class GlobalExceptionHandler {
             MethodArgumentNotValidException e
     ) {
         log.warn("Validation failed: {}", e.getMessage());
-        String message = e.getBindingResult().getAllErrors().get(0).getDefaultMessage();
+        List<ErrorResponse.ValidationError> errors = e.getBindingResult().getFieldErrors().stream()
+                .map(fe -> new ErrorResponse.ValidationError(fe.getField(), fe.getDefaultMessage()))
+                .toList();
+        String message = e.getBindingResult().getAllErrors().isEmpty()
+                ? ErrorCode.INVALID_INPUT.getMessage()
+                : e.getBindingResult().getAllErrors().get(0).getDefaultMessage();
         return ResponseEntity
                 .badRequest()
-                .body(ErrorResponse.of(ErrorCode.INVALID_INPUT, message));
+                .body(ErrorResponse.validationError(ErrorCode.INVALID_INPUT.getCode(), message, errors));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    protected ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException e) {
+        log.warn("IllegalArgumentException: {}", e.getMessage());
+        return ResponseEntity
+                .badRequest()
+                .body(ErrorResponse.of(ErrorCode.INVALID_INPUT, e.getMessage()));
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
