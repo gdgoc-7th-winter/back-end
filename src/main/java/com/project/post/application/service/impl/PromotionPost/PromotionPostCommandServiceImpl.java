@@ -9,7 +9,6 @@ import com.project.post.application.service.PostCommandService;
 import com.project.post.application.service.PromotionPostCommandService;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.PromotionPost;
-import com.project.post.domain.repository.PostRepository;
 import com.project.post.domain.repository.PromotionPostRepository;
 import com.project.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +23,6 @@ public class PromotionPostCommandServiceImpl implements PromotionPostCommandServ
     private static final String PROMOTION_BOARD_CODE = "PROMOTION";
 
     private final PostCommandService postCommandService;
-    private final PostRepository postRepository;
     private final PromotionPostRepository promotionPostRepository;
 
     @Override
@@ -38,10 +36,7 @@ public class PromotionPostCommandServiceImpl implements PromotionPostCommandServ
                 request.post().attachments()
         );
 
-        Long postId = postCommandService.create(PROMOTION_BOARD_CODE, postCreateRequest, author);
-
-        Post post = postRepository.findActiveById(postId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
+        Post post = postCommandService.create(PROMOTION_BOARD_CODE, postCreateRequest, author);
 
         PromotionPost promotionPost = PromotionPost.builder()
                 .post(post)
@@ -50,7 +45,7 @@ public class PromotionPostCommandServiceImpl implements PromotionPostCommandServ
 
         promotionPostRepository.save(promotionPost);
 
-        return postId;
+        return post.getId();
     }
 
     @Override

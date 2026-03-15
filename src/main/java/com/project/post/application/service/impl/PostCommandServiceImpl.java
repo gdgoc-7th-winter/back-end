@@ -29,7 +29,7 @@ public class PostCommandServiceImpl implements PostCommandService {
 
     @Override
     @Transactional
-    public Long create(@NonNull String boardCode, @NonNull PostCreateRequest request, @NonNull User author) {
+    public Post create(@NonNull String boardCode, @NonNull PostCreateRequest request, @NonNull User author) {
         Board board = boardRepository.findByCodeAndActiveTrue(boardCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시판을 찾을 수 없습니다."));
 
@@ -46,7 +46,7 @@ public class PostCommandServiceImpl implements PostCommandService {
         postAttachmentService.replaceAttachments(savedPost, request.attachments());
         postRepository.flush();
 
-        return savedPost.getId();
+        return savedPost;
     }
 
     @Override
