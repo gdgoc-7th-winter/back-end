@@ -14,7 +14,7 @@ import java.util.Optional;
 
 public interface PromotionPostRepository extends JpaRepository<PromotionPost, Long> {
 
-    @Query("SELECT pp FROM PromotionPost pp JOIN FETCH pp.post p WHERE pp.id = :postId AND pp.deletedAt IS NULL")
+    @Query("SELECT pp FROM PromotionPost pp JOIN FETCH pp.post p WHERE pp.id = :postId")
     Optional<PromotionPost> findActiveById(@Param("postId") Long postId);
 
     @Query("SELECT pp FROM PromotionPost pp WHERE pp.category = :category")

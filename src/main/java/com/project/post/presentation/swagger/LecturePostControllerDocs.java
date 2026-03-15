@@ -48,7 +48,7 @@ public interface LecturePostControllerDocs {
     @Operation(summary = "강의/수업 게시글 상세 조회", description = "게시글 ID로 강의/수업 게시글 상세 정보를 조회합니다.")
     @ApiResponse(responseCode = "200", description = "성공")
     ResponseEntity<CommonResponse<LecturePostDetailResponse>> getDetail(
-            @Parameter(description = "게시글 ID") @Positive @NonNull Long id
+            @Parameter(description = "게시글 ID") @Positive @NonNull Long postId
     );
 
     @Operation(summary = "강의/수업 게시글 작성", description = "새 강의/수업 게시글을 작성합니다. 학과와 캠퍼스는 필수 입력입니다.")
@@ -63,7 +63,7 @@ public interface LecturePostControllerDocs {
     @ApiResponse(responseCode = "200", description = "성공")
     @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
     ResponseEntity<CommonResponse<Void>> update(
-            @Parameter(description = "게시글 ID") @Positive @NonNull Long id,
+            @Parameter(description = "게시글 ID") @Positive @NonNull Long postId,
             @RequestBody(description = "강의/수업 게시글 수정 요청") @Valid @NonNull LecturePostUpdateRequest request,
             @Parameter(hidden = true) @NonNull User user
     );
@@ -72,7 +72,7 @@ public interface LecturePostControllerDocs {
     @ApiResponse(responseCode = "200", description = "성공")
     @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(schema = @Schema(hidden = true)))
     ResponseEntity<CommonResponse<Void>> delete(
-            @Parameter(description = "게시글 ID") @Positive @NonNull Long id,
+            @Parameter(description = "게시글 ID") @Positive @NonNull Long postId,
             @Parameter(hidden = true) @NonNull User user
     );
 }

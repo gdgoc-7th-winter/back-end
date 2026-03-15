@@ -12,7 +12,6 @@ import com.project.post.domain.entity.LecturePost;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.enums.Campus;
 import com.project.post.domain.repository.LecturePostRepository;
-import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,9 +38,6 @@ class LecturePostCommandServiceTest {
 
     @Mock
     private PostCommandService postCommandService;
-
-    @Mock
-    private PostRepository postRepository;
 
     @Mock
     private LecturePostRepository lecturePostRepository;
@@ -74,8 +70,7 @@ class LecturePostCommandServiceTest {
         User author = buildUser(1L);
         Post post = buildPost(1L, board, author);
 
-        when(postCommandService.create(eq("LECTURE"), any(PostCreateRequest.class), eq(author))).thenReturn(1L);
-        when(postRepository.findActiveById(1L)).thenReturn(Optional.of(post));
+        when(postCommandService.create(eq("LECTURE"), any(PostCreateRequest.class), eq(author))).thenReturn(post);
 
         LecturePostCreateRequest request = new LecturePostCreateRequest(
                 "알고리즘 과제 질문", "동적 프로그래밍 문제입니다.",

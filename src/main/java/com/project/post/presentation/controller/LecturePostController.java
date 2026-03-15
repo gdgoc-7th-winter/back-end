@@ -62,10 +62,10 @@ public class LecturePostController implements LecturePostControllerDocs {
     }
 
     @Override
-    @GetMapping("/{id}")
+    @GetMapping("/{postId}")
     public ResponseEntity<CommonResponse<LecturePostDetailResponse>> getDetail(
-            @PathVariable @Positive @NonNull Long id) {
-        LecturePostDetailResponse detail = lecturePostQueryService.getDetail(id);
+            @PathVariable @Positive @NonNull Long postId) {
+        LecturePostDetailResponse detail = lecturePostQueryService.getDetail(postId);
         return ResponseEntity.ok(CommonResponse.ok(detail));
     }
 
@@ -80,21 +80,21 @@ public class LecturePostController implements LecturePostControllerDocs {
     }
 
     @Override
-    @PatchMapping("/{id}")
+    @PatchMapping("/{postId}")
     public ResponseEntity<CommonResponse<Void>> update(
-            @PathVariable @Positive @NonNull Long id,
+            @PathVariable @Positive @NonNull Long postId,
             @RequestBody @Valid @NonNull LecturePostUpdateRequest request,
             @CurrentUser @NonNull User user) {
-        lecturePostCommandService.update(id, request, user);
+        lecturePostCommandService.update(postId, request, user);
         return ResponseEntity.ok(CommonResponse.ok());
     }
 
     @Override
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{postId}")
     public ResponseEntity<CommonResponse<Void>> delete(
-            @PathVariable @Positive @NonNull Long id,
+            @PathVariable @Positive @NonNull Long postId,
             @CurrentUser @NonNull User user) {
-        lecturePostCommandService.delete(id, user);
+        lecturePostCommandService.delete(postId, user);
         return ResponseEntity.ok(CommonResponse.ok());
     }
 }

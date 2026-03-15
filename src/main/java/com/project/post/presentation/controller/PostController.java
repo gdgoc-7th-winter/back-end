@@ -82,11 +82,8 @@ public class PostController implements PostControllerDocs {
             @PathVariable @NotBlank @NonNull String code,
             @RequestBody @Valid @NonNull PostCreateRequest request,
             @CurrentUser @NonNull User user) {
-        Long postId = postCommandService.create(
-                code,
-                request,
-                user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.ok(new PostCreateResponse(postId)));
+        var post = postCommandService.create(code, request, user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.ok(new PostCreateResponse(post.getId())));
     }
 
     @Override

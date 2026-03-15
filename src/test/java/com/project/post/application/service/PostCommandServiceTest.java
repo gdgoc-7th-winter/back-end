@@ -79,9 +79,9 @@ class PostCommandServiceTest {
                 List.of(new com.project.post.application.dto.PostAttachmentRequest("url", "a.txt", "text/plain", 10L, 0))
         );
 
-        Long result = postCommandService.create("GENERAL", request, author);
+        Post result = postCommandService.create("GENERAL", request, author);
 
-        assertThat(result).isEqualTo(1L);
+        assertThat(result.getId()).isEqualTo(1L);
 
         ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
         verify(postRepository).save(postCaptor.capture());
