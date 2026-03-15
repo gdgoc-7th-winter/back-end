@@ -1,14 +1,13 @@
-package com.project.user;
+package com.project.user.application.service;
 
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.user.application.dto.UserSession;
-import com.project.user.application.dto.request.UserPromotionEvent;
-import com.project.user.application.service.UserService;
+import com.project.global.event.Impl.UserPromotionEvent;
+import com.project.user.application.service.impl.UserServiceImpl;
 import com.project.user.domain.entity.User;
 import com.project.user.domain.enums.Authority;
 import com.project.user.domain.enums.Track;
-import com.project.user.domain.repository.EmailAuthRepository;
 import com.project.user.domain.repository.UserRepository;
 import com.project.user.presentation.dto.request.LoginRequest;
 import com.project.user.presentation.dto.request.ProfileUpdateRequest;
@@ -23,7 +22,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.core.Authentication;
@@ -49,18 +47,15 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
-    @Mock
-    private EmailAuthRepository emailAuthRepository;
+
     @Mock
     private PasswordEncoder passwordEncoder;
-    @Mock
-    private RedisTemplate<String, Object> redisTemplate;
+
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
-    private UserService userService;
-
+    private UserServiceImpl userService;
     private MockHttpSession session;
 
     @BeforeEach
@@ -124,10 +119,10 @@ class UserServiceTest {
                 .userId(1L).email(email).authority(Authority.DUMMY).needsProfile(true).build();
         session.setAttribute("LOGIN_USER", oldSession);
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
 
         // when
-        userService.completeInitialProfile(email, request, session);
+        userService.completeInitialProfile(user.getId(), request, session);
 
         // then
         // 1. 엔티티 상태 변경 확인
@@ -135,7 +130,6 @@ class UserServiceTest {
         verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
 
         UserPromotionEvent publishedEvent = eventCaptor.getValue();
-        assertThat(publishedEvent.email()).isEqualTo(email);
         assertThat(publishedEvent.userId()).isEqualTo(user.getId());
     }
 
@@ -154,11 +148,13 @@ class UserServiceTest {
     }
 
     private ProfileUpdateRequest createProfileUpdateRequest() {
+
         return ProfileUpdateRequest.builder()
                 .nickname("닉네임")
                 .studentId("202001234")
                 .department("컴퓨터공학")
                 .track(Track.BACKEND)
                 .build();
+
     }
 }

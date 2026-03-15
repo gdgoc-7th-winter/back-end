@@ -74,6 +74,4 @@ public class RedisEmailAuthRepository implements EmailAuthRepository {
         redisTemplate.delete("REGISTER_SESSION:" + email);
     }
 
-
-
 }

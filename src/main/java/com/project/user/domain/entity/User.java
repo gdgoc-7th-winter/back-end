@@ -1,4 +1,6 @@
 package com.project.user.domain.entity;
+
+import com.project.contribution.domain.entity.UserContribution;
 import com.project.user.domain.enums.Authority;
 import com.project.user.domain.enums.Interest;
 import com.project.user.domain.enums.TechStack;
@@ -6,25 +8,32 @@ import com.project.user.domain.enums.Track;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Table;
 import jakarta.persistence.Id;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.ElementCollection;
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -37,6 +46,10 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="user_id")
     private Long id;
+
+    // 프로필 사진 S3 url
+    @Column(name = "profile_img_url", columnDefinition = "TEXT")
+    private String profileImgUrl;
 
     @Column(name="email",nullable = false, unique = true)
     private String email;
@@ -53,22 +66,25 @@ public class User {
     @Column(name = "department", length = 50)
     private String department;
 
-
     @Enumerated(EnumType.STRING)
     @Column(name = "track")
     private Track track;
-
-    @Column(name = "user_badge", nullable = false)
-    private String userBadge = "DUMMY";
-
-    // 프로필 사진 S3 url
-    @Column(name = "profile_img_url", columnDefinition = "TEXT")
-    private String profileImgUrl;
 
     // 권한 레벨 (Dummy, User, Manager, Admin)
     @Enumerated(EnumType.STRING)
     @Column(name="authority", nullable = false, length = 30)
     private Authority authority = Authority.DUMMY;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserContribution> userContributions = new ArrayList<>();
+
+    @Column(name = "total_point", nullable = false)
+    private int totalPoint = 0;
+
+    // 유저 레벨 뱃지 (객체 매핑)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="level_id")
+    private LevelBadge levelBadge;
 
     // 회원가입 시점
     @CreationTimestamp
@@ -101,10 +117,10 @@ public class User {
     }
 
     public boolean needsInitialSetup() {
-        return this.authority == Authority.DUMMY;
+        return this.getDepartment() == null || this.getTrack() == null || this.getStudentId() == null;
     }
 
-    public void promoteToUser() {
+    public void grantUserAuthority() {
         this.authority = Authority.USER;
     }
 
@@ -121,7 +137,25 @@ public class User {
 
         this.interests.clear();
         if (interests != null) this.interests.addAll(interests);
+    }
 
-        this.authority = Authority.USER;
+    public void initializeLevelBadge(LevelBadge initialBadge) {
+        this.levelBadge = initialBadge;
+    }
+
+    public void updatePoint(int point) {
+        this.totalPoint += point;
+    }
+
+    public void updateBadge(LevelBadge newBadge) {
+        if (newBadge == null) {
+            throw new IllegalArgumentException("뱃지 정보가 없습니다!");
+        }
+        this.levelBadge = newBadge;
+    }
+
+    public LevelBadge getLevelBadge() {
+        if (this.levelBadge == null) return null;
+        return this.levelBadge;
     }
 }

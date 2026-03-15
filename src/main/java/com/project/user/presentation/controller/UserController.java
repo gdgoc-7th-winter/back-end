@@ -1,5 +1,6 @@
 package com.project.user.presentation.controller;
 
+import com.project.user.application.service.UserService;
 import com.project.user.presentation.swagger.UserControllerDocs;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
@@ -7,7 +8,6 @@ import com.project.global.response.CommonResponse;
 
 import com.project.user.application.dto.UserSession;
 import com.project.user.application.dto.response.ProfileResponse;
-import com.project.user.application.service.UserService;
 
 import com.project.user.presentation.dto.request.LoginRequest;
 import com.project.user.presentation.dto.request.ProfileUpdateRequest;
@@ -67,7 +67,7 @@ public class UserController implements UserControllerDocs {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND, "세션이 만료되었습니다.");
         }
 
-        userService.completeInitialProfile(user.getEmail(), request, session);
+        userService.completeInitialProfile(user.getUserId(), request, session);
 
         return ResponseEntity.ok(CommonResponse.ok("프로필 설정이 완료되었습니다."));
     }
@@ -81,7 +81,7 @@ public class UserController implements UserControllerDocs {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
 
-        ProfileResponse response = userService.getUserProfile(sessionUser.getEmail());
+        ProfileResponse response = userService.getUserProfile(sessionUser.getUserId());
         return ResponseEntity.ok(CommonResponse.ok(response));
     }
 }

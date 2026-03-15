@@ -3,7 +3,7 @@ package com.project.global.resolver;
 import com.project.global.annotation.CurrentUser;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
-import com.project.user.application.service.UserSessionService;
+import com.project.user.application.service.impl.UserSessionService;
 import com.project.user.domain.entity.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
