@@ -4,7 +4,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.contribution.domain.entity.ContributionScore;
 import com.project.contribution.domain.repository.ContributionScoreRepository;
-import jakarta.transaction.Transactional;
+
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -24,7 +27,6 @@ public class ContributionScoreInitializer implements CommandLineRunner {
     private final ObjectMapper objectMapper;
 
     @Override
-    @Transactional
     public void run(String... args) throws Exception {
         ClassPathResource resource = new ClassPathResource("contributionScores.json");
 
@@ -53,7 +55,8 @@ public class ContributionScoreInitializer implements CommandLineRunner {
         }
     }
 
-    private void upsertScore(ContributionScore incomingScore) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void upsertScore(ContributionScore incomingScore) {
         try {
             scoreRepository.findByName(incomingScore.getName())
                     .ifPresentOrElse(

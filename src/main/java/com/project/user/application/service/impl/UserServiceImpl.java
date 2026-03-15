@@ -9,10 +9,12 @@ import com.project.global.error.ErrorCode;
 
 import com.project.user.application.dto.UserSession;
 import com.project.global.event.Impl.UserPromotionEvent;
+import com.project.user.application.dto.request.UserRegistrationCompletedEvent;
 import com.project.user.application.dto.response.ProfileResponse;
 import com.project.user.application.service.UserService;
 import com.project.user.domain.entity.LevelBadge;
 import com.project.user.domain.entity.User;
+import com.project.user.domain.enums.Authority;
 import com.project.user.domain.repository.EmailAuthRepository;
 import com.project.user.domain.repository.LevelBadgeRepository;
 import com.project.user.domain.repository.UserRepository;
@@ -20,8 +22,6 @@ import com.project.user.presentation.dto.request.LoginRequest;
 import com.project.user.presentation.dto.request.ProfileUpdateRequest;
 import com.project.user.presentation.dto.request.SignUpRequest;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -54,9 +54,6 @@ public class UserServiceImpl implements UserService {
     private final ApplicationEventPublisher eventPublisher;
     private final ContributionScoreRepository contributionScoreRepository;
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
     // 회원가입
     @Override
     @Transactional
@@ -78,8 +75,9 @@ public class UserServiceImpl implements UserService {
             userRepository.save(user);
             LevelBadge initialBadge = levelBadgeRepository.findByPointWithinRange(user.getTotalPoint())
                     .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
             user.initializeLevelBadge(initialBadge);
-            emailAuthRepository.deleteRegisterSession(request.getEmail());
+            eventPublisher.publishEvent(new UserRegistrationCompletedEvent(request.getEmail()));
         } catch (DataIntegrityViolationException e) {
             throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS);
         }
@@ -133,7 +131,9 @@ public class UserServiceImpl implements UserService {
                 request.getNickname(), request.getStudentId(), request.getDepartment(), request.getTrack(),
                 request.getProfilePicture(), request.getTechStacks(), request.getInterests()
         );
-        user.grantUserAuthority();
+        if (user.getAuthority()== Authority.DUMMY){
+            user.grantUserAuthority();
+        }
         eventPublisher.publishEvent(new UserPromotionEvent(user.getId(), user.getId()));
     }
 
@@ -173,7 +173,8 @@ public class UserServiceImpl implements UserService {
                     .build();
             userContributionRepository.save(contribution);
         } catch (DataIntegrityViolationException e) {
-            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS);
+            log.error("Unexpected error during score initialization for: {}", contributionScore.getName() + e.getMessage());
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "작업 실행 중 오류가 발생했습니다. 관리팀에 문의주세요.");
         }
         return user;
     }
