@@ -25,7 +25,7 @@ spring:
   session:
     store-type: redis
     redis:
-      namespace: hufsdev:session
+      namespace: "{hufsdev:session}"
 
 server:
   port: 8080
