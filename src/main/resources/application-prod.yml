@@ -2,6 +2,7 @@
 cors:
   allowed-origins:
     - https://hufs.dev
+    - https://www.hufs.dev
     - http://localhost:5173  # 로컬 개발 시 프로덕션 API 호출용
 
 spring:
