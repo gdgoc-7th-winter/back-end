@@ -110,7 +110,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "scripts,docker-compose.yml"
+          source: "scripts,docker-compose.yml,nginx"
           target: "/opt/REDACTED_DB_PASSWORD/backend/"
 
       - name: Deploy via SSH
@@ -120,6 +120,6 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            mkdir -p /opt/REDACTED_DB_PASSWORD/backend/scripts
+            mkdir -p /opt/REDACTED_DB_PASSWORD/backend/scripts /opt/REDACTED_DB_PASSWORD/backend/nginx/conf.d
             chmod +x /opt/REDACTED_DB_PASSWORD/backend/scripts/deploy.sh
             /opt/REDACTED_DB_PASSWORD/backend/scripts/deploy.sh ${{ github.sha }}
