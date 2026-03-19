@@ -35,6 +35,13 @@ server:
       force: true
   forward-headers-strategy: framework
 
+cloud:
+  aws:
+    s3:
+      region: ap-northeast-2
+      presigned-url-expire-seconds: 600
+      max-file-size-bytes: 5242880
+
 springdoc:
   swagger-ui:
     path: /swagger-ui
