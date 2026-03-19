@@ -17,7 +17,7 @@ import com.project.user.domain.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
@@ -32,20 +32,22 @@ public class FileUploadServiceImpl implements FileUploadService {
     private final CloudFrontProperties cloudFrontProperties;
     private final FileValidationConfig fileValidationConfig;
     private final FileMetadataRepository fileMetadataRepository;
+    private final TransactionTemplate transactionTemplate;
 
     public FileUploadServiceImpl(S3Client s3Client, S3Properties s3Properties,
                                  CloudFrontProperties cloudFrontProperties,
                                  FileValidationConfig fileValidationConfig,
-                                 FileMetadataRepository fileMetadataRepository) {
+                                 FileMetadataRepository fileMetadataRepository,
+                                 TransactionTemplate transactionTemplate) {
         this.s3Client = s3Client;
         this.s3Properties = s3Properties;
         this.cloudFrontProperties = cloudFrontProperties;
         this.fileValidationConfig = fileValidationConfig;
         this.fileMetadataRepository = fileMetadataRepository;
+        this.transactionTemplate = transactionTemplate;
     }
 
     @Override
-    @Transactional
     public FileCompleteResponse completeUpload(FileCompleteRequest request, User uploader) {
         validateContentType(request.contentType());
         validateSize(request.size());
@@ -55,25 +57,26 @@ public class FileUploadServiceImpl implements FileUploadService {
         String bucket = resolveBucket(request.uploadType());
         verifyS3ObjectExists(bucket, request.objectKey(), request.contentType(), request.size());
 
-        FileMetadata saved;
-        try {
-            saved = fileMetadataRepository.findByBucketAndObjectKey(bucket, request.objectKey())
-                    .orElseGet(() -> {
-                        FileMetadata metadata = FileMetadata.of(
-                                bucket,
-                                request.objectKey(),
-                                request.uploadType(),
-                                request.uploadType().getAccessType(),
-                                request.contentType(),
-                                request.size(),
-                                uploader
-                        );
-                        return fileMetadataRepository.save(metadata);
-                    });
-        } catch (DataIntegrityViolationException e) {
-            saved = fileMetadataRepository.findByBucketAndObjectKey(bucket, request.objectKey())
-                    .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR));
-        }
+        FileMetadata saved = transactionTemplate.execute(status -> {
+            try {
+                return fileMetadataRepository.findByBucketAndObjectKey(bucket, request.objectKey())
+                        .orElseGet(() -> {
+                            FileMetadata metadata = FileMetadata.of(
+                                    bucket,
+                                    request.objectKey(),
+                                    request.uploadType(),
+                                    request.uploadType().getAccessType(),
+                                    request.contentType(),
+                                    request.size(),
+                                    uploader
+                            );
+                            return fileMetadataRepository.save(metadata);
+                        });
+            } catch (DataIntegrityViolationException e) {
+                return fileMetadataRepository.findByBucketAndObjectKey(bucket, request.objectKey())
+                        .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR));
+            }
+        });
 
         String resolvedUrl = resolveUrl(request.uploadType().getAccessType(), request.objectKey());
 
