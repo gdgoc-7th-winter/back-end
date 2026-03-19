@@ -64,6 +64,15 @@ management:
     mail:
       enabled: false
 
+cloud:
+  aws:
+    s3:
+      access-key-id: ${S3_AWS_ACCESS_KEY_ID}
+      secret-access-key: ${S3_AWS_SECRET_ACCESS_KEY}
+      bucket-name-public: ${S3_BUCKET_NAME_PUBLIC}
+    cloudfront:
+      domain: ${CLOUDFRONT_DOMAIN:}
+
 logging:
   file:
     path: /app/logs
