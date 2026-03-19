@@ -1,31 +1,69 @@
 # ****************************** #
-# EC2 DOCKER COMPOSE             #
-# Updated At: 26.02.25           #
-# Updated By: Chaehyeon Yeo      #
+# EC2 BLUE-GREEN DOCKER COMPOSE   #
+# Blue: 8080, Green: 8081         #
+# Nginx: 80 (ALB target)          #
 # ****************************** #
 
 services:
-  backend:
-    container_name: REDACTED_DB_PASSWORD-backend
+  backend-blue:
+    container_name: REDACTED_DB_PASSWORD-backend-blue
     image: ${IMAGE_REF:-873135413383.dkr.ecr.ap-northeast-2.amazonaws.com/REDACTED_DB_PASSWORD-backend:latest}
     user: "1000:1000"
-    restart: always
+    restart: "no"
     dns:
       - 172.31.0.2
     ports:
-      - "8080:8080"
+      - "${BLUE_PORT:-8080}:8080"
     env_file:
       - .env-prod
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE:-prod}
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health/liveness"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health/readiness"]
+      interval: 10s
+      timeout: 5s
       retries: 3
       start_period: 90s
     volumes:
-      - ./logs:/app/logs
+      - ./logs/blue:/app/logs
     logging:
       driver: "json-file"
       options:
         max-size: "50m"
         max-file: "3"
+
+  backend-green:
+    container_name: REDACTED_DB_PASSWORD-backend-green
+    image: ${IMAGE_REF:-873135413383.dkr.ecr.ap-northeast-2.amazonaws.com/REDACTED_DB_PASSWORD-backend:latest}
+    user: "1000:1000"
+    restart: "no"
+    dns:
+      - 172.31.0.2
+    ports:
+      - "${GREEN_PORT:-8081}:8080"
+    env_file:
+      - .env-prod
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE:-prod}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health/readiness"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    volumes:
+      - ./logs/green:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  nginx:
+    container_name: REDACTED_DB_PASSWORD-nginx
+    image: nginx:1.25-alpine
+    restart: always
+    network_mode: host
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
