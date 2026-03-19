@@ -110,7 +110,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "scripts,docker-compose.yml"
+          source: "scripts,docker-compose.yml,nginx"
           target: "/opt/hufsdev/backend/"
 
       - name: Deploy via SSH
@@ -120,6 +120,6 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            mkdir -p /opt/hufsdev/backend/scripts
+            mkdir -p /opt/hufsdev/backend/scripts /opt/hufsdev/backend/nginx/conf.d
             chmod +x /opt/hufsdev/backend/scripts/deploy.sh
             /opt/hufsdev/backend/scripts/deploy.sh ${{ github.sha }}
