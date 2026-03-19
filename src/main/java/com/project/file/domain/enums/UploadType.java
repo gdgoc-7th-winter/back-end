@@ -3,8 +3,6 @@ package com.project.file.domain.enums;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-import java.util.Set;
-
 /**
  * 업로드 타입에 따라 accessType, S3 prefix가 자동 결정된다.
  * 추후 private bucket 확장 시 enum 추가만 하면 된다.
@@ -21,14 +19,11 @@ public enum UploadType {
     private final String prefix;
     private final AccessType accessType;
 
-    private static final Set<UploadType> PUBLIC_TYPES = Set.of(PROFILE_IMAGE, POST_IMAGE, ATTACHMENT);
-    private static final Set<UploadType> PRIVATE_TYPES = Set.of(CHAT_IMAGE);
-
     public boolean isPublic() {
-        return PUBLIC_TYPES.contains(this);
+        return this.accessType == AccessType.PUBLIC;
     }
 
     public boolean isPrivate() {
-        return PRIVATE_TYPES.contains(this);
+        return this.accessType == AccessType.PRIVATE;
     }
 }
