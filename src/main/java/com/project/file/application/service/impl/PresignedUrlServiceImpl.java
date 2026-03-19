@@ -21,10 +21,13 @@ import java.util.UUID;
 @Service
 public class PresignedUrlServiceImpl implements PresignedUrlService {
 
+    private final S3Presigner s3Presigner;
     private final S3Properties s3Properties;
     private final FileValidationConfig fileValidationConfig;
 
-    public PresignedUrlServiceImpl(S3Properties s3Properties, FileValidationConfig fileValidationConfig) {
+    public PresignedUrlServiceImpl(S3Presigner s3Presigner, S3Properties s3Properties,
+                                   FileValidationConfig fileValidationConfig) {
+        this.s3Presigner = s3Presigner;
         this.s3Properties = s3Properties;
         this.fileValidationConfig = fileValidationConfig;
     }
@@ -40,13 +43,6 @@ public class PresignedUrlServiceImpl implements PresignedUrlService {
         String objectKey = generateObjectKey(uploadType, contentType, referenceId, uploader.getId());
         String bucket = resolveBucket(uploadType);
 
-        S3Presigner presigner = S3Presigner.builder()
-                .region(software.amazon.awssdk.regions.Region.of(s3Properties.getRegion()))
-                .credentialsProvider(software.amazon.awssdk.auth.credentials.StaticCredentialsProvider.create(
-                        software.amazon.awssdk.auth.credentials.AwsBasicCredentials.create(
-                                s3Properties.getAccessKeyId(), s3Properties.getSecretAccessKey())))
-                .build();
-
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucket)
                 .key(objectKey)
@@ -58,10 +54,8 @@ public class PresignedUrlServiceImpl implements PresignedUrlService {
                 .putObjectRequest(putObjectRequest)
                 .build();
 
-        PresignedPutObjectRequest presignedRequest = presigner.presignPutObject(presignRequest);
+        PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(presignRequest);
         URL uploadUrl = presignedRequest.url();
-
-        presigner.close();
 
         return new PresignedUrlResponse(
                 uploadUrl.toString(),

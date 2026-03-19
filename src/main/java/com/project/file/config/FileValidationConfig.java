@@ -25,8 +25,7 @@ public class FileValidationConfig {
         if (contentType == null) {
             return null;
         }
-        Set<String> extensions = FileConstants.CONTENT_TYPE_TO_EXTENSIONS.get(contentType.toLowerCase());
-        return extensions != null ? extensions.iterator().next() : null;
+        return FileConstants.CONTENT_TYPE_TO_PRIMARY_EXTENSION.get(contentType.toLowerCase());
     }
 
     public Set<String> getAllowedContentTypes() {

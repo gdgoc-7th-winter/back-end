@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,7 +24,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 
 @Entity
-@Table(name = "file_metadata")
+@Table(name = "file_metadata",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"bucket", "object_key"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class FileMetadata {
