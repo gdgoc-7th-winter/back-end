@@ -22,6 +22,17 @@ public final class FileConstants {
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document", Set.of("docx")
     );
 
+    /** contentType → object key 생성 시 사용할 대표 확장자 */
+    public static final Map<String, String> CONTENT_TYPE_TO_PRIMARY_EXTENSION = Map.of(
+            "image/jpeg", "jpg",
+            "image/png", "png",
+            "image/webp", "webp",
+            "image/gif", "gif",
+            "application/pdf", "pdf",
+            "application/msword", "doc",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx"
+    );
+
     public static final long MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 
     public static final int OBJECT_KEY_MIN_PARTS = 3;

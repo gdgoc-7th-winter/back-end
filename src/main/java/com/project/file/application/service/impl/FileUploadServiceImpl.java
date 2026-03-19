@@ -14,6 +14,8 @@ import com.project.file.application.service.FileUploadService;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.user.domain.entity.User;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -21,6 +23,7 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
+@Slf4j
 @Service
 public class FileUploadServiceImpl implements FileUploadService {
 
@@ -46,22 +49,31 @@ public class FileUploadServiceImpl implements FileUploadService {
     public FileCompleteResponse completeUpload(FileCompleteRequest request, User uploader) {
         validateContentType(request.contentType());
         validateSize(request.size());
-        validateObjectKeyPrefix(request.objectKey(), request.uploadType());
+        validateObjectKey(request.objectKey(), request.uploadType(), request.contentType());
         validateUploadType(request.uploadType());
 
         String bucket = resolveBucket(request.uploadType());
         verifyS3ObjectExists(bucket, request.objectKey(), request.contentType(), request.size());
 
-        FileMetadata metadata = FileMetadata.of(
-                bucket,
-                request.objectKey(),
-                request.uploadType(),
-                request.uploadType().getAccessType(),
-                request.contentType(),
-                request.size(),
-                uploader
-        );
-        FileMetadata saved = fileMetadataRepository.save(metadata);
+        FileMetadata saved;
+        try {
+            saved = fileMetadataRepository.findByBucketAndObjectKey(bucket, request.objectKey())
+                    .orElseGet(() -> {
+                        FileMetadata metadata = FileMetadata.of(
+                                bucket,
+                                request.objectKey(),
+                                request.uploadType(),
+                                request.uploadType().getAccessType(),
+                                request.contentType(),
+                                request.size(),
+                                uploader
+                        );
+                        return fileMetadataRepository.save(metadata);
+                    });
+        } catch (DataIntegrityViolationException e) {
+            saved = fileMetadataRepository.findByBucketAndObjectKey(bucket, request.objectKey())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR));
+        }
 
         String resolvedUrl = resolveUrl(request.uploadType().getAccessType(), request.objectKey());
 
@@ -85,7 +97,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         }
     }
 
-    private void validateObjectKeyPrefix(String objectKey, UploadType uploadType) {
+    private void validateObjectKey(String objectKey, UploadType uploadType, String contentType) {
         String expectedPrefix = uploadType.getPrefix() + "/";
         if (!objectKey.startsWith(expectedPrefix)) {
             throw new BusinessException(ErrorCode.INVALID_OBJECT_KEY);
@@ -94,6 +106,18 @@ public class FileUploadServiceImpl implements FileUploadService {
         if (parts.length < FileConstants.OBJECT_KEY_MIN_PARTS) {
             throw new BusinessException(ErrorCode.INVALID_OBJECT_KEY);
         }
+        String extension = extractExtension(objectKey);
+        if (extension == null || !fileValidationConfig.isExtensionAllowedForContentType(contentType, extension)) {
+            throw new BusinessException(ErrorCode.INVALID_OBJECT_KEY);
+        }
+    }
+
+    private String extractExtension(String objectKey) {
+        int lastDot = objectKey.lastIndexOf('.');
+        if (lastDot == -1 || lastDot == objectKey.length() - 1) {
+            return null;
+        }
+        return objectKey.substring(lastDot + 1).toLowerCase();
     }
 
     private void validateUploadType(UploadType uploadType) {
@@ -119,15 +143,16 @@ public class FileUploadServiceImpl implements FileUploadService {
 
             if (expectedContentType != null && response.contentType() != null
                     && !response.contentType().equalsIgnoreCase(expectedContentType)) {
-                throw new BusinessException(ErrorCode.INVALID_OBJECT_KEY);
+                throw new BusinessException(ErrorCode.FILE_METADATA_MISMATCH);
             }
             if (expectedSize != null && response.contentLength() != null
                     && !response.contentLength().equals(expectedSize)) {
-                throw new BusinessException(ErrorCode.INVALID_OBJECT_KEY);
+                throw new BusinessException(ErrorCode.FILE_METADATA_MISMATCH);
             }
         } catch (NoSuchKeyException e) {
             throw new BusinessException(ErrorCode.FILE_NOT_FOUND_IN_S3);
         } catch (S3Exception e) {
+            log.warn("S3 headObject failed: bucket={}, key={}", bucket, objectKey, e);
             throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
