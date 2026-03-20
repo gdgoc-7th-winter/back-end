@@ -22,13 +22,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 
@@ -57,15 +54,6 @@ public class UserController implements UserControllerDocs {
                 .body(CommonResponse.ok("정상 로그인처리 되었습니다."));
     }
 
-    // 소셜로그인 실패 케이스 발생 시 에러코드 get 메소드로 호출
-    @GetMapping("/login")
-    public ResponseEntity<CommonResponse<String>> handleLoginError(
-            @RequestParam(required = false) String error) {
-
-        log.warn("OAuth2 로그인 실패 처리 엔드포인트 호출됨. 에러 코드: {}", error);
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(CommonResponse.error(error));
-    }
 
     @Override
     @PostMapping("/profile-setup")
