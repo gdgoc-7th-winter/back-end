@@ -5,9 +5,9 @@ import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.PostDetailResponse;
 import com.project.post.application.dto.PostListResponse;
 import com.project.post.application.service.PostQueryService;
+import com.project.post.application.service.PostTagQueryService;
+import com.project.post.domain.constants.PostConstants;
 import com.project.post.domain.repository.BoardRepository;
-import com.project.post.domain.entity.PostTag;
-import com.project.post.domain.repository.PostTagRepository;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
 import com.project.post.domain.repository.dto.PostListQueryResult;
 import com.project.post.domain.repository.PostRepository;
@@ -21,24 +21,19 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PostQueryServiceImpl implements PostQueryService {
-
-    private static final int MAX_PAGE_SIZE = 100;
 
     private final BoardRepository boardRepository;
     private final PostRepository postRepository;
-    private final PostTagRepository postTagRepository;
+    private final PostTagQueryService postTagQueryService;
 
     @Override
-    @Transactional(readOnly = true)
     public Page<PostListResponse> getList(
             @NonNull String boardCode,
             @NonNull Pageable pageable,
@@ -49,7 +44,7 @@ public class PostQueryServiceImpl implements PostQueryService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시판을 찾을 수 없습니다."));
 
         PostListSort sortType = PostListSort.from(order);
-        int pageSize = Math.min(pageable.getPageSize(), MAX_PAGE_SIZE);
+        int pageSize = Math.min(pageable.getPageSize(), PostConstants.MAX_PAGE_SIZE);
         Pageable safePageable = PageRequest.of(pageable.getPageNumber(), pageSize);
 
         PostSearchCondition condition = new PostSearchCondition(
@@ -59,7 +54,8 @@ public class PostQueryServiceImpl implements PostQueryService {
         );
 
         Page<PostListQueryResult> page = postRepository.findPostList(boardCode, safePageable, condition);
-        Map<Long, List<String>> tagNamesByPostId = loadTagNamesByPostIds(page);
+        var tagNamesByPostId = postTagQueryService.getTagNamesByPostIds(
+                page.getContent().stream().map(PostListQueryResult::postId).toList());
         return page.map(result -> toListResponse(
                 result,
                 tagNamesByPostId.getOrDefault(result.postId(), List.of())
@@ -81,37 +77,7 @@ public class PostQueryServiceImpl implements PostQueryService {
         );
     }
 
-    private Map<Long, List<String>> loadTagNamesByPostIds(Page<PostListQueryResult> page) {
-        List<Long> postIds = page.getContent().stream()
-                .map(PostListQueryResult::postId)
-                .toList();
-        if (postIds.isEmpty()) {
-            return Map.of();
-        }
-
-        List<PostTag> postTags = postTagRepository.findByPostIdIn(postIds);
-        Map<Long, List<String>> tagsByPostId = new HashMap<>();
-        for (PostTag postTag : postTags) {
-            Long postId = postTag.getPost().getId();
-            String tagName = postTag.getTag() == null ? null : postTag.getTag().getName();
-            if (tagName == null) {
-                continue;
-            }
-            tagsByPostId
-                    .computeIfAbsent(postId, id -> new ArrayList<>())
-                    .add(tagName);
-        }
-
-        tagsByPostId.replaceAll((id, names) -> names.stream()
-                .filter(Objects::nonNull)
-                .distinct()
-                .sorted()
-                .toList());
-        return tagsByPostId;
-    }
-
     @Override
-    @Transactional(readOnly = true)
     public PostDetailResponse getDetail(@NonNull Long postId) {
         PostDetailQueryResult result = postRepository.findPostDetail(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));

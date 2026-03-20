@@ -65,8 +65,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/oauth2/login/**").permitAll()
                         // 비로그인 허용: 학과 목록 조회
                         .requestMatchers(HttpMethod.GET, "/api/v1/departments").permitAll()
-                        // 비로그인 허용: 메인 홈 게시글 목록 조회만
+                        // 비로그인 허용: 메인 홈 게시글 목록/상세 조회
                         .requestMatchers(HttpMethod.GET, "/api/v1/boards/*/posts").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/lectures").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/lectures/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/promotions").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/promotions/{postId}").permitAll()
                         // 그 외 모든 요청은 인증 필요 (Redis 세션 기반 인증 적용 예정)
                         .anyRequest().authenticated()
                 )

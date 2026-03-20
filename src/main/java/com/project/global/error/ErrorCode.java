@@ -22,7 +22,15 @@ public enum ErrorCode {
     LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "A001", "이메일 또는 비밀번호가 일치하지 않습니다."),
     PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "A002", "현재 비밀번호가 일치하지 않습니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "A003", "접근 권한이 없습니다."),
-    SESSION_EXPIRED(HttpStatus.UNAUTHORIZED, "A004", "세션이 만료되었습니다.");
+    SESSION_EXPIRED(HttpStatus.UNAUTHORIZED, "A004", "세션이 만료되었습니다."),
+
+    // File
+    FILE_NOT_FOUND_IN_S3(HttpStatus.BAD_REQUEST, "F001", "S3에 해당 파일이 존재하지 않습니다. 업로드를 먼저 완료해주세요."),
+    INVALID_OBJECT_KEY(HttpStatus.BAD_REQUEST, "F002", "objectKey 형식이 올바르지 않습니다."),
+    FILE_METADATA_MISMATCH(HttpStatus.BAD_REQUEST, "F006", "요청한 파일 정보와 S3에 저장된 파일이 일치하지 않습니다."),
+    INVALID_CONTENT_TYPE(HttpStatus.BAD_REQUEST, "F003", "허용되지 않은 파일 형식입니다."),
+    FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "F004", "파일 크기가 제한을 초과했습니다."),
+    UNSUPPORTED_UPLOAD_TYPE(HttpStatus.BAD_REQUEST, "F005", "지원하지 않는 업로드 타입입니다.");
 
 
 

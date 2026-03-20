@@ -25,7 +25,7 @@ spring:
   session:
     store-type: redis
     redis:
-      namespace: REDACTED_DB_PASSWORD:session
+      namespace: "{REDACTED_DB_PASSWORD:session}"
 
 server:
   port: 8080
@@ -34,6 +34,13 @@ server:
       charset: UTF-8
       force: true
   forward-headers-strategy: framework
+
+cloud:
+  aws:
+    s3:
+      region: ap-northeast-2
+      presigned-url-expire-seconds: 600
+      max-file-size-bytes: 5242880
 
 springdoc:
   swagger-ui:

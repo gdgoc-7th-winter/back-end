@@ -34,7 +34,6 @@
         <module name="EqualsHashCode"/>
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
-        <module name="FinalClass"/>
         <module name="MissingSwitchDefault"/>
 
         <!-- Annotation -->

@@ -4,6 +4,7 @@ import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.PostCommentResponse;
 import com.project.post.application.service.PostCommentQueryService;
+import com.project.post.domain.constants.PostConstants;
 import com.project.post.domain.entity.PostComment;
 import com.project.post.domain.repository.PostCommentRepository;
 import com.project.post.domain.repository.PostRepository;
@@ -21,25 +22,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * 삭제 댓글은 목록에 포함하고, toResponse에서 deleted=true / content·작성자 null로 마스킹.
+ */
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PostCommentQueryServiceImpl implements PostCommentQueryService {
 
-    private static final int MAX_PAGE_SIZE = 100;
     private static final int MAX_REPLIES_PER_ROOT = 20;
 
     private final PostRepository postRepository;
     private final PostCommentRepository commentRepository;
 
     @Override
-    @Transactional(readOnly = true)
     public Page<PostCommentResponse> getComments(@NonNull Long postId, @NonNull Pageable pageable) {
         if (!postRepository.existsActiveById(postId)) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다.");
         }
 
-        Pageable safePageable = pageable.getPageSize() > MAX_PAGE_SIZE
-                ? PageRequest.of(pageable.getPageNumber(), MAX_PAGE_SIZE, pageable.getSort())
+        Pageable safePageable = pageable.getPageSize() > PostConstants.MAX_PAGE_SIZE
+                ? PageRequest.of(pageable.getPageNumber(), PostConstants.MAX_PAGE_SIZE, pageable.getSort())
                 : pageable;
 
         Page<PostComment> rootComments = commentRepository.findRootComments(postId, safePageable);
@@ -75,6 +78,7 @@ public class PostCommentQueryServiceImpl implements PostCommentQueryService {
         return repliesByParentId;
     }
 
+    /** 삭제 댓글: deleted=true, content·작성자 null */
     private PostCommentResponse toResponse(PostComment comment, Long parentId) {
         boolean deleted = comment.isDeleted();
         return new PostCommentResponse(

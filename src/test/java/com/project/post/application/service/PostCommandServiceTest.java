@@ -50,11 +50,11 @@ class PostCommandServiceTest {
     @Test
     @DisplayName("게시판이 없으면 생성 시 예외를 던진다")
     void createThrowsWhenBoardMissing() {
-        when(boardRepository.findByCodeAndActiveTrue("general")).thenReturn(Optional.empty());
+        when(boardRepository.findByCodeAndActiveTrue("GENERAL")).thenReturn(Optional.empty());
 
         PostCreateRequest request = new PostCreateRequest("title", "content", null, null, null);
 
-        assertThatThrownBy(() -> postCommandService.create("general", request, buildUser(1L)))
+        assertThatThrownBy(() -> postCommandService.create("GENERAL", request, buildUser(1L)))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
@@ -65,12 +65,12 @@ class PostCommandServiceTest {
     @Test
     @DisplayName("게시글 생성 시 태그와 첨부파일을 저장한다")
     void createSavesPostWithTagsAndAttachments() {
-        Board board = Board.of("general", "자유게시판");
+        Board board = Board.of("GENERAL", "자유/정보 게시판");
         ReflectionTestUtils.setField(board, "id", 10L);
         User author = buildUser(1L);
         Post post = buildPost(1L, board, author);
 
-        when(boardRepository.findByCodeAndActiveTrue("general")).thenReturn(Optional.of(board));
+        when(boardRepository.findByCodeAndActiveTrue("GENERAL")).thenReturn(Optional.of(board));
         when(postRepository.save(any(Post.class))).thenReturn(post);
 
         PostCreateRequest request = new PostCreateRequest(
@@ -79,9 +79,9 @@ class PostCommandServiceTest {
                 List.of(new com.project.post.application.dto.PostAttachmentRequest("url", "a.txt", "text/plain", 10L, 0))
         );
 
-        Long result = postCommandService.create("general", request, author);
+        Post result = postCommandService.create("GENERAL", request, author);
 
-        assertThat(result).isEqualTo(1L);
+        assertThat(result.getId()).isEqualTo(1L);
 
         ArgumentCaptor<Post> postCaptor = ArgumentCaptor.forClass(Post.class);
         verify(postRepository).save(postCaptor.capture());
@@ -110,7 +110,7 @@ class PostCommandServiceTest {
     void updateThrowsWhenNotAuthor() {
         User author = buildUser(1L);
         User other = buildUser(2L);
-        Post post = buildPost(1L, Board.of("general", "자유"), author);
+        Post post = buildPost(1L, Board.of("GENERAL", "자유"), author);
 
         when(postRepository.findActiveById(1L)).thenReturn(Optional.of(post));
 
@@ -128,7 +128,7 @@ class PostCommandServiceTest {
     @DisplayName("수정 시 제목·본문·태그·첨부를 갱신한다")
     void updateModifiesPost() {
         User author = buildUser(1L);
-        Board board = Board.of("general", "자유");
+        Board board = Board.of("GENERAL", "자유");
         Post post = buildPost(1L, board, author);
 
         when(postRepository.findActiveById(1L)).thenReturn(Optional.of(post));
@@ -164,7 +164,7 @@ class PostCommandServiceTest {
     void softDeleteThrowsWhenNotAuthor() {
         User author = buildUser(1L);
         User other = buildUser(2L);
-        Post post = buildPost(1L, Board.of("general", "자유"), author);
+        Post post = buildPost(1L, Board.of("GENERAL", "자유"), author);
 
         when(postRepository.findActiveById(1L)).thenReturn(Optional.of(post));
 
@@ -180,7 +180,7 @@ class PostCommandServiceTest {
     @DisplayName("삭제 시 소프트 삭제 처리한다")
     void softDeleteMarksAsDeleted() {
         User author = buildUser(1L);
-        Post post = buildPost(1L, Board.of("general", "자유"), author);
+        Post post = buildPost(1L, Board.of("GENERAL", "자유"), author);
 
         when(postRepository.findActiveById(1L)).thenReturn(Optional.of(post));
 
