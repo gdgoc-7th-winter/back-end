@@ -123,23 +123,9 @@ class PostQueryServiceTest {
         )));
         PostSearchCondition condition = new PostSearchCondition(null, null, PostListSort.LATEST);
         Pageable pageable = PageRequest.of(0, 10);
-<<<<<<< HEAD
-        when(postRepository.findPostList("general", pageable, condition)).thenReturn(queryPage);
-        Post post = Post.builder()
-                .id(1L)
-                .board(Board.of("general", "자유게시판"))
-                .author(new com.project.user.domain.entity.User("user@test.com", "pw", "testuser1"))
-                .title("t")
-                .content("content")
-                .build();
-        when(postTagRepository.findByPostIdIn(List.of(1L))).thenReturn(List.of(
-                new PostTag(post, new Tag("java"))
-        ));
-=======
         when(postRepository.findPostList("GENERAL", pageable, condition)).thenReturn(queryPage);
         when(postTagQueryService.getTagNamesByPostIds(List.of(1L))).thenReturn(
                 java.util.Map.of(1L, List.of("java")));
->>>>>>> 7250d19968757353bd05de6fc6fd3c089abe8d15
 
         Page<PostListResponse> result = postQueryService.getList("GENERAL", PageRequest.of(0, 10), null, null, null);
 
