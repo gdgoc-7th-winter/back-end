@@ -27,7 +27,6 @@ public class BadgeUpdateEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePointChanged(UserPointChangeEvent event) {
-        log.info("뱃지 업데이트 리스너 진입! userId={}", event.userId());
         User user = userRepository.findById(event.userId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "사용자 없음"));
 

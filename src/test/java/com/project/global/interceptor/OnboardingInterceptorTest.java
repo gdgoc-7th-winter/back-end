@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
@@ -23,12 +24,14 @@ class OnboardingInterceptorTest {
     private MockHttpServletRequest request;
     private MockHttpServletResponse response;
     private Object handler;
+    private String email;
 
     @BeforeEach
     void setUp() {
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
         handler = new Object(); // 더미 핸들러
+        email = "dummy@hufs.ac.kr";
     }
 
     @Test
@@ -37,12 +40,11 @@ class OnboardingInterceptorTest {
         // given
         UserSession dummySession = UserSession.builder()
                 .userId(1L)
-                .email("dummy@hufs.ac.kr")
                 .authority(Authority.DUMMY)
                 .needsProfile(true)
                 .build();
 
-        request.setRequestURI("/api/users/me");
+        request.setRequestURI("/api/v1/me/profile");
         request.getSession().setAttribute("LOGIN_USER", dummySession);
 
         // when
@@ -60,12 +62,31 @@ class OnboardingInterceptorTest {
         // given
         UserSession dummySession = UserSession.builder()
                 .userId(1L)
-                .email("dummy@hufs.ac.kr")
                 .authority(Authority.DUMMY)
                 .needsProfile(true)
                 .build();
 
-        request.setRequestURI("/api/users/profile-setup");
+        request.setRequestURI("/api/v1/users/profile-setup");
+        request.getSession().setAttribute("LOGIN_USER", dummySession);
+
+        // when
+        boolean result = onboardingInterceptor.preHandle(request, response, handler);
+
+        // then
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    @DisplayName("DUMMY 권한 유저라도 학과 조회 API 접근은 허용됨")
+    void preHandleAllowDepartmentsApi() throws Exception {
+        // given
+        UserSession dummySession = UserSession.builder()
+                .userId(1L)
+                .authority(Authority.DUMMY)
+                .needsProfile(true)
+                .build();
+
+        request.setRequestURI("/api/v1/departments");
         request.getSession().setAttribute("LOGIN_USER", dummySession);
 
         // when
@@ -81,12 +102,11 @@ class OnboardingInterceptorTest {
         // given
         UserSession userSession = UserSession.builder()
                 .userId(1L)
-                .email("user@hufs.ac.kr")
                 .authority(Authority.USER)
                 .needsProfile(false)
                 .build();
 
-        request.setRequestURI("/api/users/me");
+        request.setRequestURI("/api/v1/me/profile");
         request.getSession().setAttribute("LOGIN_USER", userSession);
 
         // when
