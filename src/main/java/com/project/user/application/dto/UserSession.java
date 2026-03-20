@@ -17,7 +17,6 @@ public class UserSession implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Long userId;
-    private String email;
     private Authority authority;
     private boolean needsProfile;
 }

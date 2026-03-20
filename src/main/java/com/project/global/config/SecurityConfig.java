@@ -1,10 +1,9 @@
 package com.project.global.config;
 
-import com.project.global.error.BusinessException;
-import com.project.global.error.ErrorCode;
+import com.project.user.domain.repository.impl.CustomAuthorizationRequestRepository;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,12 +17,13 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
-import java.io.IOException;
-
+@Slf4j
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
-    private static final Logger LOG = LoggerFactory.getLogger(SecurityConfig.class);
+
+    private final OAuth2ConnectSuccessHandler oAuth2ConnectSuccessHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -31,29 +31,23 @@ public class SecurityConfig {
     }
 
     @Bean
+    public CustomAuthorizationRequestRepository customAuthorizationRequestRepository() {
+        return new CustomAuthorizationRequestRepository();
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
         return http
+                .sessionManagement(session -> session.sessionFixation().none())
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                         .ignoringRequestMatchers(
                                 "/actuator/health", "/actuator/health/**", "/actuator/info",
-                                "/api/health", "/api/ping","/api/auth/**",
-                                "/swagger-ui/**", "/v3/api-docs/**", "/api/users/signup", "/api/users/login", "/api/users/logout"
+                                "/api/health", "/api/ping","/api/v1/auth/**",
+                                "/swagger-ui/**", "/v3/api-docs/**", "/api/v1/users/signup", "/api/v1/users/login", "/api/v1/users/logout",
+                                "/login/oauth2/code/**"
                         )
-                )
-                .logout(logout -> logout
-                        .logoutUrl("/api/users/logout").invalidateHttpSession(true).clearAuthentication(true).deleteCookies("JSESSIONID")
-                        .logoutSuccessHandler((request, response, authentication) -> {
-                            response.setContentType("application/json;charset=UTF-8");
-                            try{
-                                response.setStatus(HttpServletResponse.SC_OK);
-                                String jsonResponse = "{\"success\": true, \"data\": \"로그아웃 되었습니다.\", \"message\": null}";
-                                response.getWriter().write(jsonResponse);
-                            } catch (IOException e) {
-                                LOG.error("Logout success response writing failed", e); throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "서버 내부에 문제가 있습니다. 관리팀에 문의하세요.");
-                            }
-                        })
                 )
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
@@ -64,13 +58,33 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                         // Swagger UI
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/users/signup","/api/users/login","/api/users/logout").permitAll()
+                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/api/v1/users/signup", "/api/v1/users/login", "/api/v1/users/logout").permitAll()
+                        // OAuth2 로그인 시작 (비로그인 사용자도 접근 가능)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/oauth2/login/**").permitAll()
+                        // 비로그인 허용: 학과 목록 조회
+                        .requestMatchers(HttpMethod.GET, "/api/v1/departments").permitAll()
                         // 비로그인 허용: 메인 홈 게시글 목록 조회만
                         .requestMatchers(HttpMethod.GET, "/api/v1/boards/*/posts").permitAll()
                         // 그 외 모든 요청은 인증 필요 (Redis 세션 기반 인증 적용 예정)
                         .anyRequest().authenticated()
                 )
+                .exceptionHandling(handler -> handler
+                        .authenticationEntryPoint((request, response, authException) ->
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(auth -> auth
+                                .authorizationRequestRepository(customAuthorizationRequestRepository())
+                        )
+                        .successHandler(oAuth2ConnectSuccessHandler)
+                        .failureHandler((request, response, exception) -> {
+                            log.error("OAuth2 Login Failed: {}", exception.getMessage());
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, exception.getMessage());
+                        })
+                )
+                .logout(AbstractHttpConfigurer::disable)
                 .build();
     }
 }

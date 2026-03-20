@@ -12,17 +12,29 @@ import com.project.global.event.Impl.UserPromotionEvent;
 import com.project.user.application.dto.request.UserRegistrationCompletedEvent;
 import com.project.user.application.dto.response.ProfileResponse;
 import com.project.user.application.service.UserService;
-import com.project.user.domain.entity.LevelBadge;
+
+import com.project.user.domain.entity.Department;
 import com.project.user.domain.entity.User;
-import com.project.user.domain.enums.Authority;
+import com.project.user.domain.entity.LevelBadge;
+import com.project.user.domain.entity.TechStack;
+import com.project.user.domain.entity.Track;
+import com.project.user.domain.entity.SocialAccount;
+
+import com.project.user.domain.repository.DepartmentRepository;
 import com.project.user.domain.repository.EmailAuthRepository;
 import com.project.user.domain.repository.LevelBadgeRepository;
+import com.project.user.domain.repository.TrackRepository;
 import com.project.user.domain.repository.UserRepository;
-import com.project.user.presentation.dto.request.LoginRequest;
+import com.project.user.domain.repository.TechStackRepository;
+
+import com.project.user.presentation.dto.request.PasswordUpdateRequest;
+import com.project.user.presentation.dto.request.ProfilePatchRequest;
 import com.project.user.presentation.dto.request.ProfileUpdateRequest;
 import com.project.user.presentation.dto.request.SignUpRequest;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
@@ -39,6 +51,8 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.List;
 
@@ -49,10 +63,14 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final EmailAuthRepository emailAuthRepository;
     private final LevelBadgeRepository levelBadgeRepository;
-    private final UserContributionRepository userContributionRepository;
     private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher eventPublisher;
+    private final TechStackRepository techStackRepository;
+    private final TrackRepository trackRepository;
+    private final DepartmentRepository departmentRepository;
+
     private final ContributionScoreRepository contributionScoreRepository;
+    private final UserContributionRepository userContributionRepository;
 
     // 회원가입
     @Override
@@ -71,7 +89,9 @@ public class UserServiceImpl implements UserService {
         // 비밀번호 암호화 및 엔티티 생성
         try {
             String encodedPassword = passwordEncoder.encode(request.getPassword());
-            User user = new User(request.getEmail(), encodedPassword);
+            String email = request.getEmail();
+            String nickname = request.getNickname();
+            User user = new User(email, encodedPassword, nickname);
             userRepository.save(user);
             LevelBadge initialBadge = levelBadgeRepository.findByPointWithinRange(user.getTotalPoint())
                     .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
@@ -79,17 +99,20 @@ public class UserServiceImpl implements UserService {
             user.initializeLevelBadge(initialBadge);
             eventPublisher.publishEvent(new UserRegistrationCompletedEvent(request.getEmail()));
         } catch (DataIntegrityViolationException e) {
-            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS);
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "회원가입 실행 중 오류가 발생했습니다. 다시 시도해주세요");
         }
     }
 
     @Override
     @Transactional
-    public void login(LoginRequest request, HttpSession session, HttpServletRequest servletRequest) {
-        User user = userRepository.findByEmail(request.email())
+    public void login(String email, String password) {
+        HttpServletRequest servletRequest = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        HttpSession session = servletRequest.getSession(true);
+
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOGIN_FAILED));
 
-        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new BusinessException(ErrorCode.LOGIN_FAILED);
         }
 
@@ -97,7 +120,7 @@ public class UserServiceImpl implements UserService {
         List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(role));
 
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
-                user.getEmail(), null, authorities);
+                email, null, authorities);
 
         CsrfToken csrfToken = (CsrfToken) servletRequest.getAttribute(CsrfToken.class.getName());
         if (csrfToken != null) {
@@ -113,7 +136,6 @@ public class UserServiceImpl implements UserService {
 
         UserSession userSession = UserSession.builder()
                 .userId(user.getId())
-                .email(user.getEmail())
                 .authority(user.getAuthority())
                 .needsProfile(user.needsInitialSetup())
                 .build();
@@ -123,18 +145,93 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void completeInitialProfile(Long id, ProfileUpdateRequest request, HttpSession session) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "존재하지 않는 사용자입니다."));
+    public void logout(HttpSession session) {
+        HttpServletResponse response = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getResponse();
+
+        if (session != null) {
+            session.invalidate();
+        }
+
+        // 3. SecurityContext 초기화 (인증 정보 삭제)
+        SecurityContextHolder.clearContext();
+
+        // 4. JSESSIONID 쿠키 삭제를 위해 클라이언트에 전달
+        Cookie cookie = new Cookie("JSESSIONID", null);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+    }
+
+    @Override
+    @Transactional
+    public void updateProfile(Long userId, ProfileUpdateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        if (!user.needsInitialSetup()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "이미 초기 프로필 설정이 완료된 계정입니다.");
+        }
+
+        Department department = departmentRepository.findById(request.getDepartmentId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "존재하지 않는 학과입니다."));
+        List<Track> trackMasters = trackRepository.findByNameIn(request.getTrackNames());
+        List<TechStack> techStackMasters = techStackRepository.findByNameIn(request.getTechStackNames());
 
         user.updateProfile(
-                request.getNickname(), request.getStudentId(), request.getDepartment(), request.getTrack(),
-                request.getProfilePicture(), request.getTechStacks(), request.getInterests()
+                request.getNickname(),
+                request.getStudentId(),
+                department,
+                request.getProfilePicture(),
+                request.getIntroduction(),
+                trackMasters,
+                techStackMasters
         );
-        if (user.getAuthority()== Authority.DUMMY){
+
+        if (!user.needsInitialSetup()) {
             user.grantUserAuthority();
+            updateSecurityContext(user.getId());
+            eventPublisher.publishEvent(new UserPromotionEvent(user.getId(), user.getId()));
+            log.info("유저 승급 이벤트 형성");
         }
-        eventPublisher.publishEvent(new UserPromotionEvent(user.getId(), user.getId()));
+    }
+
+    @Override
+    @Transactional
+    public void patchProfile(Long userId, ProfilePatchRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        if (user.needsInitialSetup()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "초기 프로필 설정을 먼저 완료해주세요.");
+        }
+
+        validateNotBlank(request.getNickname(), "닉네임");
+        validateNotBlank(request.getStudentId(), "학번");
+
+        Department department = request.getDepartmentId() != null
+                ? departmentRepository.findById(request.getDepartmentId())
+                        .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "존재하지 않는 학과입니다."))
+                : null;
+        List<Track> trackMasters = request.getTrackNames() != null
+                ? trackRepository.findByNameIn(request.getTrackNames()) : null;
+        List<TechStack> techStackMasters = request.getTechStackNames() != null
+                ? techStackRepository.findByNameIn(request.getTechStackNames()) : null;
+
+        user.updateProfile(
+                request.getNickname(),
+                request.getStudentId(),
+                department,
+                request.getProfilePicture(),
+                request.getIntroduction(),
+                trackMasters,
+                techStackMasters
+        );
+    }
+
+    private void validateNotBlank(String value, String fieldName) {
+        if (value != null && value.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, fieldName + "은(는) 공백일 수 없습니다.");
+        }
     }
 
     @Override
@@ -142,10 +239,50 @@ public class UserServiceImpl implements UserService {
     public void updateSecurityContext(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        HttpServletRequest request =  ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+
+        String authorityName = user.getAuthority().name();
+        if (!authorityName.startsWith("ROLE_")) {
+            authorityName = "ROLE_" + authorityName;
+        }
+
+        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(authorityName));
+
+        // 2. 새로운 Authentication 객체 생성 (기존 Principal 타입과 일치시켜야 함)
         Authentication newAuth = new UsernamePasswordAuthenticationToken(
-                id, null, List.of(new SimpleGrantedAuthority(user.getAuthority().name())));
-        SecurityContextHolder.getContext().setAuthentication(newAuth);
+                user.getEmail(), // 로그 로그보니 이메일 형식이네요! 202003824@hufs.ac.kr
+                null,
+                authorities
+        );
+
+        // 3. 현재 스레드의 SecurityContext 갱신
+        SecurityContext context = SecurityContextHolder.getContext();
+        context.setAuthentication(newAuth);
+
+        // 🚨 4. 중요: HttpSession에 변경된 SecurityContext를 명시적으로 저장
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+            log.info("🌐 세션에 새로운 SecurityContext 저장 완료: {}", authorityName);
+        }
     }
+
+    @Override
+    @Transactional
+    public void changePassword(Long id, PasswordUpdateRequest request){
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        String currentPassword = request.getOldPassword();
+        String newPassword = request.getNewPassword();
+
+        if (!currentPassword.equals(user.getPassword())) {
+            throw new BusinessException(ErrorCode.PASSWORD_MISMATCH);
+        } else {
+            user.changePassword(newPassword);
+        }
+    }
+
 
     @Override
     @Transactional(readOnly = true)
@@ -177,5 +314,38 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "작업 실행 중 오류가 발생했습니다. 관리팀에 문의주세요.");
         }
         return user;
+    }
+
+    @Override
+    @Transactional
+    public void linkSocialAccount(Long userId, String provider, String email, String providerId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        boolean alreadyLinked = user.getSocialAccounts().stream()
+                .anyMatch(acc -> acc.getProvider().equals(provider));
+
+        if (alreadyLinked) {
+            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS, "이미 등록하신 소셜 로그인 게정입니다.");
+        }
+
+        if (userRepository.existsBySocialAuth(email,provider)) {
+            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS, "이미 사용되고 있는 계정 정보입니다.");
+        }
+
+        user.addSocialAccount(new SocialAccount(provider, email, providerId));
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void deleteUser(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        userRepository.delete(user);
+
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        logout(request.getSession(false));
     }
 }

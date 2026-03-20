@@ -14,6 +14,11 @@ public class SignUpRequest {
     private String email;
 
     @NotBlank(message = "비밀번호는 필수 입력 값입니다.")
-    @Size(min = 8, message = "비밀번호는 최소 8자 이상이어야 합니다.")
+    @Size(min = 8, message = "비밀번호는 최소 8자 이상이어야 하며, 특수문자와 숫자를 최소 1개씩 포함해야 합니다.")
     private String password;
+
+    @NotBlank(message = "닉네임은 필수 입력값입니다.")
+    private String nickname;
+
+
 }

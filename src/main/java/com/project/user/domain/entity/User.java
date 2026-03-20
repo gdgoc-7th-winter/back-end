@@ -2,9 +2,6 @@ package com.project.user.domain.entity;
 
 import com.project.contribution.domain.entity.UserContribution;
 import com.project.user.domain.enums.Authority;
-import com.project.user.domain.enums.Interest;
-import com.project.user.domain.enums.TechStack;
-import com.project.user.domain.enums.Track;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -51,11 +48,15 @@ public class User {
     @Column(name = "profile_img_url", columnDefinition = "TEXT")
     private String profileImgUrl;
 
-    @Column(name="email",nullable = false, unique = true)
+    @Column(name= "user_email")
     private String email;
 
     @Column(name = "password",nullable = false)
     private String password;
+
+    @ElementCollection
+    @CollectionTable(name="user_social_account",joinColumns = @JoinColumn(name="user_id"))
+    private Set<SocialAccount> socialAccounts = new HashSet<>();
 
     @Column(name="nickname", length = 50)
     private String nickname;
@@ -63,12 +64,16 @@ public class User {
     @Column(name = "student_id", length = 20)
     private String studentId;
 
-    @Column(name = "department", length = 50)
-    private String department;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private Department department;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "track")
-    private Track track;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserTrack> userTracks = new ArrayList<>();
+
+    // 2. 기술 스택 정보 (ElementCollection 대신 UserTechStack 엔티티 리스트로 관리)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserTechStack> userTechStacks = new ArrayList<>();
 
     // 권한 레벨 (Dummy, User, Manager, Admin)
     @Enumerated(EnumType.STRING)
@@ -96,47 +101,76 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
-    // 기술 스택: 복수 선택 (별도 테이블 user_tech_stacks 생성)
-    @ElementCollection(targetClass = TechStack.class)
-    @CollectionTable(name = "user_tech_stacks", joinColumns = @JoinColumn(name = "user_id"))
-    @Enumerated(EnumType.STRING)
-    @Column(name = "stack_name")
-    private Set<TechStack> techStacks = new HashSet<>();
-
-    // 관심사: 복수 선택 (별도 테이블 user_interests_enum 생성)
-    @ElementCollection(targetClass = Interest.class)
-    @CollectionTable(name = "user_interests_enum", joinColumns = @JoinColumn(name = "user_id"))
-    @Enumerated(EnumType.STRING)
-    @Column(name = "interest_name")
-    private Set<Interest> interests = new HashSet<>();
+    @Column(name = "introduction", nullable = true)
+    private String introduction;
 
     @Builder
-    public User(String email, String password) {
+    public User(String email, String password, String nickname) {
         this.email = email;
         this.password = password;
+        this.nickname = nickname;
     }
 
     public boolean needsInitialSetup() {
-        return this.getDepartment() == null || this.getTrack() == null || this.getStudentId() == null;
+        return this.department == null || this.getUserTracks().isEmpty() || this.getStudentId() == null;
     }
 
     public void grantUserAuthority() {
         this.authority = Authority.USER;
     }
 
-    public void updateProfile(String nickname, String studentId, String department,
-                              Track track, String profileImgUrl, Set<TechStack> techStacks, Set<Interest> interests) {
-        this.nickname = nickname;
-        this.studentId = studentId;
-        this.department = department;
-        this.track = track;
-        this.profileImgUrl = profileImgUrl;
+    public void updateProfile(String nickname, String studentId, Department department,
+                              String profileImgUrl, String introduction,
+                              List<Track> tracks, List<TechStack> techStacks) {
+        if (nickname != null){
+            this.nickname = nickname;
+        }
 
-        this.techStacks.clear();
-        if (techStacks != null) this.techStacks.addAll(techStacks);
+        if (studentId != null){
+            this.studentId = studentId;
+        }
 
-        this.interests.clear();
-        if (interests != null) this.interests.addAll(interests);
+        if (department != null){
+            this.department = department;
+        }
+
+        if (tracks != null) {
+            this.userTracks.clear();
+            tracks.forEach(this::addUserTrack); // addUserTrack(Track track) 메서드 호출
+        }
+
+        if (profileImgUrl != null){
+            this.profileImgUrl = profileImgUrl;
+        }
+
+        if (techStacks != null) {
+            this.userTechStacks.clear();
+            techStacks.forEach(this::addTechStack); // addTechStack(TechStack techStack) 호출
+        }
+
+        if (introduction != null){
+            this.introduction = introduction;
+        }
+    }
+
+    public void changePassword(String newPassword) {
+        this.password = newPassword;
+    }
+
+    private void addUserTrack(Track trackMaster) {
+        UserTrack userTrack = UserTrack.builder()
+                .user(this)
+                .track(trackMaster)
+                .build();
+        this.userTracks.add(userTrack);
+    }
+
+    private void addTechStack(TechStack techStackMaster) {
+        UserTechStack userTechStack = UserTechStack.builder()
+                .user(this)
+                .techStack(techStackMaster)
+                .build();
+        this.userTechStacks.add(userTechStack);
     }
 
     public void initializeLevelBadge(LevelBadge initialBadge) {
@@ -157,5 +191,9 @@ public class User {
     public LevelBadge getLevelBadge() {
         if (this.levelBadge == null) return null;
         return this.levelBadge;
+    }
+
+    public void addSocialAccount(SocialAccount socialAccount) {
+        this.getSocialAccounts().add(socialAccount);
     }
 }

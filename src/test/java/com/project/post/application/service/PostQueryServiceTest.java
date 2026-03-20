@@ -120,7 +120,7 @@ class PostQueryServiceTest {
         Post post = Post.builder()
                 .id(1L)
                 .board(Board.of("general", "자유게시판"))
-                .author(new com.project.user.domain.entity.User("user@test.com", "pw"))
+                .author(new com.project.user.domain.entity.User("user@test.com", "pw", "testuser1"))
                 .title("t")
                 .content("content")
                 .build();

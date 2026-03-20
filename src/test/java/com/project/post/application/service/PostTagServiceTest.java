@@ -57,7 +57,7 @@ class PostTagServiceTest {
     }
 
     private static @NonNull Post buildPost(Long id) {
-        User user = new User("user@test.com", "pw");
+        User user = new User("user@test.com", "pw", "testuser");
         ReflectionTestUtils.setField(user, "id", 1L);
         Board board = Board.of("general", "자유게시판");
         ReflectionTestUtils.setField(Objects.requireNonNull(board), "id", 10L);
