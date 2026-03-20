@@ -94,6 +94,18 @@ spring:
   session:
     store-type: none
 
+cloud:
+  aws:
+    s3:
+      access-key-id: test-access-key
+      secret-access-key: test-secret-key
+      bucket-name-public: test-bucket
+      region: ap-northeast-2
+      presigned-url-expire-seconds: 600
+      max-file-size-bytes: 5242880
+    cloudfront:
+      domain: https://cdn.test
+
 management:
   endpoints:
     web:

@@ -3,6 +3,7 @@ package com.project.post.presentation.controller;
 import com.project.post.presentation.swagger.PostControllerDocs;
 import com.project.post.application.dto.LikeScrapToggleResponse;
 import com.project.post.application.dto.PostCreateRequest;
+import com.project.post.application.dto.PostCreateResponse;
 import com.project.post.application.dto.PostDetailResponse;
 import com.project.post.application.dto.PostListResponse;
 import com.project.post.application.dto.PostUpdateRequest;
@@ -13,10 +14,12 @@ import com.project.post.application.service.PostQueryService;
 import com.project.post.application.service.PostScrapService;
 import com.project.user.domain.entity.User;
 import com.project.global.response.CommonResponse;
+import com.project.global.response.PageResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -49,14 +52,14 @@ public class PostController implements PostControllerDocs {
 
     @Override
     @GetMapping("/boards/{code}/posts")
-    public ResponseEntity<CommonResponse<Page<PostListResponse>>> getList(
+    public ResponseEntity<CommonResponse<PageResponse<PostListResponse>>> getList(
             @PathVariable @NotBlank @NonNull String code,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false, name = "tags") java.util.List<String> tags,
             @RequestParam(required = false, defaultValue = "latest") String order,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) @NonNull Pageable pageable) {
+            @ParameterObject @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) @NonNull Pageable pageable) {
         Page<PostListResponse> list = postQueryService.getList(code, pageable, keyword, tags, order);
-        return ResponseEntity.ok(CommonResponse.ok(list));
+        return ResponseEntity.ok(CommonResponse.ok(PageResponse.of(list)));
     }
 
     @Override
@@ -75,15 +78,12 @@ public class PostController implements PostControllerDocs {
 
     @Override
     @PostMapping("/boards/{code}/posts")
-    public ResponseEntity<CommonResponse<Long>> create(
+    public ResponseEntity<CommonResponse<PostCreateResponse>> create(
             @PathVariable @NotBlank @NonNull String code,
             @RequestBody @Valid @NonNull PostCreateRequest request,
             @CurrentUser @NonNull User user) {
-        Long postId = postCommandService.create(
-                code,
-                request,
-                user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.ok(postId));
+        var post = postCommandService.create(code, request, user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.ok(new PostCreateResponse(post.getId())));
     }
 
     @Override

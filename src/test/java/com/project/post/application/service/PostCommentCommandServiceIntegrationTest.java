@@ -44,8 +44,13 @@ class PostCommentCommandServiceIntegrationTest {
     @Test
     @DisplayName("부모 댓글이 다른 게시글에 속하면 댓글 생성이 실패한다")
     void createReplyFailsWhenParentBelongsToDifferentPost() {
+<<<<<<< HEAD
         User user = new User("user@test.com", "pw", "testuser");
         Board board = Board.of("general-it", "자유게시판");
+=======
+        User user = new User("user@test.com", "pw");
+        Board board = Board.of("GENERAL", "자유/정보 게시판");
+>>>>>>> 7250d19968757353bd05de6fc6fd3c089abe8d15
         Post post = buildPost(1L, board, user, "title-1");
         Post otherPost = buildPost(2L, board, user, "title-2");
         PostComment parent = PostComment.builder()

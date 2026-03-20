@@ -10,8 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-import java.io.IOException;
-
 @Component
 @RequiredArgsConstructor
 public class OnboardingInterceptor implements HandlerInterceptor {
@@ -36,24 +34,7 @@ public class OnboardingInterceptor implements HandlerInterceptor {
                     || requestURI.startsWith("/api/v1/departments")) {
                 return true;
             }
-
-            // 4. JSON 응답 반환 (REST API 방식)
-            response.setContentType("application/json;charset=UTF-8");
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403 Forbidden
-
-            String jsonResponse = "{"
-                    + "\"success\": false,"
-                    + "\"data\": null,"
-                    + "\"message\": \"프로필 설정을 먼저 완료해주세요.\""
-                    + "}";
-
-            try {
-                response.getWriter().write(jsonResponse);
-            } catch (IOException e) {
-                throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
-            }
-
-            return false;
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
 
         return true;

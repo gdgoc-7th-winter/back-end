@@ -133,7 +133,7 @@ class PostCommentCommandServiceTest {
     }
 
     private static Post buildPost(Long id, User author) {
-        Board board = Board.of("general", "자유게시판");
+        Board board = Board.of("GENERAL", "자유/정보 게시판");
         ReflectionTestUtils.setField(Objects.requireNonNull(board), "id", 10L);
         return Post.builder()
                 .id(id)

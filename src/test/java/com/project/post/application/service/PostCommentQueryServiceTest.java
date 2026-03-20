@@ -81,7 +81,7 @@ class PostCommentQueryServiceTest {
     }
 
     @Test
-    @DisplayName("삭제된 댓글은 isDeleted true, content·작성자 정보 null로 반환한다")
+    @DisplayName("삭제된 댓글은 목록에 포함되나 isDeleted true, content·작성자 정보 null로 마스킹 (원문 미노출)")
     void getCommentsReturnsDeletedCommentWithHiddenAuthor() {
         User user = buildUser(1L, "user");
         Post post = buildPost(1L, user);
@@ -114,7 +114,7 @@ class PostCommentQueryServiceTest {
     }
 
     private static Post buildPost(Long id, User author) {
-        Board board = Board.of("general", "자유게시판");
+        Board board = Board.of("GENERAL", "자유/정보 게시판");
         ReflectionTestUtils.setField(board, "id", 10L);
         return Post.builder()
                 .id(id)
