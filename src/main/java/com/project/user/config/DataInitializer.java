@@ -7,7 +7,7 @@ import com.project.user.domain.entity.Track;
 import com.project.user.domain.repository.DepartmentRepository;
 import com.project.user.domain.repository.TechStackRepository;
 import com.project.user.domain.repository.TrackRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -34,28 +34,31 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initializeTracksAndTechStacks() {
-        if (trackRepository.count() > 0 || techStackRepository.count() > 0) {
-            log.info("트랙/기술스택 초기 데이터가 이미 존재하여 건너뜁니다.");
-            return;
-        }
-
         try {
             ClassPathResource resource = new ClassPathResource("tracks-and-techStacks.json");
             TracksAndTechStacksDto data = objectMapper.readValue(resource.getInputStream(), TracksAndTechStacksDto.class);
 
-            List<Track> tracks = data.getTracks().stream()
-                    .map(name -> new Track(name))
-                    .toList();
-            trackRepository.saveAll(tracks);
+            if (trackRepository.count() == 0) {
+                List<Track> tracks = data.getTracks().stream()
+                        .map(name -> new Track(name))
+                        .toList();
+                trackRepository.saveAll(tracks);
+                log.info("트랙 {}개 초기화 완료", tracks.size());
+            } else {
+                log.info("트랙 초기 데이터가 이미 존재하여 건너뜁니다.");
+            }
 
-            List<TechStack> techStacks = data.getTechStacks().stream()
-                    .map(name -> new TechStack(name))
-                    .toList();
-            techStackRepository.saveAll(techStacks);
-
-            log.info("트랙 {}개, 기술스택 {}개 초기화 완료", tracks.size(), techStacks.size());
+            if (techStackRepository.count() == 0) {
+                List<TechStack> techStacks = data.getTechStacks().stream()
+                        .map(name -> new TechStack(name))
+                        .toList();
+                techStackRepository.saveAll(techStacks);
+                log.info("기술스택 {}개 초기화 완료", techStacks.size());
+            } else {
+                log.info("기술스택 초기 데이터가 이미 존재하여 건너뜁니다.");
+            }
         } catch (Exception e) {
-            log.error("트랙/기술스택 초기화 중 오류 발생: {}", e.getMessage());
+            throw new IllegalStateException("트랙/기술스택 필수 초기 데이터 로딩 실패 — 서버를 기동할 수 없습니다.", e);
         }
     }
 
@@ -79,7 +82,7 @@ public class DataInitializer implements CommandLineRunner {
 
             log.info("학과 {}개 초기화 완료", departments.size());
         } catch (Exception e) {
-            log.error("학과 초기화 중 오류 발생: {}", e.getMessage());
+            throw new IllegalStateException("학과 필수 초기 데이터 로딩 실패 — 서버를 기동할 수 없습니다.", e);
         }
     }
 }

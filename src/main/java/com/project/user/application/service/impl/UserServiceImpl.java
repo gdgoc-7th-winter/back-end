@@ -116,7 +116,7 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ErrorCode.LOGIN_FAILED);
         }
 
-        String role = user.getAuthority().name();
+        String role = "ROLE_" + user.getAuthority().name();
         List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(role));
 
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
@@ -146,19 +146,26 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void logout(HttpSession session) {
-        HttpServletResponse response = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getResponse();
-
         if (session != null) {
             session.invalidate();
         }
-
-        // 3. SecurityContext 초기화 (인증 정보 삭제)
         SecurityContextHolder.clearContext();
 
-        // 4. JSESSIONID 쿠키 삭제를 위해 클라이언트에 전달
+        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs == null) {
+            return;
+        }
+        HttpServletResponse response = attrs.getResponse();
+        if (response == null) {
+            return;
+        }
+
         Cookie cookie = new Cookie("JSESSIONID", null);
         cookie.setPath("/");
         cookie.setMaxAge(0);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setAttribute("SameSite", "Strict");
         response.addCookie(cookie);
     }
 
@@ -241,11 +248,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         HttpServletRequest request =  ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
 
-        String authorityName = user.getAuthority().name();
-        if (!authorityName.startsWith("ROLE_")) {
-            authorityName = "ROLE_" + authorityName;
-        }
-
+        String authorityName = "ROLE_" + user.getAuthority().name();
         List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(authorityName));
 
         // 2. 새로운 Authentication 객체 생성 (기존 Principal 타입과 일치시켜야 함)
@@ -273,14 +276,10 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        String currentPassword = request.getOldPassword();
-        String newPassword = request.getNewPassword();
-
-        if (!currentPassword.equals(user.getPassword())) {
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
             throw new BusinessException(ErrorCode.PASSWORD_MISMATCH);
-        } else {
-            user.changePassword(newPassword);
         }
+        user.changePassword(passwordEncoder.encode(request.getNewPassword()));
     }
 
 

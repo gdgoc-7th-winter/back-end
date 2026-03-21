@@ -7,8 +7,6 @@ import com.project.global.event.Impl.UserPromotionEvent;
 import com.project.user.application.service.UserService;
 import com.project.user.domain.entity.User;
 import com.project.user.domain.repository.UserRepository;
-import jakarta.servlet.ServletRequest;
-
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +24,6 @@ import java.util.Optional;
 public class UserPromotionListener {
     private final UserService userService;
     private final UserRepository userRepository;
-    private final ServletRequest httpServletRequest;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleUserPromotion(UserPromotionEvent event) {

@@ -173,21 +173,26 @@ class UserServiceTest {
     void changePasswordSuccess() {
         // given
         Long userId = 1L;
-        String currentPassword = "currentPw";
-        User user = new User("test@hufs.ac.kr", currentPassword, "nick");
+        String encodedCurrent = "encoded_currentPw";
+        String encodedNew = "encoded_newPw123!";
+        User user = new User("test@hufs.ac.kr", encodedCurrent, "nick");
         ReflectionTestUtils.setField(user, "id", userId);
 
         PasswordUpdateRequest passwordUpdateRequest = new PasswordUpdateRequest();
-        ReflectionTestUtils.setField(passwordUpdateRequest, "oldPassword", currentPassword);
-        ReflectionTestUtils.setField(passwordUpdateRequest, "newPassword", "newPw123");
+        ReflectionTestUtils.setField(passwordUpdateRequest, "oldPassword", "currentPw");
+        ReflectionTestUtils.setField(passwordUpdateRequest, "newPassword", "newPw123!");
 
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(passwordEncoder.matches("currentPw", encodedCurrent)).willReturn(true);
+        given(passwordEncoder.encode("newPw123!")).willReturn(encodedNew);
 
         // when
         userService.changePassword(userId, passwordUpdateRequest);
 
         // then
-        assertThat(user.getPassword()).isEqualTo("newPw123");
+        verify(passwordEncoder).matches("currentPw", encodedCurrent);
+        verify(passwordEncoder).encode("newPw123!");
+        assertThat(user.getPassword()).isEqualTo(encodedNew);
     }
 
     @Test
@@ -195,14 +200,16 @@ class UserServiceTest {
     void changePasswordFailMismatch() {
         // given
         Long userId = 1L;
-        User user = new User("test@hufs.ac.kr", "correctPw", "nick");
+        String encodedCurrent = "encoded_correctPw";
+        User user = new User("test@hufs.ac.kr", encodedCurrent, "nick");
         ReflectionTestUtils.setField(user, "id", userId);
 
         PasswordUpdateRequest passwordUpdateRequest = new PasswordUpdateRequest();
         ReflectionTestUtils.setField(passwordUpdateRequest, "oldPassword", "wrongPw");
-        ReflectionTestUtils.setField(passwordUpdateRequest, "newPassword", "newPw123");
+        ReflectionTestUtils.setField(passwordUpdateRequest, "newPassword", "newPw123!");
 
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(passwordEncoder.matches("wrongPw", encodedCurrent)).willReturn(false);
 
         // when & then
         assertThatThrownBy(() -> userService.changePassword(userId, passwordUpdateRequest))

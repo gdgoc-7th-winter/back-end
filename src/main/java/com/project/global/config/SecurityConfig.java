@@ -38,14 +38,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
         return http
-                .sessionManagement(session -> session.sessionFixation().none())
+                .sessionManagement(session -> session.sessionFixation().changeSessionId())
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                         .ignoringRequestMatchers(
                                 "/actuator/health", "/actuator/health/**", "/actuator/info",
-                                "/api/health", "/api/ping","/api/v1/auth/**",
-                                "/swagger-ui/**", "/v3/api-docs/**", "/api/v1/users/signup", "/api/v1/users/login", "/api/v1/users/logout",
+                                "/api/health", "/api/ping", "/api/v1/auth/**",
+                                "/swagger-ui/**", "/v3/api-docs/**", "/api/v1/users/signup", "/api/v1/users/login",
                                 "/login/oauth2/code/**"
                         )
                 )
@@ -85,7 +85,7 @@ public class SecurityConfig {
                         .successHandler(oAuth2ConnectSuccessHandler)
                         .failureHandler((request, response, exception) -> {
                             log.error("OAuth2 Login Failed: {}", exception.getMessage());
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, exception.getMessage());
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "OAuth2 인증 실패");
                         })
                 )
                 .logout(AbstractHttpConfigurer::disable)

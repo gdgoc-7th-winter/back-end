@@ -1,5 +1,6 @@
 package com.project.user.presentation.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,10 +15,10 @@ import java.util.List;
 @AllArgsConstructor
 public class ProfileUpdateRequest {
 
-    @NotNull(message = "닉네임은 필수 입력 사항입니다.")
+    @NotBlank(message = "닉네임은 필수 입력 사항입니다.")
     private String nickname;
 
-    @NotNull(message = "학번은 필수 입력 사항입니다.")
+    @NotBlank(message = "학번은 필수 입력 사항입니다.")
     private String studentId;
 
     @NotNull(message = "학과는 필수 선택 사항입니다.")
