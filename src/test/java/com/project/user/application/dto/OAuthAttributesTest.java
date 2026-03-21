@@ -57,16 +57,16 @@ class OAuthAttributesTest {
     }
 
     @Test
-    @DisplayName("GitHub 속성에서 providerId(id)와 login이 올바르게 추출된다")
+    @DisplayName("GitHub 속성에서 providerId(id)와 email이 올바르게 추출된다")
     void ofGithub() {
         Map<String, Object> attrs = new HashMap<>();
         attrs.put("id", 99999);
-        attrs.put("login", "github-username");
+        attrs.put("email", "user@github.com");
 
         OAuthAttributes result = OAuthAttributes.of("github", "id", attrs);
 
         assertThat(result.providerId()).isEqualTo("99999");
-        assertThat(result.email()).isEqualTo("github-username");
+        assertThat(result.email()).isEqualTo("user@github.com");
     }
 
     @Test
