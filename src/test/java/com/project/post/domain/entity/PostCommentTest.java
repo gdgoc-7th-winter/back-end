@@ -12,8 +12,8 @@ class PostCommentTest {
     @Test
     @DisplayName("부모 댓글이 다른 게시글에 속하면 예외가 발생한다")
     void createReplyThrowsWhenParentBelongsToDifferentPost() {
-        User user = new User("user@test.com", "pw");
-        Board board = Board.of("GENERAL", "자유/정보 게시판");
+        User user = new User("user@test.com", "pw", "testuser");
+        Board board = Board.of("general", "자유게시판");
         Post post = buildPost(1L, board, user, "title-1");
         Post otherPost = buildPost(2L, board, user, "title-2");
 
@@ -33,8 +33,8 @@ class PostCommentTest {
     @Test
     @DisplayName("부모 댓글 depth가 1 이상이면 예외가 발생한다")
     void createReplyThrowsWhenParentDepthTooDeep() {
-        User user = new User("user@test.com", "pw");
-        Board board = Board.of("GENERAL", "자유/정보 게시판");
+        User user = new User("user@test.com", "pw", "testuser");
+        Board board = Board.of("general", "자유게시판");
         Post post = buildPost(1L, board, user, "title");
 
         PostComment parent = PostComment.builder()

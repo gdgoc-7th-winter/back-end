@@ -1,0 +1,4 @@
+{
+  "tracks": ["BACKEND", "FRONTEND", "AI", "DEVOPS", "FULLSTACK", "PM"],
+  "techStacks": ["JAVA", "SPRING_BOOT", "REACT", "PYTHON", "DJANGO", "MYSQL", "AWS", "DOCKER"]
+}

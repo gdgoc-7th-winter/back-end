@@ -211,7 +211,7 @@ class PostCommandServiceTest {
     }
 
     private static User buildUser(Long id) {
-        User user = new User("user@test.com", "pw");
+        User user = new User("user@test.com", "pw", "testuser");
         ReflectionTestUtils.setField(user, "id", id);
         return user;
     }
