@@ -182,7 +182,13 @@ public class UserServiceImpl implements UserService {
         Department department = departmentRepository.findById(request.getDepartmentId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "존재하지 않는 학과입니다."));
         List<Track> trackMasters = trackRepository.findByNameIn(request.getTrackNames());
-        List<TechStack> techStackMasters = techStackRepository.findByNameIn(request.getTechStackNames());
+        validateAllFound(request.getTrackNames(), trackMasters.stream().map(Track::getName).toList(), "트랙");
+
+        List<TechStack> techStackMasters = request.getTechStackNames() != null
+                ? techStackRepository.findByNameIn(request.getTechStackNames()) : List.of();
+        if (request.getTechStackNames() != null) {
+            validateAllFound(request.getTechStackNames(), techStackMasters.stream().map(TechStack::getName).toList(), "기술 스택");
+        }
 
         user.updateProfile(
                 request.getNickname(),
@@ -219,10 +225,17 @@ public class UserServiceImpl implements UserService {
                 ? departmentRepository.findById(request.getDepartmentId())
                         .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "존재하지 않는 학과입니다."))
                 : null;
-        List<Track> trackMasters = request.getTrackNames() != null
-                ? trackRepository.findByNameIn(request.getTrackNames()) : null;
-        List<TechStack> techStackMasters = request.getTechStackNames() != null
-                ? techStackRepository.findByNameIn(request.getTechStackNames()) : null;
+        List<Track> trackMasters = null;
+        if (request.getTrackNames() != null) {
+            trackMasters = trackRepository.findByNameIn(request.getTrackNames());
+            validateAllFound(request.getTrackNames(), trackMasters.stream().map(Track::getName).toList(), "트랙");
+        }
+
+        List<TechStack> techStackMasters = null;
+        if (request.getTechStackNames() != null) {
+            techStackMasters = techStackRepository.findByNameIn(request.getTechStackNames());
+            validateAllFound(request.getTechStackNames(), techStackMasters.stream().map(TechStack::getName).toList(), "기술 스택");
+        }
 
         user.updateProfile(
                 request.getNickname(),
@@ -233,6 +246,16 @@ public class UserServiceImpl implements UserService {
                 trackMasters,
                 techStackMasters
         );
+    }
+
+    private void validateAllFound(List<String> requested, List<String> found, String fieldName) {
+        List<String> missing = requested.stream()
+                .filter(name -> !found.contains(name))
+                .toList();
+        if (!missing.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT,
+                    "존재하지 않는 " + fieldName + "이(가) 있습니다: " + missing);
+        }
     }
 
     private void validateNotBlank(String value, String fieldName) {
@@ -258,15 +281,20 @@ public class UserServiceImpl implements UserService {
                 authorities
         );
 
-        // 3. 현재 스레드의 SecurityContext 갱신
         SecurityContext context = SecurityContextHolder.getContext();
         context.setAuthentication(newAuth);
 
-        // 🚨 4. 중요: HttpSession에 변경된 SecurityContext를 명시적으로 저장
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-            log.info("🌐 세션에 새로운 SecurityContext 저장 완료: {}", authorityName);
+
+            UserSession updatedLoginUser = UserSession.builder()
+                    .userId(user.getId())
+                    .authority(user.getAuthority())
+                    .needsProfile(user.needsInitialSetup())
+                    .build();
+            session.setAttribute("LOGIN_USER", updatedLoginUser);
+            log.info("세션 갱신 완료 - authority: {}, needsProfile: {}", authorityName, updatedLoginUser.isNeedsProfile());
         }
     }
 
@@ -325,15 +353,19 @@ public class UserServiceImpl implements UserService {
                 .anyMatch(acc -> acc.getProvider().equals(provider));
 
         if (alreadyLinked) {
-            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS, "이미 등록하신 소셜 로그인 게정입니다.");
+            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS, "이미 등록하신 소셜 로그인 계정입니다.");
         }
 
-        if (userRepository.existsBySocialAuth(email,provider)) {
-            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS, "이미 사용되고 있는 계정 정보입니다.");
+        if (userRepository.existsBySocialAuth(provider, providerId)) {
+            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS, "이미 다른 계정에 연동된 소셜 계정입니다.");
         }
 
-        user.addSocialAccount(new SocialAccount(provider, email, providerId));
-        userRepository.save(user);
+        try {
+            user.addSocialAccount(new SocialAccount(provider, email, providerId));
+            userRepository.save(user);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS, "소셜 계정 연동 중 중복이 감지되었습니다. 잠시 후 다시 시도해주세요.");
+        }
     }
 
     @Override

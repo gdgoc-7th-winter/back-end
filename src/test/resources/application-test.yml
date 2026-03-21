@@ -41,6 +41,7 @@ spring:
             client-authentication-method: client_secret_post
             scope:
               - read:user
+              - user:email
             redirect-uri: "{baseUrl}/login/oauth2/code/github"
 
         provider:
