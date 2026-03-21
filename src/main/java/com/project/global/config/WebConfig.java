@@ -11,8 +11,8 @@ import com.project.global.resolver.CurrentUserArgumentResolver;
 import java.util.List;
 
 @Configuration
-public class WebConfig implements WebMvcConfigurer {
-
+public class
+WebConfig implements WebMvcConfigurer {
     private final @NonNull OnboardingInterceptor onboardingInterceptor;
     private final @NonNull CurrentUserArgumentResolver currentUserArgumentResolver;
 
@@ -29,10 +29,12 @@ public class WebConfig implements WebMvcConfigurer {
 
                 .excludePathPatterns(
                         "/api/health",
-                        "/api/auth/**",
-                        "/api/users/login",
-                        "/api/users/signup",
-                        "/api/users/profile-setup"
+                        "/api/v1/auth/**",
+                        "/api/v1/users/login",
+                        "/api/v1/users/signup",
+                        "/api/v1/users/logout",
+                        "/api/v1/oauth2/login/**",
+                        "/api/v1/departments"
                 );
     }
 
