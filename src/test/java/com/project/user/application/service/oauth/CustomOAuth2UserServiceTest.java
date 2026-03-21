@@ -113,7 +113,7 @@ class CustomOAuth2UserServiceTest {
 
             given(delegate.loadUser(any())).willReturn(mockOAuth2User);
             given(session.getAttribute("LINK_USER_ID")).willReturn(null);
-            given(userRepository.findByProviderId(PROVIDER_ID)).willReturn(Optional.of(user));
+            given(userRepository.findByProviderAndProviderId("google", PROVIDER_ID)).willReturn(Optional.of(user));
 
             OAuth2User result = customOAuth2UserService.loadUser(userRequest);
 
@@ -130,7 +130,7 @@ class CustomOAuth2UserServiceTest {
     void loadUserLoginWithNoLinkedAccount() {
         given(delegate.loadUser(any())).willReturn(mockOAuth2User);
         given(session.getAttribute("LINK_USER_ID")).willReturn(null);
-        given(userRepository.findByProviderId(PROVIDER_ID)).willReturn(Optional.empty());
+        given(userRepository.findByProviderAndProviderId("google", PROVIDER_ID)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> customOAuth2UserService.loadUser(userRequest))
                 .isInstanceOf(

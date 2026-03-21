@@ -18,6 +18,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
+import jakarta.persistence.UniqueConstraint;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -55,7 +56,11 @@ public class User {
     private String password;
 
     @ElementCollection
-    @CollectionTable(name="user_social_account",joinColumns = @JoinColumn(name="user_id"))
+    @CollectionTable(
+            name = "user_social_account",
+            joinColumns = @JoinColumn(name = "user_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"provider", "provider_id"})
+    )
     private Set<SocialAccount> socialAccounts = new HashSet<>();
 
     @Column(name="nickname", length = 50)
@@ -194,6 +199,11 @@ public class User {
     }
 
     public void addSocialAccount(SocialAccount socialAccount) {
-        this.getSocialAccounts().add(socialAccount);
+        boolean alreadyExists = this.socialAccounts.stream()
+                .anyMatch(acc -> acc.getProvider().equals(socialAccount.getProvider())
+                        && acc.getProviderId().equals(socialAccount.getProviderId()));
+        if (!alreadyExists) {
+            this.socialAccounts.add(socialAccount);
+        }
     }
 }

@@ -23,6 +23,7 @@ public enum ErrorCode {
     PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "A002", "현재 비밀번호가 일치하지 않습니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "A003", "접근 권한이 없습니다."),
     SESSION_EXPIRED(HttpStatus.UNAUTHORIZED, "A004", "세션이 만료되었습니다."),
+    OAUTH_PROVIDER_ERROR(HttpStatus.UNAUTHORIZED, "A005", "OAuth 제공자 응답에서 필수 정보를 가져올 수 없습니다."),
 
     // File
     FILE_NOT_FOUND_IN_S3(HttpStatus.BAD_REQUEST, "F001", "S3에 해당 파일이 존재하지 않습니다. 업로드를 먼저 완료해주세요."),
