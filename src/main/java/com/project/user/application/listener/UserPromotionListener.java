@@ -1,7 +1,5 @@
 package com.project.user.application.listener;
 
-import com.project.global.error.BusinessException;
-import com.project.global.error.ErrorCode;
 import com.project.global.event.Impl.UserPromotionEvent;
 import com.project.user.application.service.UserService;
 import lombok.RequiredArgsConstructor;
