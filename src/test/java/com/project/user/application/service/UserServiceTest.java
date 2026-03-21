@@ -2,159 +2,256 @@ package com.project.user.application.service;
 
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
-import com.project.user.application.dto.UserSession;
 import com.project.global.event.Impl.UserPromotionEvent;
+import com.project.user.application.dto.UserSession;
 import com.project.user.application.service.impl.UserServiceImpl;
+import com.project.user.domain.entity.Department;
+import com.project.user.domain.entity.TechStack;
+import com.project.user.domain.entity.Track;
 import com.project.user.domain.entity.User;
 import com.project.user.domain.enums.Authority;
-import com.project.user.domain.enums.Track;
-import com.project.user.domain.repository.UserRepository;
-import com.project.user.presentation.dto.request.LoginRequest;
-import com.project.user.presentation.dto.request.ProfileUpdateRequest;
 
-import jakarta.servlet.http.HttpServletRequest;
+import com.project.user.domain.repository.DepartmentRepository;
+import com.project.user.domain.repository.LevelBadgeRepository;
+import com.project.user.domain.repository.TechStackRepository;
+import com.project.user.domain.repository.TrackRepository;
+import com.project.user.domain.repository.UserRepository;
+import com.project.user.domain.repository.EmailAuthRepository;
+
+import com.project.user.presentation.dto.request.PasswordUpdateRequest;
+import com.project.user.presentation.dto.request.ProfileUpdateRequest;
+import com.project.contribution.domain.repository.ContributionScoreRepository;
+import com.project.contribution.domain.repository.UserContributionRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
+
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.security.web.csrf.CsrfToken;
-import org.springframework.security.web.csrf.DefaultCsrfToken;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.any;
+
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
-    @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private PasswordEncoder passwordEncoder;
-
-    @Mock
-    private ApplicationEventPublisher eventPublisher;
+    @Mock private UserRepository userRepository;
+    @Mock private PasswordEncoder passwordEncoder;
+    @Mock private ApplicationEventPublisher eventPublisher;
+    @Mock private TrackRepository trackRepository;
+    @Mock private TechStackRepository techStackRepository;
+    @Mock private DepartmentRepository departmentRepository;
+    @Mock private EmailAuthRepository emailAuthRepository;
+    @Mock private LevelBadgeRepository levelBadgeRepository;
+    @Mock private ContributionScoreRepository contributionScoreRepository;
+    @Mock private UserContributionRepository userContributionRepository;
 
     @InjectMocks
     private UserServiceImpl userService;
+
+    private MockHttpServletRequest request;
+    private MockHttpServletResponse response;
     private MockHttpSession session;
 
     @BeforeEach
     void setUp() {
+        request = new MockHttpServletRequest();
+        response = new MockHttpServletResponse();
         session = new MockHttpSession();
-        // SecurityContext 초기화
-        SecurityContextHolder.clearContext();
+        request.setSession(session);
     }
 
     @Test
-    @DisplayName("로그인 성공 시 세션에 유저 정보와 보안 컨텍스트가 저장되어야 한다")
+    @DisplayName("로그인 성공 시 세션에 유저 정보가 저장되어야 한다")
     void loginSuccess() {
-        // given
-        String email = "test@hufs.ac.kr";
-        String password = "password123";
-        User user = new User(email, "encodedPassword");
-        LoginRequest request = new LoginRequest(email, password);
+        try (MockedStatic<RequestContextHolder> mockedContext = mockStatic(RequestContextHolder.class)) {
+            // given
+            mockedContext.when(RequestContextHolder::currentRequestAttributes)
+                    .thenReturn(new ServletRequestAttributes(request));
 
-        MockHttpServletRequest servletRequest = new MockHttpServletRequest();
-        servletRequest.getSession(true);
-        CsrfToken mockCsrfToken = new DefaultCsrfToken("X-XSRF-TOKEN", "_csrf", "test-token-value");
-        servletRequest.setAttribute(CsrfToken.class.getName(), mockCsrfToken);
+            String email = "test@hufs.ac.kr";
+            String password = "password123";
+            User user = new User(email, "encodedPassword", "testuser");
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
-        given(passwordEncoder.matches(password, user.getPassword())).willReturn(true);
+            given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+            given(passwordEncoder.matches(password, user.getPassword())).willReturn(true);
 
-        // when
-        userService.login(request, session, servletRequest);
+            // when
+            userService.login(email, password);
 
-        // then
-        // 세션에 LOGIN_USER가 저장되었는지 확인
-        UserSession userSession = (UserSession) session.getAttribute("LOGIN_USER");
-        assertThat(userSession).isNotNull();
-        assertThat(userSession.getEmail()).isEqualTo(email);
-        assertThat(userSession.isNeedsProfile()).isTrue();
-
-        // 세션에 Spring Security Context가 저장되었는지 확인
-        Object securityContext = session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-        assertThat(securityContext).isInstanceOf(SecurityContext.class);
-
-        CsrfToken tokenInRequest = (CsrfToken) servletRequest.getAttribute(CsrfToken.class.getName());
-        assertThat(tokenInRequest).isNotNull();
-        assertThat(tokenInRequest.getToken()).isEqualTo("test-token-value");
-
-        Authentication auth = ((SecurityContext) securityContext).getAuthentication();
-        assertThat(auth.getPrincipal()).isEqualTo(email);
-        assertThat(auth.getAuthorities()).extracting("authority").contains("DUMMY");
-    }
-
-
-    @Test
-    @DisplayName("초기 프로필 설정 완료 시 권한이 USER로 승격되고 세션이 갱신되어야 한다")
-    void completeInitialProfileSuccess() {
-        // given
-        String email = "test@hufs.ac.kr";
-        User user = spy(new User(email, "password")); // updateProfile 감시를 위해 spy 사용
-        ProfileUpdateRequest request = createProfileUpdateRequest(); // 테스트용 DTO 생성 메서드
-
-        // 기존 세션 설정
-        UserSession oldSession = UserSession.builder()
-                .userId(1L).email(email).authority(Authority.DUMMY).needsProfile(true).build();
-        session.setAttribute("LOGIN_USER", oldSession);
-
-        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
-
-        // when
-        userService.completeInitialProfile(user.getId(), request, session);
-
-        // then
-        // 1. 엔티티 상태 변경 확인
-        ArgumentCaptor<UserPromotionEvent> eventCaptor = ArgumentCaptor.forClass(UserPromotionEvent.class);
-        verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
-
-        UserPromotionEvent publishedEvent = eventCaptor.getValue();
-        assertThat(publishedEvent.userId()).isEqualTo(user.getId());
+            // then
+            UserSession userSession = (UserSession) session.getAttribute("LOGIN_USER");
+            assertThat(userSession).isNotNull();
+            assertThat(userSession.getAuthority()).isEqualTo(Authority.DUMMY);
+        }
     }
 
     @Test
-    @DisplayName("존재하지 않는 이메일로 로그인 시 BusinessException이 발생한다")
-    void loginFailUserNotFound() {
+    @DisplayName("로그인 실패 - 비밀번호 불일치 시 예외 발생")
+    void loginFailInvalidPassword() {
+        try (MockedStatic<RequestContextHolder> mockedContext = mockStatic(RequestContextHolder.class)) {
+            // given
+            mockedContext.when(RequestContextHolder::currentRequestAttributes)
+                    .thenReturn(new ServletRequestAttributes(request));
+
+            User user = new User("test@hufs.ac.kr", "encoded", "nick");
+            given(userRepository.findByEmail(anyString())).willReturn(Optional.of(user));
+            given(passwordEncoder.matches(anyString(), anyString())).willReturn(false);
+
+            // when & then
+            assertThatThrownBy(() -> userService.login("test@hufs.ac.kr", "wrong"))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.LOGIN_FAILED);
+        }
+    }
+
+    @Test
+    @DisplayName("프로필 초기 설정 시 권한이 승급되고 이벤트가 발행된다")
+    void updateProfilePromotionSuccess() {
+        try (MockedStatic<RequestContextHolder> mockedContext = mockStatic(RequestContextHolder.class)) {
+            // given
+            mockedContext.when(RequestContextHolder::currentRequestAttributes)
+                    .thenReturn(new ServletRequestAttributes(request));
+
+            Long userId = 1L;
+            User user = new User("test@hufs.ac.kr", "pw", "nick");
+            ReflectionTestUtils.setField(user, "id", userId);
+
+            Department mockDept = Department.builder().college("공과대학").name("컴퓨터공학").build();
+            Track mockTrack = Track.builder().name("백엔드").build();
+            TechStack mockTech = TechStack.builder().name("Spring").build();
+
+            ProfileUpdateRequest updateRequest = ProfileUpdateRequest.builder()
+                    .nickname("newNick")
+                    .studentId("202001234")
+                    .departmentId(1L)
+                    .trackNames(List.of("백엔드"))
+                    .techStackNames(List.of("Spring"))
+                    .build();
+
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(departmentRepository.findById(1L)).willReturn(Optional.of(mockDept));
+            given(trackRepository.findByNameIn(anyList())).willReturn(List.of(mockTrack));
+            given(techStackRepository.findByNameIn(anyList())).willReturn(List.of(mockTech));
+
+            // when
+            userService.updateProfile(userId, updateRequest);
+
+            // then
+            assertThat(user.getAuthority()).isEqualTo(Authority.USER);
+            assertThat(user.needsInitialSetup()).isFalse();
+            verify(eventPublisher, times(1)).publishEvent(any(UserPromotionEvent.class));
+        }
+    }
+
+    @Test
+    @DisplayName("비밀번호 변경 성공")
+    void changePasswordSuccess() {
         // given
-        LoginRequest loginRequest = new LoginRequest("none@hufs.ac.kr", "pwd");
-        HttpServletRequest httpRequest = new MockHttpServletRequest();
-        given(userRepository.findByEmail(anyString())).willReturn(Optional.empty());
+        Long userId = 1L;
+        String encodedCurrent = "encoded_currentPw";
+        String encodedNew = "encoded_newPw123!";
+        User user = new User("test@hufs.ac.kr", encodedCurrent, "nick");
+        ReflectionTestUtils.setField(user, "id", userId);
+
+        PasswordUpdateRequest passwordUpdateRequest = new PasswordUpdateRequest();
+        ReflectionTestUtils.setField(passwordUpdateRequest, "oldPassword", "currentPw");
+        ReflectionTestUtils.setField(passwordUpdateRequest, "newPassword", "newPw123!");
+
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(passwordEncoder.matches("currentPw", encodedCurrent)).willReturn(true);
+        given(passwordEncoder.encode("newPw123!")).willReturn(encodedNew);
+
+        // when
+        userService.changePassword(userId, passwordUpdateRequest);
+
+        // then
+        verify(passwordEncoder).matches("currentPw", encodedCurrent);
+        verify(passwordEncoder).encode("newPw123!");
+        assertThat(user.getPassword()).isEqualTo(encodedNew);
+    }
+
+    @Test
+    @DisplayName("비밀번호 변경 실패 - 현재 비밀번호 불일치 시 예외 발생")
+    void changePasswordFailMismatch() {
+        // given
+        Long userId = 1L;
+        String encodedCurrent = "encoded_correctPw";
+        User user = new User("test@hufs.ac.kr", encodedCurrent, "nick");
+        ReflectionTestUtils.setField(user, "id", userId);
+
+        PasswordUpdateRequest passwordUpdateRequest = new PasswordUpdateRequest();
+        ReflectionTestUtils.setField(passwordUpdateRequest, "oldPassword", "wrongPw");
+        ReflectionTestUtils.setField(passwordUpdateRequest, "newPassword", "newPw123!");
+
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(passwordEncoder.matches("wrongPw", encodedCurrent)).willReturn(false);
 
         // when & then
-        assertThatThrownBy(() -> userService.login(loginRequest, session, httpRequest))
+        assertThatThrownBy(() -> userService.changePassword(userId, passwordUpdateRequest))
                 .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.LOGIN_FAILED);
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PASSWORD_MISMATCH);
     }
 
-    private ProfileUpdateRequest createProfileUpdateRequest() {
+    @Test
+    @DisplayName("회원 탈퇴 성공 - 유저가 삭제되고 세션이 무효화된다")
+    void deleteUserSuccess() {
+        try (MockedStatic<RequestContextHolder> mockedContext = mockStatic(RequestContextHolder.class)) {
+            // given
+            mockedContext.when(RequestContextHolder::currentRequestAttributes)
+                    .thenReturn(new ServletRequestAttributes(request, response));
 
-        return ProfileUpdateRequest.builder()
-                .nickname("닉네임")
-                .studentId("202001234")
-                .department("컴퓨터공학")
-                .track(Track.BACKEND)
-                .build();
+            Long userId = 1L;
+            User user = new User("test@hufs.ac.kr", "pw", "nick");
+            ReflectionTestUtils.setField(user, "id", userId);
 
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+            // when
+            userService.deleteUser(userId);
+
+            // then
+            verify(userRepository, times(1)).delete(user);
+            assertThat(session.isInvalid()).isTrue();
+        }
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴 실패 - 존재하지 않는 유저")
+    void deleteUserFailNotFound() {
+        // given
+        Long userId = 999L;
+        given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userService.deleteUser(userId))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND);
+
+        verify(userRepository, never()).delete(any());
     }
 }

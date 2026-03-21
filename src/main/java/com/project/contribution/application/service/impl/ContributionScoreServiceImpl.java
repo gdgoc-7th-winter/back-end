@@ -19,7 +19,7 @@ public class ContributionScoreServiceImpl implements ContributionScoreService {
 
     @Override
     @Transactional(rollbackFor = BusinessException.class)
-    public ContributionScore addScore(Long userId, ScoreCreateRequest request) {
+    public ContributionScore addScore(ScoreCreateRequest request) {
         try {
             ContributionScore score = new ContributionScore(
                     request.scoreName(),

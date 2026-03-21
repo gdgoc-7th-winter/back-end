@@ -109,7 +109,7 @@ class PostAttachmentServiceTest {
     }
 
     private static Post buildPost(Long id) {
-        User user = new User("user@test.com", "pw");
+        User user = new User("user@test.com", "pw", "testuser");
         ReflectionTestUtils.setField(user, "id", 1L);
         Board board = Board.of("GENERAL", "자유/정보 게시판");
         ReflectionTestUtils.setField(board, "id", 10L);

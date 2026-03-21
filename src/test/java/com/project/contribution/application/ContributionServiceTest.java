@@ -52,7 +52,7 @@ class ContributionServiceTest {
         ActivityType activityType = ActivityType.POST_CREATED;
         ContributionScore mockScore = new ContributionScore(scoreName,30);
 
-        User mockUser = new User("test@email.com", "password123");
+        User mockUser = new User("test@email.com", "password123", "testuser1");
         ReflectionTestUtils.setField(mockUser, "id", userId);
 
         when(mockPolicy.supports(activityType)).thenReturn(true);
