@@ -26,7 +26,7 @@ public interface FileControllerDocs {
                     S3 직접 업로드용 Presigned URL을 발급합니다.
                     1. 이 API로 uploadUrl, objectKey, expiresIn을 받습니다.
                     2. 클라이언트는 uploadUrl로 PUT 요청하여 파일을 업로드합니다.
-                    3. 업로드 완료 후 POST /api/files/complete를 호출하여 검증 및 DB 저장을 완료합니다.
+                    3. 업로드 완료 후 POST /api/v1/files/complete를 호출하여 검증 및 DB 저장을 완료합니다.
                     - uploadType: PROFILE_IMAGE(프로필), POST_IMAGE(게시글), ATTACHMENT(첨부파일)
                     - contentType: image/jpeg, image/png, image/webp, image/gif, application/pdf 등
                     - referenceId: PROFILE_IMAGE는 사용자 ID, POST_IMAGE/ATTACHMENT는 게시글 ID
