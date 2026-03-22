@@ -11,7 +11,7 @@ import com.project.post.domain.repository.dto.LecturePostDetailQueryResult;
 import com.project.post.domain.repository.dto.LecturePostListQueryResult;
 import com.project.post.domain.repository.dto.LecturePostSearchCondition;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
-import com.project.post.domain.repository.support.PostAuthorExpressions;
+import com.project.user.domain.repository.querydsl.UserRepresentativeTrackExpressions;
 import com.project.user.domain.entity.QDepartment;
 import com.project.user.domain.entity.QLevelBadge;
 import com.project.user.domain.entity.QUser;
@@ -66,7 +66,7 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
                 user.nickname,
                 user.profileImgUrl,
                 department.name,
-                PostAuthorExpressions.representativeTrackNameSubquery(user),
+                UserRepresentativeTrackExpressions.representativeTrackNameSubquery(user),
                 levelBadge.levelImage,
                 lecturePost.department,
                 lecturePost.campus,
@@ -114,7 +114,7 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
         QLecturePost lecturePost = QLecturePost.lecturePost;
         QDepartment department = QDepartment.department;
         QLevelBadge levelBadge = QLevelBadge.levelBadge;
-        Expression<String> representativeTrackName = PostAuthorExpressions.representativeTrackNameSubquery(user);
+        Expression<String> representativeTrackName = UserRepresentativeTrackExpressions.representativeTrackNameSubquery(user);
 
         Tuple base = queryFactory
                 .select(

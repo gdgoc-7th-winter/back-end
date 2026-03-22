@@ -9,7 +9,7 @@ import com.project.post.domain.repository.dto.PostDetailQueryResult;
 import com.project.post.domain.repository.dto.PostListQueryResult;
 import com.project.post.domain.enums.PostListSort;
 import com.project.post.domain.repository.dto.PostSearchCondition;
-import com.project.post.domain.repository.support.PostAuthorExpressions;
+import com.project.user.domain.repository.querydsl.UserRepresentativeTrackExpressions;
 import com.project.user.domain.entity.QDepartment;
 import com.project.user.domain.entity.QLevelBadge;
 import com.project.user.domain.entity.QUser;
@@ -61,7 +61,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 user.nickname,
                 user.profileImgUrl,
                 department.name,
-                PostAuthorExpressions.representativeTrackNameSubquery(user),
+                UserRepresentativeTrackExpressions.representativeTrackNameSubquery(user),
                 levelBadge.levelImage,
                 post.viewCount,
                 post.likeCount,
@@ -105,7 +105,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         QUser user = QUser.user;
         QDepartment department = QDepartment.department;
         QLevelBadge levelBadge = QLevelBadge.levelBadge;
-        Expression<String> representativeTrackName = PostAuthorExpressions.representativeTrackNameSubquery(user);
+        Expression<String> representativeTrackName = UserRepresentativeTrackExpressions.representativeTrackNameSubquery(user);
 
         Tuple base = queryFactory
                 .select(
