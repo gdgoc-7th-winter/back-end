@@ -9,8 +9,12 @@ import com.project.post.domain.repository.dto.PostDetailQueryResult;
 import com.project.post.domain.repository.dto.PostListQueryResult;
 import com.project.post.domain.enums.PostListSort;
 import com.project.post.domain.repository.dto.PostSearchCondition;
+import com.project.user.domain.repository.querydsl.UserRepresentativeTrackExpressions;
+import com.project.user.domain.entity.QDepartment;
+import com.project.user.domain.entity.QLevelBadge;
 import com.project.user.domain.entity.QUser;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.Expression;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
@@ -43,6 +47,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
             @NonNull PostSearchCondition condition) {
         QPost post = QPost.post;
         QUser user = QUser.user;
+        QDepartment department = QDepartment.department;
+        QLevelBadge levelBadge = QLevelBadge.levelBadge;
 
         BooleanBuilder where = buildPostListWhere(boardCode, condition, post);
 
@@ -51,7 +57,12 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 post.id,
                 post.title,
                 post.thumbnailUrl,
+                user.id,
                 user.nickname,
+                user.profileImgUrl,
+                department.name,
+                UserRepresentativeTrackExpressions.representativeTrackNameSubquery(user),
+                levelBadge.levelImage,
                 post.viewCount,
                 post.likeCount,
                 post.scrapCount,
@@ -62,6 +73,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 .select(projection)
                 .from(post)
                 .join(post.author, user)
+                .leftJoin(user.department, department)
+                .leftJoin(user.levelBadge, levelBadge)
                 .where(where)
                 .orderBy(toOrderSpecifiers(condition.sort(), post))
                 .offset(pageable.getOffset())
@@ -90,6 +103,9 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
     public Optional<PostDetailQueryResult> findPostDetail(@NonNull Long postId) {
         QPost post = QPost.post;
         QUser user = QUser.user;
+        QDepartment department = QDepartment.department;
+        QLevelBadge levelBadge = QLevelBadge.levelBadge;
+        Expression<String> representativeTrackName = UserRepresentativeTrackExpressions.representativeTrackNameSubquery(user);
 
         Tuple base = queryFactory
                 .select(
@@ -97,8 +113,12 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         post.title,
                         post.content,
                         post.thumbnailUrl,
-                        user.nickname,
                         user.id,
+                        user.nickname,
+                        user.profileImgUrl,
+                        department.name,
+                        representativeTrackName,
+                        levelBadge.levelImage,
                         post.viewCount,
                         post.likeCount,
                         post.scrapCount,
@@ -108,6 +128,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 )
                 .from(post)
                 .join(post.author, user)
+                .leftJoin(user.department, department)
+                .leftJoin(user.levelBadge, levelBadge)
                 .where(
                         post.id.eq(postId),
                         post.deletedAt.isNull()
@@ -121,7 +143,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         List<String> tagNames = fetchTagNames(postId);
         List<PostDetailQueryResult.AttachmentDto> attachments = fetchAttachments(postId);
 
-        return Optional.of(buildDetailResult(base, post, user, tagNames, attachments));
+        return Optional.of(buildDetailResult(
+                base, post, user, department, levelBadge, representativeTrackName, tagNames, attachments));
     }
 
     private List<String> fetchTagNames(Long postId) {
@@ -158,6 +181,9 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
             Tuple base,
             QPost post,
             QUser user,
+            QDepartment department,
+            QLevelBadge levelBadge,
+            Expression<String> representativeTrackName,
             List<String> tagNames,
             List<PostDetailQueryResult.AttachmentDto> attachments) {
         return new PostDetailQueryResult(
@@ -165,8 +191,12 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 base.get(post.title),
                 base.get(post.content),
                 base.get(post.thumbnailUrl),
-                base.get(user.nickname),
                 base.get(user.id),
+                base.get(user.nickname),
+                base.get(user.profileImgUrl),
+                base.get(department.name),
+                base.get(representativeTrackName),
+                base.get(levelBadge.levelImage),
                 base.get(post.viewCount),
                 base.get(post.likeCount),
                 base.get(post.scrapCount),

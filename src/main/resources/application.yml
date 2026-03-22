@@ -1,11 +1,31 @@
 # 공통 설정
+cloud:
+  aws:
+    s3:
+      region: ap-northeast-2
+      presigned-url-expire-seconds: 600
+      max-file-size-bytes: 5242880
+
 cors:
   allowed-origins:
     - http://localhost:5173
 
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+  forward-headers-strategy: framework
+
 spring:
   application:
     name: hufsdev
+
+  data:
+    web:
+      pageable:
+        max-page-size: 100
 
   datasource:
     driver-class-name: org.postgresql.Driver
@@ -17,30 +37,10 @@ spring:
         jdbc:
           time_zone: UTC
 
-  data:
-    web:
-      pageable:
-        max-page-size: 100
-
   session:
     store-type: redis
     redis:
       namespace: "{hufsdev:session}"
-
-server:
-  port: 8080
-  servlet:
-    encoding:
-      charset: UTF-8
-      force: true
-  forward-headers-strategy: framework
-
-cloud:
-  aws:
-    s3:
-      region: ap-northeast-2
-      presigned-url-expire-seconds: 600
-      max-file-size-bytes: 5242880
 
 springdoc:
   swagger-ui:

@@ -11,9 +11,13 @@ import com.project.post.domain.repository.dto.LecturePostDetailQueryResult;
 import com.project.post.domain.repository.dto.LecturePostListQueryResult;
 import com.project.post.domain.repository.dto.LecturePostSearchCondition;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
+import com.project.user.domain.repository.querydsl.UserRepresentativeTrackExpressions;
+import com.project.user.domain.entity.QDepartment;
+import com.project.user.domain.entity.QLevelBadge;
 import com.project.user.domain.entity.QUser;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -48,6 +52,8 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
         QPost post = QPost.post;
         QUser user = QUser.user;
         QLecturePost lecturePost = QLecturePost.lecturePost;
+        QDepartment department = QDepartment.department;
+        QLevelBadge levelBadge = QLevelBadge.levelBadge;
 
         BooleanBuilder where = buildListWhere(condition, post, lecturePost);
 
@@ -56,7 +62,12 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
                 post.id,
                 post.title,
                 post.thumbnailUrl,
+                user.id,
                 user.nickname,
+                user.profileImgUrl,
+                department.name,
+                UserRepresentativeTrackExpressions.representativeTrackNameSubquery(user),
+                levelBadge.levelImage,
                 lecturePost.department,
                 lecturePost.campus,
                 post.viewCount,
@@ -71,6 +82,8 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
                 .from(lecturePost)
                 .join(lecturePost.post, post)
                 .join(post.author, user)
+                .leftJoin(user.department, department)
+                .leftJoin(user.levelBadge, levelBadge)
                 .where(where)
                 .orderBy(toOrderSpecifiers(condition.sort(), post))
                 .offset(pageable.getOffset())
@@ -99,6 +112,9 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
         QPost post = QPost.post;
         QUser user = QUser.user;
         QLecturePost lecturePost = QLecturePost.lecturePost;
+        QDepartment department = QDepartment.department;
+        QLevelBadge levelBadge = QLevelBadge.levelBadge;
+        Expression<String> representativeTrackName = UserRepresentativeTrackExpressions.representativeTrackNameSubquery(user);
 
         Tuple base = queryFactory
                 .select(
@@ -106,8 +122,12 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
                         post.title,
                         post.content,
                         post.thumbnailUrl,
-                        user.nickname,
                         user.id,
+                        user.nickname,
+                        user.profileImgUrl,
+                        department.name,
+                        representativeTrackName,
+                        levelBadge.levelImage,
                         lecturePost.department,
                         lecturePost.campus,
                         post.viewCount,
@@ -120,6 +140,8 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
                 .from(lecturePost)
                 .join(lecturePost.post, post)
                 .join(post.author, user)
+                .leftJoin(user.department, department)
+                .leftJoin(user.levelBadge, levelBadge)
                 .where(
                         post.id.eq(postId),
                         post.deletedAt.isNull(),
@@ -139,8 +161,12 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
                 base.get(post.title),
                 base.get(post.content),
                 base.get(post.thumbnailUrl),
-                base.get(user.nickname),
                 base.get(user.id),
+                base.get(user.nickname),
+                base.get(user.profileImgUrl),
+                base.get(department.name),
+                base.get(representativeTrackName),
+                base.get(levelBadge.levelImage),
                 base.get(lecturePost.department),
                 base.get(lecturePost.campus),
                 base.get(post.viewCount),

@@ -25,6 +25,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -36,6 +37,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "users")
+@BatchSize(size = 16)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
