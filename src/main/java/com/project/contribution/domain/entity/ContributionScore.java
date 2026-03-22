@@ -12,7 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name="contributionScore")
+@Table(name = "contribution_score")
 @Getter
 @NoArgsConstructor
 public class ContributionScore {

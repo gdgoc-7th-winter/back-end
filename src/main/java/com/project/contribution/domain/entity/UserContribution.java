@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Table(
-        name = "userContribution",
+        name = "user_contribution",
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "UK_USER_CONTRIBUTION_USER_SCORE",
