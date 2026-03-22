@@ -63,16 +63,16 @@ public class PostController implements PostControllerDocs {
     }
 
     @Override
-    @GetMapping("/posts/{id}")
-    public ResponseEntity<CommonResponse<PostDetailResponse>> getDetail(@PathVariable @Positive @NonNull Long id) {
-        PostDetailResponse detail = postQueryService.getDetail(id);
+    @GetMapping("/posts/{postId}")
+    public ResponseEntity<CommonResponse<PostDetailResponse>> getDetail(@PathVariable @Positive @NonNull Long postId) {
+        PostDetailResponse detail = postQueryService.getDetail(postId);
         return ResponseEntity.ok(CommonResponse.ok(detail));
     }
 
     @Override
-    @PostMapping("/posts/{id}/view")
-    public ResponseEntity<CommonResponse<Void>> increaseViewCount(@PathVariable @Positive @NonNull Long id) {
-        postCommandService.increaseViewCount(id);
+    @PostMapping("/posts/{postId}/view")
+    public ResponseEntity<CommonResponse<Void>> increaseViewCount(@PathVariable @Positive @NonNull Long postId) {
+        postCommandService.increaseViewCount(postId);
         return ResponseEntity.ok(CommonResponse.ok());
     }
 
@@ -87,60 +87,60 @@ public class PostController implements PostControllerDocs {
     }
 
     @Override
-    @PatchMapping("/posts/{id}")
+    @PatchMapping("/posts/{postId}")
     public ResponseEntity<CommonResponse<Void>> update(
-            @PathVariable @Positive @NonNull Long id,
+            @PathVariable @Positive @NonNull Long postId,
             @RequestBody @Valid @NonNull PostUpdateRequest request,
             @CurrentUser @NonNull User user) {
         postCommandService.update(
-                id,
+                postId,
                 request,
                 user);
         return ResponseEntity.ok(CommonResponse.ok());
     }
 
     @Override
-    @DeleteMapping("/posts/{id}")
+    @DeleteMapping("/posts/{postId}")
     public ResponseEntity<CommonResponse<Void>> delete(
-            @PathVariable @Positive @NonNull Long id,
+            @PathVariable @Positive @NonNull Long postId,
             @CurrentUser @NonNull User user) {
-        postCommandService.softDelete(id, user);
+        postCommandService.softDelete(postId, user);
         return ResponseEntity.ok(CommonResponse.ok());
     }
 
     @Override
-    @PutMapping("/posts/{id}/like")
+    @PutMapping("/posts/{postId}/like")
     public ResponseEntity<CommonResponse<LikeScrapToggleResponse>> like(
-            @PathVariable @Positive @NonNull Long id,
+            @PathVariable @Positive @NonNull Long postId,
             @CurrentUser @NonNull User user) {
-        LikeScrapToggleResponse response = postLikeService.like(id, user);
+        LikeScrapToggleResponse response = postLikeService.like(postId, user);
         return ResponseEntity.ok(CommonResponse.ok(response));
     }
 
     @Override
-    @DeleteMapping("/posts/{id}/like")
+    @DeleteMapping("/posts/{postId}/like")
     public ResponseEntity<CommonResponse<LikeScrapToggleResponse>> unlike(
-            @PathVariable @Positive @NonNull Long id,
+            @PathVariable @Positive @NonNull Long postId,
             @CurrentUser @NonNull User user) {
-        LikeScrapToggleResponse response = postLikeService.unlike(id, user);
+        LikeScrapToggleResponse response = postLikeService.unlike(postId, user);
         return ResponseEntity.ok(CommonResponse.ok(response));
     }
 
     @Override
-    @PutMapping("/posts/{id}/scrap")
+    @PutMapping("/posts/{postId}/scrap")
     public ResponseEntity<CommonResponse<LikeScrapToggleResponse>> scrap(
-            @PathVariable @Positive @NonNull Long id,
+            @PathVariable @Positive @NonNull Long postId,
             @CurrentUser @NonNull User user) {
-        LikeScrapToggleResponse response = postScrapService.scrap(id, user);
+        LikeScrapToggleResponse response = postScrapService.scrap(postId, user);
         return ResponseEntity.ok(CommonResponse.ok(response));
     }
 
     @Override
-    @DeleteMapping("/posts/{id}/scrap")
+    @DeleteMapping("/posts/{postId}/scrap")
     public ResponseEntity<CommonResponse<LikeScrapToggleResponse>> unscrap(
-            @PathVariable @Positive @NonNull Long id,
+            @PathVariable @Positive @NonNull Long postId,
             @CurrentUser @NonNull User user) {
-        LikeScrapToggleResponse response = postScrapService.unscrap(id, user);
+        LikeScrapToggleResponse response = postScrapService.unscrap(postId, user);
         return ResponseEntity.ok(CommonResponse.ok(response));
     }
 }

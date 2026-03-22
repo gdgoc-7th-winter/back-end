@@ -1,10 +1,11 @@
 package com.project.post.domain.repository.dto;
 
-import com.project.post.domain.enums.Campus;
+import com.project.post.domain.enums.PromotionCategory;
 
 import java.time.Instant;
 
-public record LecturePostListQueryResult(
+public record PromotionPostListQueryResult(
+        PromotionCategory category,
         Long postId,
         String title,
         String thumbnailUrl,
@@ -14,8 +15,6 @@ public record LecturePostListQueryResult(
         String authorDepartmentName,
         String authorRepresentativeTrackName,
         String authorTierBadgeImageUrl,
-        String department,
-        Campus campus,
         long viewCount,
         long likeCount,
         long scrapCount,

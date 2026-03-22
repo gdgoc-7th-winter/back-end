@@ -2,6 +2,7 @@ package com.project.post.application.service.impl;
 
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
+import com.project.post.application.dto.PostAuthorResponse;
 import com.project.post.application.dto.PostDetailResponse;
 import com.project.post.application.dto.PostListResponse;
 import com.project.post.application.service.PostQueryService;
@@ -67,7 +68,13 @@ public class PostQueryServiceImpl implements PostQueryService {
                 result.postId(),
                 result.title(),
                 result.thumbnailUrl(),
-                result.authorNickname(),
+                PostAuthorResponse.fromParts(
+                        result.authorId(),
+                        result.authorNickname(),
+                        result.authorProfileImgUrl(),
+                        result.authorDepartmentName(),
+                        result.authorRepresentativeTrackName(),
+                        result.authorTierBadgeImageUrl()),
                 result.viewCount(),
                 result.likeCount(),
                 result.scrapCount(),
@@ -111,8 +118,13 @@ public class PostQueryServiceImpl implements PostQueryService {
                 result.title(),
                 result.content(),
                 result.thumbnailUrl(),
-                result.authorNickname(),
-                result.authorId(),
+                PostAuthorResponse.fromParts(
+                        result.authorId(),
+                        result.authorNickname(),
+                        result.authorProfileImgUrl(),
+                        result.authorDepartmentName(),
+                        result.authorRepresentativeTrackName(),
+                        result.authorTierBadgeImageUrl()),
                 result.viewCount(),
                 result.likeCount(),
                 result.scrapCount(),
