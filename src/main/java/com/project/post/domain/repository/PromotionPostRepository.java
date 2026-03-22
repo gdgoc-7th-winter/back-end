@@ -9,36 +9,28 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface PromotionPostRepository extends JpaRepository<PromotionPost, Long> {
 
-    @Query("SELECT pp FROM PromotionPost pp JOIN FETCH pp.post p WHERE pp.id = :postId")
+    @Query("SELECT pp FROM PromotionPost pp JOIN FETCH pp.post p WHERE pp.id = :postId AND p.deletedAt IS NULL")
     Optional<PromotionPost> findActiveById(@Param("postId") Long postId);
 
-    @Query("SELECT pp FROM PromotionPost pp WHERE pp.category = :category")
+    @Query("SELECT pp FROM PromotionPost pp JOIN pp.post p WHERE p.deletedAt IS NULL AND pp.category = :category")
     @EntityGraph(attributePaths = {
             "post",
             "post.author",
             "post.author.department",
-            "post.author.levelBadge",
-            "post.author.userTracks",
-            "post.author.userTracks.track"
+            "post.author.levelBadge"
     })
     Page<PromotionPost> findAllActiveByCategory(@Param("category") PromotionCategory category, Pageable pageable);
 
-    @Query("SELECT pp FROM PromotionPost pp")
+    @Query("SELECT pp FROM PromotionPost pp JOIN pp.post p WHERE p.deletedAt IS NULL")
     @EntityGraph(attributePaths = {
             "post",
             "post.author",
             "post.author.department",
-            "post.author.levelBadge",
-            "post.author.userTracks",
-            "post.author.userTracks.track"
+            "post.author.levelBadge"
     })
     Page<PromotionPost> findAllActive(Pageable pageable);
-
-    @Query("SELECT pp FROM PromotionPost pp WHERE pp.category = :category")
-    List<PromotionPost> findAllActiveByCategory(@Param("category") PromotionCategory category);
 }

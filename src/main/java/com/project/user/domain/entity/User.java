@@ -25,17 +25,21 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Entity
 @Table(name = "users")
+@BatchSize(size = 16)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
@@ -118,6 +122,16 @@ public class User {
 
     public boolean needsInitialSetup() {
         return this.department == null || this.getUserTracks().isEmpty() || this.getStudentId() == null;
+    }
+
+     // 노출용 대표 트랙명. 보유 {@link UserTrack} 중 id가 가장 작은 행의 트랙명
+    public String getRepresentativeTrackName() {
+        return userTracks.stream()
+                .filter(Objects::nonNull)
+                .filter(ut -> ut.getTrack() != null)
+                .min(Comparator.comparing(UserTrack::getId, Comparator.nullsLast(Long::compareTo)))
+                .map(ut -> ut.getTrack().getName())
+                .orElse(null);
     }
 
     public void grantUserAuthority() {
