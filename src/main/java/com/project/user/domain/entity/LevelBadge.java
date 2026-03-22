@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 import jakarta.persistence.Id;
 
 @Entity
-@Table(name="levelBadge")
+@Table(name = "level_badge")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,22 +20,22 @@ public class LevelBadge {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id")
+    @Column(name = "id")
     private Long id;
 
-    @Column(name="levelName")
+    @Column(name = "level_name")
     private String levelName;
 
-    @Column(name="levelDescription")
+    @Column(name = "level_description")
     private String levelDescription;
 
-    @Column(name="levelImage")
+    @Column(name = "level_image")
     private String levelImage;
 
-    @Column(name="minimumPoint")
+    @Column(name = "minimum_point")
     private Integer minimumPoint;
 
-    @Column(name="maximumPoint")
+    @Column(name = "maximum_point")
     private Integer maximumPoint;
 
     @Builder
