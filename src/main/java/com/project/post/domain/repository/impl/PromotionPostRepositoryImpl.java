@@ -84,19 +84,17 @@ public class PromotionPostRepositoryImpl implements PromotionPostRepositoryCusto
         return PageableExecutionUtils.getPage(
                 Objects.requireNonNull(content),
                 pageable,
-                () -> fetchPromotionPostListCount(where, promotionPost, post, user));
+                () -> fetchPromotionPostListCount(where, promotionPost, post));
     }
 
     private long fetchPromotionPostListCount(
             BooleanBuilder where,
             QPromotionPost promotionPost,
-            QPost post,
-            QUser user) {
+            QPost post) {
         Long total = queryFactory
                 .select(promotionPost.id.count())
                 .from(promotionPost)
                 .join(promotionPost.post, post)
-                .join(post.author, user)
                 .where(where)
                 .fetchOne();
         return total == null ? 0L : total;
