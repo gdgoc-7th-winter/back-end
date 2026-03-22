@@ -1,36 +1,14 @@
 package com.project.post.domain.repository;
 
 import com.project.post.domain.entity.PromotionPost;
-import com.project.post.domain.enums.PromotionCategory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
-public interface PromotionPostRepository extends JpaRepository<PromotionPost, Long> {
+public interface PromotionPostRepository extends JpaRepository<PromotionPost, Long>, PromotionPostRepositoryCustom {
 
     @Query("SELECT pp FROM PromotionPost pp JOIN FETCH pp.post p WHERE pp.id = :postId AND p.deletedAt IS NULL")
     Optional<PromotionPost> findActiveById(@Param("postId") Long postId);
-
-    @Query("SELECT pp FROM PromotionPost pp JOIN pp.post p WHERE p.deletedAt IS NULL AND pp.category = :category")
-    @EntityGraph(attributePaths = {
-            "post",
-            "post.author",
-            "post.author.department",
-            "post.author.levelBadge"
-    })
-    Page<PromotionPost> findAllActiveByCategory(@Param("category") PromotionCategory category, Pageable pageable);
-
-    @Query("SELECT pp FROM PromotionPost pp JOIN pp.post p WHERE p.deletedAt IS NULL")
-    @EntityGraph(attributePaths = {
-            "post",
-            "post.author",
-            "post.author.department",
-            "post.author.levelBadge"
-    })
-    Page<PromotionPost> findAllActive(Pageable pageable);
 }
