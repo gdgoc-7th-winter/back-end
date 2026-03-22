@@ -89,8 +89,12 @@ class PostQueryServiceTest {
                 "title",
                 "content",
                 "thumb",
-                "author",
                 10L,
+                "author",
+                null,
+                null,
+                null,
+                null,
                 3L,
                 2L,
                 1L,
@@ -119,7 +123,7 @@ class PostQueryServiceTest {
         when(boardRepository.findByCodeAndActiveTrue("GENERAL")).thenReturn(Optional.of(Board.of("GENERAL", "자유/정보 게시판")));
 
         Page<PostListQueryResult> queryPage = new PageImpl<>(Objects.requireNonNull(List.of(
-                new PostListQueryResult(1L, "t", "thumb", "nick", 0, 0, 0, 0, Instant.now())
+                new PostListQueryResult(1L, "t", "thumb", 1L, "nick", null, null, null, null, 0, 0, 0, 0, Instant.now())
         )));
         PostSearchCondition condition = new PostSearchCondition(null, null, PostListSort.LATEST);
         Pageable pageable = PageRequest.of(0, 10);

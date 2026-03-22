@@ -1,5 +1,6 @@
 package com.project.post.application.dto.LecturePost;
 
+import com.project.post.application.dto.PostAuthorResponse;
 import com.project.post.application.dto.PostDetailResponse;
 import com.project.post.domain.enums.Campus;
 
@@ -11,8 +12,7 @@ public record LecturePostDetailResponse(
         String title,
         String content,
         String thumbnailUrl,
-        String authorNickname,
-        Long authorId,
+        PostAuthorResponse author,
         String department,
         Campus campus,
         long viewCount,

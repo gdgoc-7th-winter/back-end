@@ -18,11 +18,25 @@ public interface PromotionPostRepository extends JpaRepository<PromotionPost, Lo
     Optional<PromotionPost> findActiveById(@Param("postId") Long postId);
 
     @Query("SELECT pp FROM PromotionPost pp WHERE pp.category = :category")
-    @EntityGraph(attributePaths = {"post", "post.author"})
+    @EntityGraph(attributePaths = {
+            "post",
+            "post.author",
+            "post.author.department",
+            "post.author.levelBadge",
+            "post.author.userTracks",
+            "post.author.userTracks.track"
+    })
     Page<PromotionPost> findAllActiveByCategory(@Param("category") PromotionCategory category, Pageable pageable);
 
     @Query("SELECT pp FROM PromotionPost pp")
-    @EntityGraph(attributePaths = {"post", "post.author"})
+    @EntityGraph(attributePaths = {
+            "post",
+            "post.author",
+            "post.author.department",
+            "post.author.levelBadge",
+            "post.author.userTracks",
+            "post.author.userTracks.track"
+    })
     Page<PromotionPost> findAllActive(Pageable pageable);
 
     @Query("SELECT pp FROM PromotionPost pp WHERE pp.category = :category")

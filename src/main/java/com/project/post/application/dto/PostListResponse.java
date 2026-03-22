@@ -7,7 +7,7 @@ public record PostListResponse(
         Long postId,
         String title,
         String thumbnailUrl,
-        String authorNickname,
+        PostAuthorResponse author,
         long viewCount,
         long likeCount,
         long scrapCount,
