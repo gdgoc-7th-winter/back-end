@@ -48,7 +48,8 @@ class LecturePostQueryServiceTest {
     void getListReturnsPaginatedResults() {
         Pageable pageable = PageRequest.of(0, 20);
         LecturePostListQueryResult result = new LecturePostListQueryResult(
-                1L, "알고리즘 과제", null, "테스터",
+                1L, "알고리즘 과제", null,
+                1L, "테스터", null, "영어통번역학과", "백엔드", null,
                 "컴퓨터공학과", Campus.SEOUL,
                 10, 5, 3, 2, Instant.now()
         );
@@ -117,7 +118,7 @@ class LecturePostQueryServiceTest {
     void getDetailReturnsResponse() {
         LecturePostDetailQueryResult result = new LecturePostDetailQueryResult(
                 1L, "제목", "본문", null,
-                "닉네임", 10L,
+                10L, "닉네임", null, null, null, null,
                 "컴퓨터공학과", Campus.SEOUL,
                 100, 50, 30, 20,
                 Instant.now(), Instant.now(),

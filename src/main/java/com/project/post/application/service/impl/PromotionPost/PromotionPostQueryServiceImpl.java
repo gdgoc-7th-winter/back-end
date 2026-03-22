@@ -2,6 +2,7 @@ package com.project.post.application.service.impl.PromotionPost;
 
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
+import com.project.post.application.dto.PostAuthorResponse;
 import com.project.post.application.dto.PostDetailResponse;
 import com.project.post.application.dto.PostListResponse;
 import com.project.post.application.dto.PromotionPost.PromotionPostDetailResponse;
@@ -74,7 +75,7 @@ public class PromotionPostQueryServiceImpl implements PromotionPostQueryService 
                     post.getId(),
                     post.getTitle(),
                     post.getThumbnailUrl(),
-                    post.getAuthor().getNickname(),
+                    PostAuthorResponse.fromUser(post.getAuthor()),
                     post.getViewCount(),
                     post.getLikeCount(),
                     post.getScrapCount(),
