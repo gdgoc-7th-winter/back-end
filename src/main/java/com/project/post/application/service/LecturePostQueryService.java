@@ -6,6 +6,7 @@ import com.project.post.domain.enums.Campus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 
 import java.util.List;
 
@@ -17,7 +18,8 @@ public interface LecturePostQueryService {
             List<String> tagNames,
             Campus campus,
             List<String> departments,
-            String order);
+            String order,
+            @Nullable Long viewerUserId);
 
-    LecturePostDetailResponse getDetail(@NonNull Long postId);
+    LecturePostDetailResponse getDetail(@NonNull Long postId, @Nullable Long viewerUserId);
 }

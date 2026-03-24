@@ -4,6 +4,7 @@ import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.LecturePost.LecturePostDetailResponse;
 import com.project.post.application.dto.LecturePost.LecturePostListResponse;
+import com.project.post.application.dto.PostViewerResponse;
 import com.project.post.application.service.impl.LecturePost.LecturePostQueryServiceImpl;
 import com.project.post.domain.enums.Campus;
 import com.project.post.domain.repository.LecturePostRepository;
@@ -24,11 +25,14 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,6 +43,9 @@ class LecturePostQueryServiceTest {
 
     @Mock
     private PostTagQueryService postTagQueryService;
+
+    @Mock
+    private PostViewerStateService postViewerStateService;
 
     @InjectMocks
     private LecturePostQueryServiceImpl lecturePostQueryService;
@@ -57,10 +64,12 @@ class LecturePostQueryServiceTest {
         Page<LecturePostListQueryResult> queryPage = new PageImpl<>(List.of(result), pageable, 1);
         when(lecturePostRepository.findLecturePostList(any(Pageable.class), any(LecturePostSearchCondition.class)))
                 .thenReturn(queryPage);
-        when(postTagQueryService.getTagNamesByPostIds(List.of(1L))).thenReturn(java.util.Map.of());
+        when(postTagQueryService.getTagNamesByPostIds(List.of(1L))).thenReturn(Map.of());
+        when(postViewerStateService.resolveForPosts(isNull(), eq(List.of(1L)), eq(Map.of(1L, 1L)))).thenReturn(
+                Map.of(1L, PostViewerResponse.guest()));
 
         Page<LecturePostListResponse> response = lecturePostQueryService.getList(
-                pageable, null, null, null, null, "latest");
+                pageable, null, null, null, null, "latest", null);
 
         assertThat(response.getContent()).hasSize(1);
         LecturePostListResponse item = response.getContent().get(0);
@@ -76,9 +85,10 @@ class LecturePostQueryServiceTest {
         Page<LecturePostListQueryResult> emptyPage = new PageImpl<>(List.of(), pageable, 0);
         when(lecturePostRepository.findLecturePostList(any(Pageable.class), any(LecturePostSearchCondition.class)))
                 .thenReturn(emptyPage);
-        when(postTagQueryService.getTagNamesByPostIds(List.of())).thenReturn(java.util.Map.of());
+        when(postTagQueryService.getTagNamesByPostIds(List.of())).thenReturn(Map.of());
+        when(postViewerStateService.resolveForPosts(isNull(), eq(List.of()), eq(Map.of()))).thenReturn(Map.of());
 
-        lecturePostQueryService.getList(pageable, null, null, Campus.GLOBAL, null, "latest");
+        lecturePostQueryService.getList(pageable, null, null, Campus.GLOBAL, null, "latest", null);
 
         ArgumentCaptor<LecturePostSearchCondition> condCaptor = ArgumentCaptor.forClass(LecturePostSearchCondition.class);
         org.mockito.Mockito.verify(lecturePostRepository).findLecturePostList(any(), condCaptor.capture());
@@ -92,10 +102,11 @@ class LecturePostQueryServiceTest {
         Page<LecturePostListQueryResult> emptyPage = new PageImpl<>(List.of(), pageable, 0);
         when(lecturePostRepository.findLecturePostList(any(Pageable.class), any(LecturePostSearchCondition.class)))
                 .thenReturn(emptyPage);
-        when(postTagQueryService.getTagNamesByPostIds(List.of())).thenReturn(java.util.Map.of());
+        when(postTagQueryService.getTagNamesByPostIds(List.of())).thenReturn(Map.of());
+        when(postViewerStateService.resolveForPosts(isNull(), eq(List.of()), eq(Map.of()))).thenReturn(Map.of());
 
         lecturePostQueryService.getList(pageable, null, null, null,
-                List.of("컴퓨터공학과", "경영학과"), "latest");
+                List.of("컴퓨터공학과", "경영학과"), "latest", null);
 
         ArgumentCaptor<LecturePostSearchCondition> condCaptor = ArgumentCaptor.forClass(LecturePostSearchCondition.class);
         org.mockito.Mockito.verify(lecturePostRepository).findLecturePostList(any(), condCaptor.capture());
@@ -107,7 +118,7 @@ class LecturePostQueryServiceTest {
     void getDetailThrowsWhenMissingOrDeleted() {
         when(lecturePostRepository.findLecturePostDetail(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> lecturePostQueryService.getDetail(1L))
+        assertThatThrownBy(() -> lecturePostQueryService.getDetail(1L, null))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
@@ -127,8 +138,10 @@ class LecturePostQueryServiceTest {
         );
 
         when(lecturePostRepository.findLecturePostDetail(1L)).thenReturn(Optional.of(result));
+        when(postViewerStateService.resolveForPosts(isNull(), eq(List.of(1L)), eq(Map.of(1L, 10L)))).thenReturn(
+                Map.of(1L, PostViewerResponse.guest()));
 
-        LecturePostDetailResponse response = lecturePostQueryService.getDetail(1L);
+        LecturePostDetailResponse response = lecturePostQueryService.getDetail(1L, null);
 
         assertThat(response.postId()).isEqualTo(1L);
         assertThat(response.department()).isEqualTo("컴퓨터공학과");
@@ -143,9 +156,10 @@ class LecturePostQueryServiceTest {
         Page<LecturePostListQueryResult> emptyPage = new PageImpl<>(List.of(), PageRequest.of(0, 100), 0);
         when(lecturePostRepository.findLecturePostList(any(Pageable.class), any(LecturePostSearchCondition.class)))
                 .thenReturn(emptyPage);
-        when(postTagQueryService.getTagNamesByPostIds(List.of())).thenReturn(java.util.Map.of());
+        when(postTagQueryService.getTagNamesByPostIds(List.of())).thenReturn(Map.of());
+        when(postViewerStateService.resolveForPosts(isNull(), eq(List.of()), eq(Map.of()))).thenReturn(Map.of());
 
-        lecturePostQueryService.getList(largePage, null, null, null, null, "latest");
+        lecturePostQueryService.getList(largePage, null, null, null, null, "latest", null);
 
         ArgumentCaptor<Pageable> pageCaptor = ArgumentCaptor.forClass(Pageable.class);
         org.mockito.Mockito.verify(lecturePostRepository).findLecturePostList(pageCaptor.capture(), any());

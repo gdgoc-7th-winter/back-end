@@ -2,6 +2,7 @@ package com.project.post.application.dto.LecturePost;
 
 import com.project.post.application.dto.PostAuthorResponse;
 import com.project.post.application.dto.PostDetailResponse;
+import com.project.post.application.dto.PostViewerResponse;
 import com.project.post.domain.enums.Campus;
 
 import java.time.Instant;
@@ -19,6 +20,7 @@ public record LecturePostDetailResponse(
         long likeCount,
         long scrapCount,
         long commentCount,
+        PostViewerResponse viewer,
         Instant createdAt,
         Instant updatedAt,
         List<String> tagNames,

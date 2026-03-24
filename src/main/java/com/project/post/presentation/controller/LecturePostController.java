@@ -1,6 +1,7 @@
 package com.project.post.presentation.controller;
 
 import com.project.global.annotation.CurrentUser;
+import com.project.global.annotation.OptionalSessionUser;
 import com.project.global.response.CommonResponse;
 import com.project.global.response.PageResponse;
 import com.project.post.application.dto.LecturePost.LecturePostCreateRequest;
@@ -11,6 +12,7 @@ import com.project.post.application.dto.PostCreateResponse;
 import com.project.post.application.service.LecturePostCommandService;
 import com.project.post.application.service.LecturePostQueryService;
 import com.project.post.domain.enums.Campus;
+import com.project.post.presentation.support.ViewerUserId;
 import com.project.post.presentation.swagger.LecturePostControllerDocs;
 import com.project.user.domain.entity.User;
 import jakarta.validation.Valid;
@@ -36,6 +38,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/lectures")
@@ -54,18 +57,20 @@ public class LecturePostController implements LecturePostControllerDocs {
             @RequestParam(required = false) Campus campus,
             @RequestParam(required = false, name = "departments") List<String> departments,
             @RequestParam(required = false, defaultValue = "latest") String order,
-            @ParameterObject @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) @NonNull Pageable pageable) {
+            @ParameterObject @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) @NonNull Pageable pageable,
+            @OptionalSessionUser Optional<User> optionalViewer) {
 
         Page<LecturePostListResponse> list = lecturePostQueryService.getList(
-                pageable, keyword, tags, campus, departments, order);
+                pageable, keyword, tags, campus, departments, order, ViewerUserId.from(optionalViewer));
         return ResponseEntity.ok(CommonResponse.ok(PageResponse.of(list)));
     }
 
     @Override
     @GetMapping("/{postId}")
     public ResponseEntity<CommonResponse<LecturePostDetailResponse>> getDetail(
-            @PathVariable @Positive @NonNull Long postId) {
-        LecturePostDetailResponse detail = lecturePostQueryService.getDetail(postId);
+            @PathVariable @Positive @NonNull Long postId,
+            @OptionalSessionUser Optional<User> optionalViewer) {
+        LecturePostDetailResponse detail = lecturePostQueryService.getDetail(postId, ViewerUserId.from(optionalViewer));
         return ResponseEntity.ok(CommonResponse.ok(detail));
     }
 

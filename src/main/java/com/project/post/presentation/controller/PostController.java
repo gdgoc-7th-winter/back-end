@@ -1,20 +1,22 @@
 package com.project.post.presentation.controller;
 
-import com.project.post.presentation.swagger.PostControllerDocs;
+import com.project.global.annotation.CurrentUser;
+import com.project.global.annotation.OptionalSessionUser;
+import com.project.global.response.CommonResponse;
+import com.project.global.response.PageResponse;
 import com.project.post.application.dto.LikeScrapToggleResponse;
 import com.project.post.application.dto.PostCreateRequest;
 import com.project.post.application.dto.PostCreateResponse;
 import com.project.post.application.dto.PostDetailResponse;
 import com.project.post.application.dto.PostListResponse;
 import com.project.post.application.dto.PostUpdateRequest;
-import com.project.global.annotation.CurrentUser;
 import com.project.post.application.service.PostCommandService;
 import com.project.post.application.service.PostLikeService;
 import com.project.post.application.service.PostQueryService;
 import com.project.post.application.service.PostScrapService;
+import com.project.post.presentation.support.ViewerUserId;
+import com.project.post.presentation.swagger.PostControllerDocs;
 import com.project.user.domain.entity.User;
-import com.project.global.response.CommonResponse;
-import com.project.global.response.PageResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
@@ -39,6 +41,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/v1")
 @Validated
@@ -55,17 +60,21 @@ public class PostController implements PostControllerDocs {
     public ResponseEntity<CommonResponse<PageResponse<PostListResponse>>> getList(
             @PathVariable @NotBlank @NonNull String code,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false, name = "tags") java.util.List<String> tags,
+            @RequestParam(required = false, name = "tags") List<String> tags,
             @RequestParam(required = false, defaultValue = "latest") String order,
-            @ParameterObject @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) @NonNull Pageable pageable) {
-        Page<PostListResponse> list = postQueryService.getList(code, pageable, keyword, tags, order);
+            @ParameterObject @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) @NonNull Pageable pageable,
+            @OptionalSessionUser Optional<User> optionalViewer) {
+        Page<PostListResponse> list = postQueryService.getList(
+                code, pageable, keyword, tags, order, ViewerUserId.from(optionalViewer));
         return ResponseEntity.ok(CommonResponse.ok(PageResponse.of(list)));
     }
 
     @Override
     @GetMapping("/posts/{postId}")
-    public ResponseEntity<CommonResponse<PostDetailResponse>> getDetail(@PathVariable @Positive @NonNull Long postId) {
-        PostDetailResponse detail = postQueryService.getDetail(postId);
+    public ResponseEntity<CommonResponse<PostDetailResponse>> getDetail(
+            @PathVariable @Positive @NonNull Long postId,
+            @OptionalSessionUser Optional<User> optionalViewer) {
+        PostDetailResponse detail = postQueryService.getDetail(postId, ViewerUserId.from(optionalViewer));
         return ResponseEntity.ok(CommonResponse.ok(detail));
     }
 
