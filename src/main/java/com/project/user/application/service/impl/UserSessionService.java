@@ -9,6 +9,8 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class UserSessionService {
@@ -25,5 +27,19 @@ public class UserSessionService {
         }
         return userRepository.findById(userSession.getUserId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+    }
+
+    /**
+     * 세션이 없거나 비로그인이면 empty, 로그인되어 있으면 DB에 존재하는 사용자만 반환한다.
+     */
+    public Optional<User> findOptionalUser(HttpSession session) {
+        if (session == null) {
+            return Optional.empty();
+        }
+        UserSession userSession = (UserSession) session.getAttribute("LOGIN_USER");
+        if (userSession == null) {
+            return Optional.empty();
+        }
+        return userRepository.findById(userSession.getUserId());
     }
 }

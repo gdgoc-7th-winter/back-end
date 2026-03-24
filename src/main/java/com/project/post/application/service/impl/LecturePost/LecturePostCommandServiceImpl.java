@@ -11,6 +11,7 @@ import com.project.post.application.service.PostCommandService;
 import com.project.post.domain.entity.LecturePost;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.repository.LecturePostRepository;
+import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
@@ -24,6 +25,7 @@ public class LecturePostCommandServiceImpl implements LecturePostCommandService 
     private static final String BOARD_CODE = "LECTURE";
 
     private final PostCommandService postCommandService;
+    private final PostRepository postRepository;
     private final LecturePostRepository lecturePostRepository;
 
     @Override
@@ -38,9 +40,10 @@ public class LecturePostCommandServiceImpl implements LecturePostCommandService 
         );
 
         Post post = postCommandService.create(BOARD_CODE, postCreateRequest, author);
+        Post postRef = postRepository.getReferenceById(post.getId());
 
         LecturePost lecturePost = LecturePost.builder()
-                .post(post)
+                .post(postRef)
                 .department(request.department())
                 .campus(request.campus())
                 .build();

@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.lang.NonNull;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 public interface PostScrapRepository extends JpaRepository<PostScrap, Long> {
@@ -20,6 +22,9 @@ public interface PostScrapRepository extends JpaRepository<PostScrap, Long> {
 
     @Query("SELECT (COUNT(ps) > 0) FROM PostScrap ps WHERE ps.post.id = :postId AND ps.user.id = :userId")
     boolean existsByPostIdAndUserId(@Param("postId") Long postId, @Param("userId") Long userId);
+
+    @Query("SELECT ps.post.id FROM PostScrap ps WHERE ps.post.id IN :postIds AND ps.user.id = :userId")
+    List<Long> findPostIdsScrappedByUserAndPostIdIn(@Param("postIds") Collection<Long> postIds, @Param("userId") Long userId);
 
     @Modifying
     @Query(value = "INSERT INTO post_scraps (post_id, user_id, created_at) " +

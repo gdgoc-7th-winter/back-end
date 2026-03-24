@@ -13,6 +13,7 @@ public record PostDetailResponse(
         long likeCount,
         long scrapCount,
         long commentCount,
+        PostViewerResponse viewer,
         Instant createdAt,
         Instant updatedAt,
         List<String> tagNames,
