@@ -3,9 +3,11 @@ package com.project.post.presentation.controller;
 import com.project.global.annotation.CurrentUser;
 import com.project.global.response.CommonResponse;
 import com.project.post.application.dto.PostCreateResponse;
+import com.project.post.application.dto.RecruitingPost.ApplicationFormDetailResponse;
 import com.project.post.application.dto.RecruitingPost.RecruitingPostCreateRequest;
 import com.project.post.application.dto.RecruitingPost.RecruitingPostDetailResponse;
 import com.project.post.application.dto.RecruitingPost.SubmitApplicationRequest;
+import com.project.post.application.service.ApplicationFormQueryService;
 import com.project.post.application.service.RecruitingApplicationCommandService;
 import com.project.post.application.service.RecruitingPostCommandService;
 import com.project.post.application.service.RecruitingPostQueryService;
@@ -26,6 +28,7 @@ public class RecruitingPostController {
     private final RecruitingPostCommandService recruitingPostCommandService;
     private final RecruitingApplicationCommandService recruitingApplicationCommandService;
     private final RecruitingPostQueryService recruitingPostQueryService;
+    private final ApplicationFormQueryService applicationFormQueryService;
 
     @PostMapping("/recruitings")
     public ResponseEntity<CommonResponse<PostCreateResponse>> create(
@@ -52,5 +55,12 @@ public class RecruitingPostController {
     @GetMapping("/recruitings/{postId}")
     public CommonResponse<RecruitingPostDetailResponse> getDetail(@PathVariable Long postId) {
         return CommonResponse.ok(recruitingPostQueryService.getDetail(postId));
+    }
+
+    @GetMapping("/recruitings/{postId}/application-form")
+    public CommonResponse<ApplicationFormDetailResponse> getApplicationFormDetail(
+            @PathVariable Long postId
+    ) {
+        return CommonResponse.ok(applicationFormQueryService.getApplicationFormDetail(postId));
     }
 }
