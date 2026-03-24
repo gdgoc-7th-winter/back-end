@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +26,7 @@ public interface PostCommentControllerDocs {
     @ApiResponse(responseCode = "401", description = "인증 필요")
     ResponseEntity<CommonResponse<PostCommentCreateResponse>> createComment(
             @Parameter(description = "게시글 ID") @Positive @NonNull Long postId,
-            @RequestBody(description = "댓글 작성 요청") @NonNull PostCommentRequest request,
+            @RequestBody(description = "댓글 작성 요청") @Valid @NonNull PostCommentRequest request,
             @Parameter(hidden = true) @NonNull User user);
 
     @Operation(summary = "댓글 목록 조회", description = "게시글의 댓글 목록을 페이징하여 조회합니다. 각 루트 댓글의 답글은 최대 20개까지 반환되며, 초과 시 hasMoreReplies=true로 표시됩니다.")
