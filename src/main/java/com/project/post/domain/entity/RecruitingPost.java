@@ -4,6 +4,7 @@ import com.project.global.entity.SoftDeleteEntity;
 import com.project.post.domain.enums.ApplicationType;
 import com.project.post.domain.enums.PromotionCategory;
 import com.project.post.domain.enums.RecruitingCategory;
+import com.project.post.domain.enums.RecruitingStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -41,9 +42,19 @@ public class RecruitingPost extends SoftDeleteEntity {
     @Column(name = "deadline_at")
     private Instant deadlineAt;
 
+    @Column(name = "status", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private RecruitingStatus status;
+
     public void updateCategory(RecruitingCategory category) {
         if (category != null) {
             this.category = category;
+        }
+    }
+
+    public void updateStatus(RecruitingStatus status) {
+        if (status != null) {
+            this.status = status;
         }
     }
 }

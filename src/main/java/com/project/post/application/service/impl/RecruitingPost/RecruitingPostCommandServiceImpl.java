@@ -7,6 +7,7 @@ import com.project.post.application.service.PostCommandService;
 import com.project.post.application.service.RecruitingPostCommandService;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.RecruitingPost;
+import com.project.post.domain.enums.RecruitingStatus;
 import com.project.post.domain.repository.RecruitingPostRepository;
 import com.project.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,8 @@ import com.project.post.domain.enums.ApplicationType;
 import com.project.post.domain.repository.RecruitingApplicationRepository;
 import com.project.post.domain.repository.RecruitingQuestionOptionRepository;
 import com.project.post.domain.repository.RecruitingQuestionRepository;
+
+import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
@@ -59,6 +62,7 @@ public class RecruitingPostCommandServiceImpl implements RecruitingPostCommandSe
                 .applicationType(request.applicationType())
                 .startedAt(request.startedAt())
                 .deadlineAt(request.deadlineAt())
+                .status(calculateStatus(request.startedAt(), request.deadlineAt()))
                 .build();
 
         recruitingPostRepository.save(recruitingPost);
@@ -68,6 +72,20 @@ public class RecruitingPostCommandServiceImpl implements RecruitingPostCommandSe
         }
 
         return post.getId();
+    }
+
+    private RecruitingStatus calculateStatus(Instant startedAt, Instant deadlineAt) {
+        Instant now = Instant.now();
+
+        if (startedAt != null && now.isBefore(startedAt)) {
+            return RecruitingStatus.UPCOMING;
+        }
+
+        if (deadlineAt != null && now.isAfter(deadlineAt)) {
+            return RecruitingStatus.CLOSED;
+        }
+
+        return RecruitingStatus.OPEN;
     }
 
     private void createApplicationForm(ApplicationFormRequest formRequest,
