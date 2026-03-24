@@ -4,14 +4,15 @@ import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.PostDetailResponse;
 import com.project.post.application.dto.PostListResponse;
-import com.project.post.domain.entity.Board;
+import com.project.post.application.dto.PostViewerResponse;
 import com.project.post.application.service.impl.PostQueryServiceImpl;
+import com.project.post.domain.entity.Board;
+import com.project.post.domain.enums.PostListSort;
 import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
 import com.project.post.domain.repository.dto.PostListQueryResult;
 import com.project.post.domain.repository.dto.PostSearchCondition;
-import com.project.post.domain.enums.PostListSort;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,11 +27,14 @@ import org.springframework.data.domain.Pageable;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -46,6 +50,9 @@ class PostQueryServiceTest {
     @Mock
     private PostTagQueryService postTagQueryService;
 
+    @Mock
+    private PostViewerStateService postViewerStateService;
+
     @InjectMocks
     private PostQueryServiceImpl postQueryService;
 
@@ -54,7 +61,7 @@ class PostQueryServiceTest {
     void getListThrowsWhenBoardMissing() {
         when(boardRepository.findByCodeAndActiveTrue("GENERAL")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postQueryService.getList("GENERAL", PageRequest.of(0, 10), null, null, null))
+        assertThatThrownBy(() -> postQueryService.getList("GENERAL", PageRequest.of(0, 10), null, null, null, null))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
@@ -67,7 +74,7 @@ class PostQueryServiceTest {
     void getDetailThrowsWhenPostDeletedOrMissing() {
         when(postRepository.findPostDetail(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postQueryService.getDetail(1L))
+        assertThatThrownBy(() -> postQueryService.getDetail(1L, null))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
@@ -106,8 +113,10 @@ class PostQueryServiceTest {
         );
 
         when(postRepository.findPostDetail(1L)).thenReturn(Optional.of(result));
+        when(postViewerStateService.resolveForPosts(isNull(), eq(List.of(1L)), eq(Map.of(1L, 10L)))).thenReturn(
+                Map.of(1L, PostViewerResponse.guest()));
 
-        PostDetailResponse response = postQueryService.getDetail(1L);
+        PostDetailResponse response = postQueryService.getDetail(1L, null);
 
         assertThat(response.tagNames()).containsExactly("java", "spring");
         assertThat(response.attachments()).hasSize(2);
@@ -115,6 +124,7 @@ class PostQueryServiceTest {
         assertThat(response.attachments().get(0).sortOrder()).isEqualTo(0);
         assertThat(response.attachments().get(1).fileUrl()).isEqualTo("url-2");
         assertThat(response.attachments().get(1).sortOrder()).isEqualTo(2);
+        assertThat(response.viewer()).isEqualTo(PostViewerResponse.guest());
     }
 
     @Test
@@ -130,10 +140,13 @@ class PostQueryServiceTest {
         when(postRepository.findPostList("GENERAL", pageable, condition)).thenReturn(queryPage);
         when(postTagQueryService.getTagNamesByPostIds(List.of(1L))).thenReturn(
                 java.util.Map.of(1L, List.of("java")));
+        when(postViewerStateService.resolveForPosts(isNull(), eq(List.of(1L)), eq(Map.of(1L, 1L)))).thenReturn(
+                Map.of(1L, PostViewerResponse.guest()));
 
-        Page<PostListResponse> result = postQueryService.getList("GENERAL", PageRequest.of(0, 10), null, null, null);
+        Page<PostListResponse> result = postQueryService.getList("GENERAL", PageRequest.of(0, 10), null, null, null, null);
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).postId()).isEqualTo(1L);
+        assertThat(result.getContent().get(0).viewer()).isEqualTo(PostViewerResponse.guest());
     }
 }
