@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.lang.NonNull;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
@@ -20,6 +22,9 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
 
     @Query("SELECT (COUNT(pl) > 0) FROM PostLike pl WHERE pl.post.id = :postId AND pl.user.id = :userId")
     boolean existsByPostIdAndUserId(@Param("postId") Long postId, @Param("userId") Long userId);
+
+    @Query("SELECT pl.post.id FROM PostLike pl WHERE pl.post.id IN :postIds AND pl.user.id = :userId")
+    List<Long> findPostIdsLikedByUserAndPostIdIn(@Param("postIds") Collection<Long> postIds, @Param("userId") Long userId);
 
     @Modifying
     @Query(value = "INSERT INTO post_likes (post_id, user_id, created_at) " +

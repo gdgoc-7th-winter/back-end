@@ -9,6 +9,7 @@ import com.project.post.application.service.PostCommandService;
 import com.project.post.application.service.PromotionPostCommandService;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.PromotionPost;
+import com.project.post.domain.repository.PostRepository;
 import com.project.post.domain.repository.PromotionPostRepository;
 import com.project.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class PromotionPostCommandServiceImpl implements PromotionPostCommandServ
     private static final String PROMOTION_BOARD_CODE = "PROMOTION";
 
     private final PostCommandService postCommandService;
+    private final PostRepository postRepository;
     private final PromotionPostRepository promotionPostRepository;
 
     @Override
@@ -37,9 +39,10 @@ public class PromotionPostCommandServiceImpl implements PromotionPostCommandServ
         );
 
         Post post = postCommandService.create(PROMOTION_BOARD_CODE, postCreateRequest, author);
+        Post postRef = postRepository.getReferenceById(post.getId());
 
         PromotionPost promotionPost = PromotionPost.builder()
-                .post(post)
+                .post(postRef)
                 .category(request.category())
                 .build();
 
