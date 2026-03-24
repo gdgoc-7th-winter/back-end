@@ -52,6 +52,14 @@ public class RecruitingPost extends SoftDeleteEntity {
         }
     }
 
+    public void updateStartedAt(Instant startedAt) {
+        this.startedAt = startedAt;
+    }
+
+    public void updateDeadlineAt(Instant deadlineAt) {
+        this.deadlineAt = deadlineAt;
+    }
+
     public void updateStatus(RecruitingStatus status) {
         if (status != null) {
             this.status = status;

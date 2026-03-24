@@ -26,6 +26,11 @@ import com.project.post.domain.repository.RecruitingApplicationRepository;
 import com.project.post.domain.repository.RecruitingQuestionOptionRepository;
 import com.project.post.domain.repository.RecruitingQuestionRepository;
 
+import com.project.post.application.dto.PostUpdateRequest;
+import com.project.post.application.dto.RecruitingPost.RecruitingPostDetailResponse;
+import com.project.post.application.dto.RecruitingPost.RecruitingPostUpdateRequest;
+import com.project.post.application.service.RecruitingPostQueryService;
+
 import java.time.Instant;
 
 @Service
@@ -39,6 +44,7 @@ public class RecruitingPostCommandServiceImpl implements RecruitingPostCommandSe
     private final RecruitingApplicationRepository recruitingApplicationRepository;
     private final RecruitingQuestionRepository recruitingQuestionRepository;
     private final RecruitingQuestionOptionRepository recruitingQuestionOptionRepository;
+    private final RecruitingPostQueryService recruitingPostQueryService;
 
     @Override
     @Transactional
@@ -127,5 +133,51 @@ public class RecruitingPostCommandServiceImpl implements RecruitingPostCommandSe
                 recruitingQuestionOptionRepository.save(option);
             }
         }
+    }
+
+    @Override
+    @Transactional
+    public RecruitingPostDetailResponse update(@NonNull Long postId,
+                                               @NonNull RecruitingPostUpdateRequest request,
+                                               @NonNull User user) {
+
+        RecruitingPost recruitingPost = recruitingPostRepository.findById(postId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        Post post = recruitingPost.getPost();
+
+        if (!post.getAuthor().getId().equals(user.getId())) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
+        Instant startedAt = request.startedAt() != null ? request.startedAt() : recruitingPost.getStartedAt();
+        Instant deadlineAt = request.deadlineAt() != null ? request.deadlineAt() : recruitingPost.getDeadlineAt();
+
+        if (startedAt != null && deadlineAt != null && startedAt.isAfter(deadlineAt)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
+        if (request.category() != null) {
+            recruitingPost.updateCategory(request.category());
+        }
+
+        if (request.startedAt() != null) {
+            recruitingPost.updateStartedAt(request.startedAt());
+        }
+
+        if (request.deadlineAt() != null) {
+            recruitingPost.updateDeadlineAt(request.deadlineAt());
+        }
+
+        recruitingPost.updateStatus(calculateStatus(
+                recruitingPost.getStartedAt(),
+                recruitingPost.getDeadlineAt()
+        ));
+
+        if (request.post() != null) {
+            postCommandService.update(post.getId(), request.post(), user);
+        }
+
+        return recruitingPostQueryService.getDetail(postId);
     }
 }
