@@ -19,6 +19,9 @@ public record RecruitingPostCreateRequest(
         Instant startedAt,
         Instant deadlineAt,
 
+        @Valid
+        ApplicationFormRequest applicationForm,
+
         @NotNull(message = "게시글 정보는 필수입니다.")
         @Valid
         PostCreateRequest post

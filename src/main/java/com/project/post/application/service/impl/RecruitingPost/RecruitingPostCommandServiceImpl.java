@@ -14,6 +14,17 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.project.post.application.dto.RecruitingPost.ApplicationFormRequest;
+import com.project.post.application.dto.RecruitingPost.QuestionOptionRequest;
+import com.project.post.application.dto.RecruitingPost.QuestionRequest;
+import com.project.post.domain.entity.RecruitingApplication;
+import com.project.post.domain.entity.RecruitingQuestion;
+import com.project.post.domain.entity.RecruitingQuestionOption;
+import com.project.post.domain.enums.ApplicationType;
+import com.project.post.domain.repository.RecruitingApplicationRepository;
+import com.project.post.domain.repository.RecruitingQuestionOptionRepository;
+import com.project.post.domain.repository.RecruitingQuestionRepository;
+
 @Service
 @RequiredArgsConstructor
 public class RecruitingPostCommandServiceImpl implements RecruitingPostCommandService {
@@ -22,6 +33,9 @@ public class RecruitingPostCommandServiceImpl implements RecruitingPostCommandSe
 
     private final PostCommandService postCommandService;
     private final RecruitingPostRepository recruitingPostRepository;
+    private final RecruitingApplicationRepository recruitingApplicationRepository;
+    private final RecruitingQuestionRepository recruitingQuestionRepository;
+    private final RecruitingQuestionOptionRepository recruitingQuestionOptionRepository;
 
     @Override
     @Transactional
@@ -49,6 +63,51 @@ public class RecruitingPostCommandServiceImpl implements RecruitingPostCommandSe
 
         recruitingPostRepository.save(recruitingPost);
 
+        if (request.applicationType() == ApplicationType.FORM && request.applicationForm() != null) {
+            createApplicationForm(request.applicationForm(), recruitingPost);
+        }
+
         return post.getId();
+    }
+
+    private void createApplicationForm(ApplicationFormRequest formRequest,
+                                       RecruitingPost recruitingPost) {
+
+        RecruitingApplication recruitingApplication = RecruitingApplication.builder()
+                .recruitingPost(recruitingPost)
+                .title(formRequest.getTitle())
+                .message(formRequest.getMessage())
+                .build();
+
+        recruitingApplicationRepository.save(recruitingApplication);
+
+        if (formRequest.getQuestions() == null || formRequest.getQuestions().isEmpty()) {
+            return;
+        }
+
+        for (QuestionRequest questionRequest : formRequest.getQuestions()) {
+            RecruitingQuestion question = RecruitingQuestion.builder()
+                    .recruitingApplication(recruitingApplication)
+                    .content(questionRequest.getContent())
+                    .type(questionRequest.getType())
+                    .required(questionRequest.isRequired())
+                    .sortOrder(questionRequest.getSortOrder())
+                    .build();
+
+            recruitingQuestionRepository.save(question);
+
+            if (questionRequest.getOptions() == null || questionRequest.getOptions().isEmpty()) {
+                continue;
+            }
+
+            for (QuestionOptionRequest optionRequest : questionRequest.getOptions()) {
+                RecruitingQuestionOption option = RecruitingQuestionOption.builder()
+                        .question(question)
+                        .label(optionRequest.getLabel())
+                        .build();
+
+                recruitingQuestionOptionRepository.save(option);
+            }
+        }
     }
 }
