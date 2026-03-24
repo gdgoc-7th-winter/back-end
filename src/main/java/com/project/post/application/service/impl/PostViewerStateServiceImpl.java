@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,26 +35,35 @@ public class PostViewerStateServiceImpl implements PostViewerStateService {
         Map<Long, Long> authorMap = authorUserIdByPostId == null
                 ? Collections.emptyMap()
                 : authorUserIdByPostId;
-        List<Long> distinctIds = postIds.stream().distinct().toList();
-        if (distinctIds.isEmpty()) {
+        LinkedHashSet<Long> postIdSet = new LinkedHashSet<>(postIds);
+        if (postIdSet.isEmpty()) {
             return Map.of();
         }
         if (viewerUserId == null) {
             PostViewerResponse guest = PostViewerResponse.guest();
-            return distinctIds.stream().collect(Collectors.toMap(id -> id, id -> guest));
+            return postIdSet.stream().collect(Collectors.toMap(id -> id, id -> guest));
         }
-        Set<Long> idSet = new HashSet<>(distinctIds);
-        Set<Long> likedIds = new HashSet<>(postLikeRepository.findPostIdsLikedByUserAndPostIdIn(idSet, viewerUserId));
-        Set<Long> scrappedIds = new HashSet<>(postScrapRepository.findPostIdsScrappedByUserAndPostIdIn(idSet, viewerUserId));
-        return distinctIds.stream()
+        Set<Long> likedIds = new HashSet<>(
+                postLikeRepository.findPostIdsLikedByUserAndPostIdIn(postIdSet, viewerUserId));
+        Set<Long> scrappedIds = new HashSet<>(
+                postScrapRepository.findPostIdsScrappedByUserAndPostIdIn(postIdSet, viewerUserId));
+        return postIdSet.stream()
                 .collect(Collectors.toMap(
                         id -> id,
-                        id -> new PostViewerResponse(
-                                likedIds.contains(id),
-                                scrappedIds.contains(id),
-                                isViewerAuthor(viewerUserId, authorMap.get(id))
-                        )
-                ));
+                        id -> viewerResponseForLoggedIn(
+                                viewerUserId, id, likedIds, scrappedIds, authorMap)));
+    }
+
+    private static PostViewerResponse viewerResponseForLoggedIn(
+            Long viewerUserId,
+            Long postId,
+            Set<Long> likedIds,
+            Set<Long> scrappedIds,
+            Map<Long, Long> authorUserIdByPostId) {
+        return new PostViewerResponse(
+                likedIds.contains(postId),
+                scrappedIds.contains(postId),
+                isViewerAuthor(viewerUserId, authorUserIdByPostId.get(postId)));
     }
 
     private static boolean isViewerAuthor(Long viewerUserId, Long authorUserId) {
