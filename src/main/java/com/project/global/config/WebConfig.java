@@ -7,6 +7,7 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import com.project.global.interceptor.OnboardingInterceptor;
 import com.project.global.resolver.CurrentUserArgumentResolver;
+import com.project.global.resolver.OptionalSessionUserArgumentResolver;
 
 import java.util.List;
 
@@ -15,11 +16,14 @@ public class
 WebConfig implements WebMvcConfigurer {
     private final @NonNull OnboardingInterceptor onboardingInterceptor;
     private final @NonNull CurrentUserArgumentResolver currentUserArgumentResolver;
+    private final @NonNull OptionalSessionUserArgumentResolver optionalSessionUserArgumentResolver;
 
     public WebConfig(@NonNull OnboardingInterceptor onboardingInterceptor,
-                     @NonNull CurrentUserArgumentResolver currentUserArgumentResolver) {
+                     @NonNull CurrentUserArgumentResolver currentUserArgumentResolver,
+                     @NonNull OptionalSessionUserArgumentResolver optionalSessionUserArgumentResolver) {
         this.onboardingInterceptor = onboardingInterceptor;
         this.currentUserArgumentResolver = currentUserArgumentResolver;
+        this.optionalSessionUserArgumentResolver = optionalSessionUserArgumentResolver;
     }
 
     @Override
@@ -41,5 +45,6 @@ WebConfig implements WebMvcConfigurer {
     @Override
     public void addArgumentResolvers(@NonNull List<HandlerMethodArgumentResolver> resolvers) {
         resolvers.add(currentUserArgumentResolver);
+        resolvers.add(optionalSessionUserArgumentResolver);
     }
 }
