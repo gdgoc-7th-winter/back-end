@@ -61,7 +61,7 @@ public class RecruitingPostController {
         return CommonResponse.ok(applicationFormQueryService.getApplicationFormDetail(postId));
     }
 
-    @PatchMapping("/{postId}")
+    @PatchMapping("/recruitings/{postId}")
     public ResponseEntity<CommonResponse<RecruitingPostDetailResponse>> update(
             @PathVariable Long postId,
             @Valid @RequestBody RecruitingPostUpdateRequest request,
@@ -72,5 +72,15 @@ public class RecruitingPostController {
                         recruitingPostCommandService.update(postId, request, user)
                 )
         );
+    }
+
+    @PatchMapping("/recruitings/applications/{submissionId}")
+    public CommonResponse<Void> updateApplicationSubmission(
+            @PathVariable Long submissionId,
+            @RequestBody @Valid ApplicationSubmissionUpdateRequest request,
+            @CurrentUser User user
+    ) {
+        recruitingApplicationCommandService.updateSubmission(submissionId, request, user);
+        return CommonResponse.ok();
     }
 }

@@ -34,6 +34,7 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         return new RecruitingPostDetailResponse(
                 recruitingPost.getCategory(),
                 recruitingPost.getApplicationType(),
+                recruitingPost.getStatus(),
                 recruitingPost.getStartedAt(),
                 recruitingPost.getDeadlineAt(),
                 postDetail
