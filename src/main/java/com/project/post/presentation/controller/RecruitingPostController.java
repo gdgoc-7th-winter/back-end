@@ -4,10 +4,7 @@ import com.project.global.annotation.CurrentUser;
 import com.project.global.response.CommonResponse;
 import com.project.post.application.dto.PostCreateResponse;
 import com.project.post.application.dto.RecruitingPost.*;
-import com.project.post.application.service.ApplicationFormQueryService;
-import com.project.post.application.service.RecruitingApplicationCommandService;
-import com.project.post.application.service.RecruitingPostCommandService;
-import com.project.post.application.service.RecruitingPostQueryService;
+import com.project.post.application.service.*;
 import com.project.user.domain.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +23,7 @@ public class RecruitingPostController {
     private final RecruitingApplicationCommandService recruitingApplicationCommandService;
     private final RecruitingPostQueryService recruitingPostQueryService;
     private final ApplicationFormQueryService applicationFormQueryService;
+    private final ApplicationSubmissionQueryService applicationSubmissionQueryService;
 
     @PostMapping("/recruitings")
     public ResponseEntity<CommonResponse<PostCreateResponse>> create(
@@ -82,5 +80,15 @@ public class RecruitingPostController {
     ) {
         recruitingApplicationCommandService.updateSubmission(submissionId, request, user);
         return CommonResponse.ok();
+    }
+
+    @GetMapping("/recruitings/applications/{submissionId}")
+    public CommonResponse<ApplicationSubmissionDetailResponse> getApplicationSubmissionDetail(
+            @PathVariable Long submissionId,
+            @CurrentUser User user
+    ) {
+        return CommonResponse.ok(
+                applicationSubmissionQueryService.getDetail(submissionId, user)
+        );
     }
 }
