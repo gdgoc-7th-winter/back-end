@@ -12,6 +12,7 @@ public record PostListResponse(
         long likeCount,
         long scrapCount,
         long commentCount,
+        PostViewerResponse viewer,
         List<String> tagNames,
         Instant createdAt
 ) {
