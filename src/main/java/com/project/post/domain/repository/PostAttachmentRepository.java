@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface PostAttachmentRepository extends JpaRepository<PostAttachment, Long> {
 
-    @Modifying(clearAutomatically = true)
+    @Modifying(flushAutomatically = true)
     @Query("DELETE FROM PostAttachment pa WHERE pa.post.id = :postId")
     void deleteByPostId(@Param("postId") Long postId);
 }
