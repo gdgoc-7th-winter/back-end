@@ -6,11 +6,13 @@ import com.project.post.domain.enums.PromotionCategory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 
 public interface PromotionPostQueryService {
-    PromotionPostDetailResponse getDetail(@NonNull Long postId);
+    PromotionPostDetailResponse getDetail(@NonNull Long postId, @Nullable Long viewerUserId);
     Page<PromotionPostListResponse> getList(
             PromotionCategory category,
-            Pageable pageable
+            Pageable pageable,
+            @Nullable Long viewerUserId
     );
 }
