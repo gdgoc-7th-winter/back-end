@@ -84,8 +84,7 @@ public class Post extends SoftDeleteEntity {
             this.content = content;
         }
         if (thumbnailUrl != null) {
-            validateNotBlank(thumbnailUrl, "썸네일 URL은 공백일 수 없습니다.");
-            this.thumbnailUrl = thumbnailUrl;
+            this.thumbnailUrl = thumbnailUrl.isBlank() ? null : thumbnailUrl;
         }
     }
 
