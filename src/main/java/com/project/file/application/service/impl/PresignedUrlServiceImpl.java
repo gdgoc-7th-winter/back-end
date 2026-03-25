@@ -37,10 +37,10 @@ public class PresignedUrlServiceImpl implements PresignedUrlService {
                                                    Long referenceId, User uploader) {
         validateContentType(contentType);
         validateUploadType(uploadType);
-        validateReferenceId(uploadType, referenceId, uploader);
+        long effectiveReferenceId = resolveReferenceId(uploadType, referenceId, uploader);
 
         int expireSeconds = clampExpireSeconds(s3Properties.getPresignedUrlExpireSeconds());
-        String objectKey = generateObjectKey(uploadType, contentType, referenceId, uploader.getId());
+        String objectKey = generateObjectKey(uploadType, contentType, effectiveReferenceId, uploader.getId());
         String bucket = resolveBucket(uploadType);
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -77,10 +77,14 @@ public class PresignedUrlServiceImpl implements PresignedUrlService {
         }
     }
 
-    private void validateReferenceId(UploadType uploadType, Long referenceId, User uploader) {
-        if (uploadType == UploadType.PROFILE_IMAGE && !referenceId.equals(uploader.getId())) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+    private long resolveReferenceId(UploadType uploadType, Long referenceId, User uploader) {
+        if (uploadType == UploadType.PROFILE_IMAGE) {
+            return uploader.getId();
         }
+        if (referenceId == null || referenceId < 1) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "referenceId가 필요합니다.");
+        }
+        return referenceId;
     }
 
     private int clampExpireSeconds(int seconds) {

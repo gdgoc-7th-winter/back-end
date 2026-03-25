@@ -29,7 +29,7 @@ public interface FileControllerDocs {
                     3. 업로드 완료 후 POST /api/v1/files/complete를 호출하여 검증 및 DB 저장을 완료합니다.
                     - uploadType: PROFILE_IMAGE(프로필), POST_IMAGE(게시글), ATTACHMENT(첨부파일)
                     - contentType: image/jpeg, image/png, image/webp, image/gif, application/pdf 등
-                    - referenceId: PROFILE_IMAGE는 사용자 ID, POST_IMAGE/ATTACHMENT는 게시글 ID
+                    - referenceId: POST_IMAGE/ATTACHMENT는 게시글 ID(필수). PROFILE_IMAGE는 생략(서버에서 인증된 사용자 ID를 사용)
                     """
     )
     @ApiResponse(responseCode = "201", description = "Presigned URL 발급 성공")
