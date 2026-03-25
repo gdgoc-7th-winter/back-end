@@ -33,10 +33,14 @@ public class PostAttachmentServiceImpl implements PostAttachmentService {
         if (dtos.size() > MAX_ATTACHMENTS) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "첨부파일은 최대 10개까지 등록 가능합니다.");
         }
+
         postAttachmentRepository.deleteByPostId(post.getId());
+        postAttachmentRepository.flush();
+
         if (dtos.isEmpty()) {
             return;
         }
+
         saveAttachments(post, dtos);
     }
 
