@@ -38,7 +38,7 @@ public class PostCommandServiceImpl implements PostCommandService {
                 .author(author)
                 .title(request.title())
                 .content(request.content())
-                .thumbnailUrl(request.thumbnailUrl())
+                .thumbnailUrl(normalizeBlank(request.thumbnailUrl()))
                 .build();
 
         Post savedPost = postRepository.save(post);
@@ -60,7 +60,11 @@ public class PostCommandServiceImpl implements PostCommandService {
         }
 
         try {
-            post.update(request.title(), request.content(), request.thumbnailUrl());
+            post.update(
+                    request.title(),
+                    request.content(),
+                    request.thumbnailUrl()
+            );
         } catch (PostDomainException ex) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, ex.getMessage());
         }
@@ -90,5 +94,12 @@ public class PostCommandServiceImpl implements PostCommandService {
         if (updated == 0) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다.");
         }
+    }
+
+    private String normalizeBlank(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value;
     }
 }
