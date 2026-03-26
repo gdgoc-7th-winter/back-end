@@ -4,5 +4,5 @@ import com.project.post.application.dto.RecruitingPost.RecruitingPostDetailRespo
 
 public interface RecruitingPostQueryService {
 
-    RecruitingPostDetailResponse getDetail(Long postId);
+    RecruitingPostDetailResponse getDetail(Long postId, Long userId);
 }

@@ -21,7 +21,7 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
     private final PostQueryService postQueryService;
 
     @Override
-    public RecruitingPostDetailResponse getDetail(Long postId) {
+    public RecruitingPostDetailResponse getDetail(Long postId, Long userId) {
 
         RecruitingPost recruitingPost = recruitingPostRepository.findActiveById(postId)
                 .orElseThrow(() -> new BusinessException(
@@ -29,7 +29,7 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
                         "모집글을 찾을 수 없습니다."
                 ));
 
-        PostDetailResponse postDetail = postQueryService.getDetail(postId);
+        PostDetailResponse postDetail = postQueryService.getDetail(postId, userId);
 
         return new RecruitingPostDetailResponse(
                 recruitingPost.getCategory(),

@@ -48,8 +48,8 @@ public class RecruitingPostController {
     }
 
     @GetMapping("/recruitings/{postId}")
-    public CommonResponse<RecruitingPostDetailResponse> getDetail(@PathVariable Long postId) {
-        return CommonResponse.ok(recruitingPostQueryService.getDetail(postId));
+    public CommonResponse<RecruitingPostDetailResponse> getDetail(@PathVariable Long postId, @CurrentUser User user) {
+        return CommonResponse.ok(recruitingPostQueryService.getDetail(postId, user.getId()));
     }
 
     @GetMapping("/recruitings/{postId}/application-form")
