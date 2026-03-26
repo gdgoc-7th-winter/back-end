@@ -2,6 +2,7 @@ package com.project.post.application.service;
 
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
+import com.project.post.application.dto.CommentViewerResponse;
 import com.project.post.application.dto.PostCommentResponse;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
@@ -10,9 +11,11 @@ import com.project.post.application.service.impl.PostCommentQueryServiceImpl;
 import com.project.post.domain.repository.PostCommentRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -21,11 +24,17 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,15 +46,29 @@ class PostCommentQueryServiceTest {
     @Mock
     private PostCommentRepository commentRepository;
 
+    @Mock
+    private CommentViewerStateService commentViewerStateService;
+
     @InjectMocks
     private PostCommentQueryServiceImpl postCommentQueryService;
+
+    @BeforeEach
+    void stubCommentViewerGuest() {
+        lenient().when(commentViewerStateService.resolveForComments(any(), any(), any()))
+                .thenAnswer(invocation -> {
+                    @SuppressWarnings("unchecked")
+                    Collection<Long> ids = (Collection<Long>) invocation.getArgument(1);
+                    CommentViewerResponse guest = CommentViewerResponse.guest();
+                    return ids.stream().collect(Collectors.toMap(id -> id, id -> guest));
+                });
+    }
 
     @Test
     @DisplayName("게시글이 없으면 댓글 조회는 예외를 던진다")
     void getCommentsThrowsWhenPostMissing() {
         when(postRepository.existsActiveById(1L)).thenReturn(false);
 
-        assertThatThrownBy(() -> postCommentQueryService.getComments(1L, PageRequest.of(0, 10)))
+        assertThatThrownBy(() -> postCommentQueryService.getComments(1L, PageRequest.of(0, 10), null))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
@@ -69,7 +92,7 @@ class PostCommentQueryServiceTest {
         when(commentRepository.findRepliesByParentIds(any()))
                 .thenReturn(List.of(reply));
 
-        Page<PostCommentResponse> result = postCommentQueryService.getComments(1L, PageRequest.of(0, 10));
+        Page<PostCommentResponse> result = postCommentQueryService.getComments(1L, PageRequest.of(0, 10), null);
 
         PostCommentResponse rootResponse = result.getContent().get(0);
         assertThat(rootResponse.parentCommentId()).isNull();
@@ -78,6 +101,8 @@ class PostCommentQueryServiceTest {
         assertThat(rootResponse.replies().get(0).content()).isEqualTo("reply");
         assertThat(rootResponse.isDeleted()).isFalse();
         assertThat(rootResponse.hasMoreReplies()).isFalse();
+        assertThat(rootResponse.viewer()).isEqualTo(CommentViewerResponse.guest());
+        assertThat(rootResponse.replies().get(0).viewer()).isEqualTo(CommentViewerResponse.guest());
     }
 
     @Test
@@ -96,7 +121,7 @@ class PostCommentQueryServiceTest {
         when(commentRepository.findRepliesByParentIds(any()))
                 .thenReturn(List.of());
 
-        Page<PostCommentResponse> result = postCommentQueryService.getComments(1L, PageRequest.of(0, 10));
+        Page<PostCommentResponse> result = postCommentQueryService.getComments(1L, PageRequest.of(0, 10), null);
 
         PostCommentResponse rootResponse = result.getContent().get(0);
         assertThat(rootResponse.isDeleted()).isTrue();
@@ -104,6 +129,11 @@ class PostCommentQueryServiceTest {
         assertThat(rootResponse.userId()).isNull();
         assertThat(rootResponse.userNickname()).isNull();
         assertThat(rootResponse.hasMoreReplies()).isFalse();
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<Long, Long>> authorMapCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(commentViewerStateService).resolveForComments(isNull(), any(), authorMapCaptor.capture());
+        assertThat(authorMapCaptor.getValue()).doesNotContainKey(10L);
     }
 
     private static User buildUser(Long id, String nickname) {
