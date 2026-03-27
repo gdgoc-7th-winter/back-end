@@ -21,6 +21,9 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 @ActiveProfiles("test")
 class EmailServiceTest {
 
+    @MockitoBean
+    private software.amazon.awssdk.services.s3.S3Client s3Client;
+
     @Autowired
     private EmailServiceImpl emailService;
 
