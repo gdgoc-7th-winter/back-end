@@ -95,4 +95,14 @@ public class RecruitingPostController {
                 applicationSubmissionQueryService.getDetail(submissionId, user)
         );
     }
+
+    @GetMapping("/recruitings/{postId}/applications")
+    public CommonResponse<ApplicationSubmissionListResponse> getApplicationSubmissionList(
+            @PathVariable Long postId,
+            @CurrentUser User user
+    ) {
+        return CommonResponse.ok(
+                applicationSubmissionQueryService.getSubmissionList(postId, user)
+        );
+    }
 }

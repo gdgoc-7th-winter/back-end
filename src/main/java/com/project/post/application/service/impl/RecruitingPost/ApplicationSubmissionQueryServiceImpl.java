@@ -4,13 +4,11 @@ import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionAnswerResponse;
 import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionDetailResponse;
+import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionListResponse;
+import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionSummaryResponse;
 import com.project.post.application.service.ApplicationSubmissionQueryService;
-import com.project.post.domain.entity.AnswerSelectedOption;
-import com.project.post.domain.entity.ApplicationSubmission;
-import com.project.post.domain.entity.RecruitingApplicationAnswer;
-import com.project.post.domain.repository.AnswerSelectedOptionRepository;
-import com.project.post.domain.repository.ApplicationSubmissionRepository;
-import com.project.post.domain.repository.RecruitingApplicationAnswerRepository;
+import com.project.post.domain.entity.*;
+import com.project.post.domain.repository.*;
 import com.project.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
@@ -27,6 +25,8 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
     private final ApplicationSubmissionRepository applicationSubmissionRepository;
     private final RecruitingApplicationAnswerRepository recruitingApplicationAnswerRepository;
     private final AnswerSelectedOptionRepository answerSelectedOptionRepository;
+    private final RecruitingPostRepository recruitingPostRepository;
+    private final RecruitingApplicationRepository recruitingApplicationRepository;
 
     @Override
     public ApplicationSubmissionDetailResponse getDetail(@NonNull Long submissionId,
@@ -69,5 +69,27 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
                 submission.getSubmittedAt(),
                 answerResponses
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApplicationSubmissionListResponse getSubmissionList(Long postId, User user) {
+        RecruitingPost recruitingPost = recruitingPostRepository.findById(postId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "리크루팅 게시글을 찾을 수 없습니다."));
+
+        if (!recruitingPost.getPost().getAuthor().getId().equals(user.getId())) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "해당 모집글의 지원서는 작성자만 조회할 수 있습니다.");
+        }
+
+        RecruitingApplication recruitingApplication = recruitingApplicationRepository.findByRecruitingPost(recruitingPost)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "지원폼을 찾을 수 없습니다."));
+
+        List<ApplicationSubmissionSummaryResponse> submissions =
+                applicationSubmissionRepository.findAllByRecruitingApplicationOrderBySubmittedAtDesc(recruitingApplication)
+                        .stream()
+                        .map(ApplicationSubmissionSummaryResponse::from)
+                        .toList();
+
+        return new ApplicationSubmissionListResponse(submissions);
     }
 }
