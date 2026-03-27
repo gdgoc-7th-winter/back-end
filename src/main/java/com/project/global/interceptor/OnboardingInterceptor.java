@@ -32,7 +32,7 @@ public class OnboardingInterceptor implements HandlerInterceptor {
             // 프로필 설정 API 및 설정에 필요한 조회 API는 허용
             if (requestURI.equals("/api/v1/users/profile-setup")
                     || requestURI.startsWith("/api/v1/departments")
-                    || requestURI.startsWith("/api/v1/me/profile")) {
+                    || (requestURI.equals("/api/v1/me/profile") && "GET".equalsIgnoreCase(request.getMethod()))) {
                 return true;
             }
             throw new BusinessException(ErrorCode.ACCESS_DENIED, "프로필 설정 후 이용하세요.");
