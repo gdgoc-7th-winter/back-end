@@ -35,7 +35,7 @@ public class OnboardingInterceptor implements HandlerInterceptor {
                     || requestURI.startsWith("/api/v1/me/profile")) {
                 return true;
             }
-            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "프로필 설정 후 이용하세요.");
         }
 
         return true;
