@@ -10,6 +10,8 @@ import com.project.post.domain.entity.RecruitingPost;
 import com.project.post.domain.enums.RecruitingStatus;
 import com.project.post.domain.repository.RecruitingPostRepository;
 import com.project.user.domain.entity.User;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
@@ -46,6 +48,9 @@ public class RecruitingPostCommandServiceImpl implements RecruitingPostCommandSe
     private final RecruitingQuestionOptionRepository recruitingQuestionOptionRepository;
     private final RecruitingPostQueryService recruitingPostQueryService;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     @Override
     @Transactional
     public Long create(@NonNull RecruitingPostCreateRequest request,
@@ -61,6 +66,7 @@ public class RecruitingPostCommandServiceImpl implements RecruitingPostCommandSe
                 request.post(),
                 user
         );
+        post = entityManager.merge(post);
 
         RecruitingPost recruitingPost = RecruitingPost.builder()
                 .post(post)

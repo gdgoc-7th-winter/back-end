@@ -28,12 +28,14 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
     private final RecruitingApplicationAnswerRepository recruitingApplicationAnswerRepository;
     private final AnswerSelectedOptionRepository answerSelectedOptionRepository;
 
+
     @Override
     @Transactional
-    public void submit(@NonNull SubmitApplicationRequest request,
+    public void submit(@NonNull Long postId,
+                       @NonNull SubmitApplicationRequest request,
                        @NonNull User user) {
 
-        RecruitingPost recruitingPost = recruitingPostRepository.findById(request.getRecruitingPostId())
+        RecruitingPost recruitingPost = recruitingPostRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "리크루팅 게시글을 찾을 수 없습니다."));
 
         RecruitingApplication recruitingApplication = recruitingApplicationRepository.findByRecruitingPost(recruitingPost)

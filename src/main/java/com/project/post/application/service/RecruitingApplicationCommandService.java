@@ -7,8 +7,7 @@ import org.springframework.lang.NonNull;
 
 public interface RecruitingApplicationCommandService {
 
-    void submit(@NonNull SubmitApplicationRequest request,
-                @NonNull User user);
+    void submit(Long postId, SubmitApplicationRequest request, User user);
 
     void updateSubmission(@NonNull Long submissionId,
                           @NonNull ApplicationSubmissionUpdateRequest request,

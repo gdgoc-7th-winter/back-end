@@ -38,12 +38,13 @@ public class RecruitingPostController {
                 .body(CommonResponse.ok(response));
     }
 
-    @PostMapping("/recruitings/applications")
+    @PostMapping("/recruitings/{postId}/applications")
     public CommonResponse<Void> submitApplication(
+            @PathVariable Long postId,
             @RequestBody @Valid SubmitApplicationRequest request,
             @CurrentUser User user
     ) {
-        recruitingApplicationCommandService.submit(request, user);
+        recruitingApplicationCommandService.submit(postId, request, user);
         return CommonResponse.ok();
     }
 
