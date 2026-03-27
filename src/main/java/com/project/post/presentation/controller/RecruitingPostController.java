@@ -105,4 +105,13 @@ public class RecruitingPostController {
                 applicationSubmissionQueryService.getSubmissionList(postId, user)
         );
     }
+
+    @DeleteMapping("/recruitings/applications/{submissionId}")
+    public CommonResponse<Void> cancelApplicationSubmission(
+            @PathVariable Long submissionId,
+            @CurrentUser User user
+    ) {
+        recruitingApplicationCommandService.cancelSubmission(submissionId, user);
+        return CommonResponse.ok();
+    }
 }

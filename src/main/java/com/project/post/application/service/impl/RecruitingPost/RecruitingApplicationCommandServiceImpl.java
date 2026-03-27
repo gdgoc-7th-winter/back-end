@@ -41,8 +41,12 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
         RecruitingApplication recruitingApplication = recruitingApplicationRepository.findByRecruitingPost(recruitingPost)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "지원폼을 찾을 수 없습니다."));
 
+        if (applicationSubmissionRepository.existsByRecruitingApplicationAndUserAndDeletedAtIsNull(recruitingApplication, user)) {
+            throw new BusinessException(ErrorCode.ALREADY_APPLIED);
+        }
+
         if (recruitingPost.getDeadlineAt() != null && Instant.now().isAfter(recruitingPost.getDeadlineAt())) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "모집 마감 후에는 지원할 수 없습니다.");
+            throw new BusinessException(ErrorCode.DEADLINE_PASSED);
         }
 
         ApplicationSubmission submission = ApplicationSubmission.builder()
@@ -63,7 +67,7 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                     .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "질문을 찾을 수 없습니다."));
 
             if (!question.getRecruitingApplication().getId().equals(recruitingApplication.getId())) {
-                throw new BusinessException(ErrorCode.INVALID_INPUT, "해당 지원폼의 질문만 답변할 수 있습니다.");
+                throw new BusinessException(ErrorCode.INVALID_QUESTION);
             }
 
             RecruitingApplicationAnswer savedAnswer = RecruitingApplicationAnswer.builder()
@@ -83,7 +87,7 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                         .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "선택지를 찾을 수 없습니다."));
 
                 if (!option.getQuestion().getId().equals(question.getId())) {
-                    throw new BusinessException(ErrorCode.INVALID_INPUT, "해당 질문에 속하지 않은 선택지입니다.");
+                    throw new BusinessException(ErrorCode.INVALID_OPTION);
                 }
 
                 answerSelectedOptionRepository.save(
@@ -112,7 +116,7 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
         RecruitingPost recruitingPost = recruitingApplication.getRecruitingPost();
 
         if (recruitingPost.getDeadlineAt() != null && Instant.now().isAfter(recruitingPost.getDeadlineAt())) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "모집 마감 후에는 지원 답변을 수정할 수 없습니다.");
+            throw new BusinessException(ErrorCode.SUBMISSION_UPDATE_NOT_ALLOWED);
         }
 
         answerSelectedOptionRepository.deleteAllByRecruitingApplicationAnswerApplicationSubmissionId(submissionId);
@@ -127,7 +131,7 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                     .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "질문을 찾을 수 없습니다."));
 
             if (!question.getRecruitingApplication().getId().equals(recruitingApplication.getId())) {
-                throw new BusinessException(ErrorCode.INVALID_INPUT, "해당 지원폼의 질문만 수정할 수 있습니다.");
+                throw new BusinessException(ErrorCode.INVALID_QUESTION);
             }
 
             RecruitingApplicationAnswer savedAnswer = RecruitingApplicationAnswer.builder()
@@ -147,11 +151,30 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                         .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "선택지를 찾을 수 없습니다."));
 
                 if (!option.getQuestion().getId().equals(question.getId())) {
-                    throw new BusinessException(ErrorCode.INVALID_INPUT, "해당 질문에 속하지 않은 선택지입니다.");
+                    throw new BusinessException(ErrorCode.INVALID_OPTION);
                 }
 
                 answerSelectedOptionRepository.save(new AnswerSelectedOption(savedAnswer, option));
             }
         }
+    }
+
+    @Override
+    @Transactional
+    public void cancelSubmission(@NonNull Long submissionId, @NonNull User user) {
+        ApplicationSubmission submission = applicationSubmissionRepository.findByIdAndDeletedAtIsNull(submissionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "지원 내역을 찾을 수 없습니다."));
+
+        if (!submission.getUser().getId().equals(user.getId())) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "본인이 작성한 지원서만 취소할 수 있습니다.");
+        }
+
+        RecruitingPost recruitingPost = submission.getRecruitingApplication().getRecruitingPost();
+
+        if (recruitingPost.getDeadlineAt() != null && Instant.now().isAfter(recruitingPost.getDeadlineAt())) {
+            throw new BusinessException(ErrorCode.SUBMISSION_CANCEL_NOT_ALLOWED);
+        }
+
+        submission.softDelete();
     }
 }

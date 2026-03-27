@@ -32,7 +32,7 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
     public ApplicationSubmissionDetailResponse getDetail(@NonNull Long submissionId,
                                                          @NonNull User user) {
 
-        ApplicationSubmission submission = applicationSubmissionRepository.findById(submissionId)
+        ApplicationSubmission submission = applicationSubmissionRepository.findByIdAndDeletedAtIsNull(submissionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "지원 내역을 찾을 수 없습니다."));
 
         if (!submission.getUser().getId().equals(user.getId())) {
@@ -85,7 +85,7 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "지원폼을 찾을 수 없습니다."));
 
         List<ApplicationSubmissionSummaryResponse> submissions =
-                applicationSubmissionRepository.findAllByRecruitingApplicationOrderBySubmittedAtDesc(recruitingApplication)
+                applicationSubmissionRepository.findAllByRecruitingApplicationAndDeletedAtIsNullOrderBySubmittedAtDesc(recruitingApplication)
                         .stream()
                         .map(ApplicationSubmissionSummaryResponse::from)
                         .toList();

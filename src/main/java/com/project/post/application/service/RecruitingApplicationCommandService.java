@@ -12,4 +12,6 @@ public interface RecruitingApplicationCommandService {
     void updateSubmission(@NonNull Long submissionId,
                           @NonNull ApplicationSubmissionUpdateRequest request,
                           @NonNull User user);
+
+    void cancelSubmission(Long submissionId, User user);
 }

@@ -31,9 +31,15 @@ public enum ErrorCode {
     FILE_METADATA_MISMATCH(HttpStatus.BAD_REQUEST, "F006", "요청한 파일 정보와 S3에 저장된 파일이 일치하지 않습니다."),
     INVALID_CONTENT_TYPE(HttpStatus.BAD_REQUEST, "F003", "허용되지 않은 파일 형식입니다."),
     FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "F004", "파일 크기가 제한을 초과했습니다."),
-    UNSUPPORTED_UPLOAD_TYPE(HttpStatus.BAD_REQUEST, "F005", "지원하지 않는 업로드 타입입니다.");
+    UNSUPPORTED_UPLOAD_TYPE(HttpStatus.BAD_REQUEST, "F005", "지원하지 않는 업로드 타입입니다."),
 
-
+    //Recruiting
+    DEADLINE_PASSED(HttpStatus.BAD_REQUEST, "R001", "모집이 마감되었습니다."),
+    ALREADY_APPLIED(HttpStatus.BAD_REQUEST, "R002", "이미 지원한 모집글입니다."),
+    INVALID_QUESTION(HttpStatus.BAD_REQUEST, "R003", "해당 지원폼의 질문이 아닙니다."),
+    INVALID_OPTION(HttpStatus.BAD_REQUEST, "R004", "해당 질문에 속하지 않은 선택지입니다."),
+    SUBMISSION_UPDATE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "R005", "모집 마감 후에는 지원서를 수정할 수 없습니다."),
+    SUBMISSION_CANCEL_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "R006", "모집 마감 후에는 지원을 취소할 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;
