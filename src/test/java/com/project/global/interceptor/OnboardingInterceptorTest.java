@@ -46,7 +46,7 @@ class OnboardingInterceptorTest {
                 .needsProfile(true)
                 .build();
 
-        request.setRequestURI("/api/v1/me/profile");
+        request.setRequestURI("/api/v1/lectures");
         request.getSession().setAttribute("LOGIN_USER", dummySession);
 
         // when & then
