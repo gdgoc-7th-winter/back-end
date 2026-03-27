@@ -6,6 +6,7 @@ import java.util.List;
 public record ApplicationSubmissionDetailResponse(
         Long submissionId,
         Long recruitingPostId,
+        String applicantName,
         Instant submittedAt,
         List<ApplicationSubmissionAnswerResponse> answers
 ) {

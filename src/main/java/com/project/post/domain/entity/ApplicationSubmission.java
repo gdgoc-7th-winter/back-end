@@ -9,8 +9,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "application_submissions")
@@ -27,6 +25,9 @@ public class ApplicationSubmission extends AuditEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @Column(name = "applicant_name", nullable = false, length = 50)
+    private String applicantName;
 
     @Column(name = "submitted_at")
     private Instant submittedAt;

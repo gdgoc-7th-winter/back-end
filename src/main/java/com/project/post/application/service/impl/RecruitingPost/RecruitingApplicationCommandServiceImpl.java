@@ -31,7 +31,7 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
 
     @Override
     @Transactional
-    public void submit(@NonNull Long postId,
+    public Long submit(@NonNull Long postId,
                        @NonNull SubmitApplicationRequest request,
                        @NonNull User user) {
 
@@ -49,12 +49,13 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                 .recruitingApplication(recruitingApplication)
                 .user(user)
                 .submittedAt(Instant.now())
+                .applicantName(request.getApplicantName())
                 .build();
 
-        applicationSubmissionRepository.save(submission);
+        ApplicationSubmission savedSubmission = applicationSubmissionRepository.save(submission);
 
         if (request.getAnswers() == null || request.getAnswers().isEmpty()) {
-            return;
+            return savedSubmission.getId();
         }
 
         for (AnswerRequest answerRequest : request.getAnswers()) {
@@ -66,7 +67,7 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
             }
 
             RecruitingApplicationAnswer savedAnswer = RecruitingApplicationAnswer.builder()
-                    .applicationSubmission(submission)
+                    .applicationSubmission(savedSubmission)
                     .question(question)
                     .answer(answerRequest.getAnswer())
                     .build();
@@ -90,6 +91,8 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                 );
             }
         }
+
+        return savedSubmission.getId();
     }
 
     @Override

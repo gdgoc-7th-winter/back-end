@@ -39,13 +39,16 @@ public class RecruitingPostController {
     }
 
     @PostMapping("/recruitings/{postId}/applications")
-    public CommonResponse<Void> submitApplication(
+    public ResponseEntity<CommonResponse<ApplicationSubmissionCreateResponse>> submitApplication(
             @PathVariable Long postId,
             @RequestBody @Valid SubmitApplicationRequest request,
             @CurrentUser User user
     ) {
-        recruitingApplicationCommandService.submit(postId, request, user);
-        return CommonResponse.ok();
+        Long submissionId = recruitingApplicationCommandService.submit(postId, request, user);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(CommonResponse.ok(new ApplicationSubmissionCreateResponse(submissionId)));
     }
 
     @GetMapping("/recruitings/{postId}")
