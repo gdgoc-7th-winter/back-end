@@ -179,7 +179,7 @@ public class RecruitingPostCommandServiceImpl implements RecruitingPostCommandSe
 
         if (request.post() != null) {
             postCommandService.update(post.getId(), request.post(), user);
-        }/
+        }
 
         return recruitingPostQueryService.getDetail(postId, user.getId());
     }
