@@ -66,6 +66,8 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
                 submission.getId(),
                 submission.getRecruitingApplication().getRecruitingPost().getId(),
                 submission.getApplicantName(),
+                submission.getCampus(),
+                submission.getDepartment(),
                 submission.getSubmittedAt(),
                 answerResponses
         );

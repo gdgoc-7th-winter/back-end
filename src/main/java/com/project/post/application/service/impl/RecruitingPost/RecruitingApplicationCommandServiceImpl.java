@@ -54,6 +54,8 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                 .user(user)
                 .submittedAt(Instant.now())
                 .applicantName(request.getApplicantName())
+                .campus(request.getCampus())
+                .department(request.getDepartment())
                 .build();
 
         ApplicationSubmission savedSubmission = applicationSubmissionRepository.save(submission);
@@ -118,6 +120,12 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
         if (recruitingPost.getDeadlineAt() != null && Instant.now().isAfter(recruitingPost.getDeadlineAt())) {
             throw new BusinessException(ErrorCode.SUBMISSION_UPDATE_NOT_ALLOWED);
         }
+
+        submission.updateApplicantInfo(
+                request.getApplicantName(),
+                request.getCampus(),
+                request.getDepartment()
+        );
 
         answerSelectedOptionRepository.deleteAllByRecruitingApplicationAnswerApplicationSubmissionId(submissionId);
         recruitingApplicationAnswerRepository.deleteAllByApplicationSubmissionId(submissionId);
