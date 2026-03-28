@@ -40,7 +40,8 @@ public enum ErrorCode {
     INVALID_OPTION(HttpStatus.BAD_REQUEST, "R004", "해당 질문에 속하지 않은 선택지입니다."),
     SUBMISSION_UPDATE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "R005", "모집 마감 후에는 지원서를 수정할 수 없습니다."),
     SUBMISSION_CANCEL_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "R006", "모집 마감 후에는 지원을 취소할 수 없습니다."),
-    APPLICATION_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "R007", "현재는 지원할 수 없는 모집글입니다.");
+    APPLICATION_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "R007", "현재는 지원할 수 없는 모집글입니다."),
+    RECRUITING_POST_DELETE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "R008", "지원자가 있는 모집글은 삭제할 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;

@@ -2,10 +2,7 @@ package com.project.post.application.service.impl.RecruitingPost;
 
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
-import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionAnswerResponse;
-import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionDetailResponse;
-import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionListResponse;
-import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionSummaryResponse;
+import com.project.post.application.dto.RecruitingPost.*;
 import com.project.post.application.service.ApplicationSubmissionQueryService;
 import com.project.post.domain.entity.*;
 import com.project.post.domain.repository.*;
@@ -101,5 +98,15 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
                         .toList();
 
         return new ApplicationSubmissionListResponse(submissions);
+    }
+
+    @Override
+    public AppliedRecruitingPostListResponse getAppliedRecruitings(@NonNull User user) {
+        return new AppliedRecruitingPostListResponse(
+                applicationSubmissionRepository.findAllByUserAndDeletedAtIsNullOrderBySubmittedAtDesc(user)
+                        .stream()
+                        .map(AppliedRecruitingPostSummaryResponse::from)
+                        .toList()
+        );
     }
 }

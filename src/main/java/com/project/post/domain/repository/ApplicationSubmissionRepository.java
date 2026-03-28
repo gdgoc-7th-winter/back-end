@@ -9,12 +9,21 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ApplicationSubmissionRepository extends JpaRepository<ApplicationSubmission, Long> {
+
     boolean existsByRecruitingApplicationAndUserAndDeletedAtIsNull(
             RecruitingApplication recruitingApplication,
             User user
     );
+
+    boolean existsByRecruitingApplicationAndDeletedAtIsNull(
+            RecruitingApplication recruitingApplication
+    );
+
     List<ApplicationSubmission> findAllByRecruitingApplicationAndDeletedAtIsNullOrderBySubmittedAtDesc(
             RecruitingApplication recruitingApplication
     );
+
+    List<ApplicationSubmission> findAllByUserAndDeletedAtIsNullOrderBySubmittedAtDesc(User user);
+
     Optional<ApplicationSubmission> findByIdAndDeletedAtIsNull(Long id);
 }

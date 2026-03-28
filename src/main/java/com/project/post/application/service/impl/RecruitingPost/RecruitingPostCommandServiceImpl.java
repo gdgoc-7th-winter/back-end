@@ -8,7 +8,7 @@ import com.project.post.application.service.RecruitingPostCommandService;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.RecruitingPost;
 import com.project.post.domain.enums.RecruitingStatus;
-import com.project.post.domain.repository.RecruitingPostRepository;
+import com.project.post.domain.repository.*;
 import com.project.user.domain.entity.User;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -24,9 +24,6 @@ import com.project.post.domain.entity.RecruitingApplication;
 import com.project.post.domain.entity.RecruitingQuestion;
 import com.project.post.domain.entity.RecruitingQuestionOption;
 import com.project.post.domain.enums.ApplicationType;
-import com.project.post.domain.repository.RecruitingApplicationRepository;
-import com.project.post.domain.repository.RecruitingQuestionOptionRepository;
-import com.project.post.domain.repository.RecruitingQuestionRepository;
 
 import com.project.post.application.dto.PostUpdateRequest;
 import com.project.post.application.dto.RecruitingPost.RecruitingPostDetailResponse;
@@ -47,6 +44,7 @@ public class RecruitingPostCommandServiceImpl implements RecruitingPostCommandSe
     private final RecruitingQuestionRepository recruitingQuestionRepository;
     private final RecruitingQuestionOptionRepository recruitingQuestionOptionRepository;
     private final RecruitingPostQueryService recruitingPostQueryService;
+    private final ApplicationSubmissionRepository applicationSubmissionRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -202,6 +200,16 @@ public class RecruitingPostCommandServiceImpl implements RecruitingPostCommandSe
                     "본인이 작성한 모집글만 삭제할 수 있습니다."
             );
         }
+
+        recruitingApplicationRepository.findByRecruitingPost(recruitingPost)
+                .ifPresent(recruitingApplication -> {
+                    boolean hasSubmission = applicationSubmissionRepository
+                            .existsByRecruitingApplicationAndDeletedAtIsNull(recruitingApplication);
+
+                    if (hasSubmission) {
+                        throw new BusinessException(ErrorCode.RECRUITING_POST_DELETE_NOT_ALLOWED);
+                    }
+                });
 
         recruitingPost.softDelete();
         post.softDelete();

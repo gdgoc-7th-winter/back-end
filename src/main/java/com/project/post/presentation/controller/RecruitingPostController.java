@@ -132,4 +132,13 @@ public class RecruitingPostController {
                 recruitingPostQueryService.getMyRecruitingPosts(user.getId())
         );
     }
+
+    @GetMapping("/recruitings/applied")
+    public CommonResponse<AppliedRecruitingPostListResponse> getAppliedRecruitings(
+            @CurrentUser User user
+    ) {
+        return CommonResponse.ok(
+                applicationSubmissionQueryService.getAppliedRecruitings(user)
+        );
+    }
 }
