@@ -15,4 +15,6 @@ public interface RecruitingPostCommandService {
             @NonNull RecruitingPostUpdateRequest request,
             @NonNull User user
     );
+
+    void delete(@NonNull Long postId, @NonNull User user);
 }

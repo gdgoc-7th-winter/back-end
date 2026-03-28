@@ -147,8 +147,11 @@ public class RecruitingPostCommandServiceImpl implements RecruitingPostCommandSe
                                                @NonNull RecruitingPostUpdateRequest request,
                                                @NonNull User user) {
 
-        RecruitingPost recruitingPost = recruitingPostRepository.findById(postId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        RecruitingPost recruitingPost = recruitingPostRepository.findByIdAndDeletedAtIsNull(postId)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND,
+                        "모집글을 찾을 수 없습니다."
+                ));
 
         Post post = recruitingPost.getPost();
 
@@ -185,5 +188,28 @@ public class RecruitingPostCommandServiceImpl implements RecruitingPostCommandSe
         }
 
         return recruitingPostQueryService.getDetail(postId, user.getId());
+    }
+
+    @Override
+    @Transactional
+    public void delete(@NonNull Long postId, @NonNull User user) {
+
+        RecruitingPost recruitingPost = recruitingPostRepository.findByIdAndDeletedAtIsNull(postId)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND,
+                        "모집글을 찾을 수 없습니다."
+                ));
+
+        Post post = recruitingPost.getPost();
+
+        if (!post.getAuthor().getId().equals(user.getId())) {
+            throw new BusinessException(
+                    ErrorCode.ACCESS_DENIED,
+                    "본인이 작성한 모집글만 삭제할 수 있습니다."
+            );
+        }
+
+        recruitingPost.softDelete();
+        post.softDelete();
     }
 }

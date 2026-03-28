@@ -45,8 +45,8 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
             throw new BusinessException(ErrorCode.ALREADY_APPLIED);
         }
 
-        if (recruitingPost.getDeadlineAt() != null && Instant.now().isAfter(recruitingPost.getDeadlineAt())) {
-            throw new BusinessException(ErrorCode.DEADLINE_PASSED);
+        if (!recruitingPost.isOpenForApplication()) {
+            throw new BusinessException(ErrorCode.APPLICATION_NOT_AVAILABLE);
         }
 
         ApplicationSubmission submission = ApplicationSubmission.builder()
@@ -117,7 +117,7 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
         RecruitingApplication recruitingApplication = submission.getRecruitingApplication();
         RecruitingPost recruitingPost = recruitingApplication.getRecruitingPost();
 
-        if (recruitingPost.getDeadlineAt() != null && Instant.now().isAfter(recruitingPost.getDeadlineAt())) {
+        if (!recruitingPost.isOpenForApplication()) {
             throw new BusinessException(ErrorCode.SUBMISSION_UPDATE_NOT_ALLOWED);
         }
 
@@ -179,7 +179,7 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
 
         RecruitingPost recruitingPost = submission.getRecruitingApplication().getRecruitingPost();
 
-        if (recruitingPost.getDeadlineAt() != null && Instant.now().isAfter(recruitingPost.getDeadlineAt())) {
+        if (!recruitingPost.isOpenForApplication()) {
             throw new BusinessException(ErrorCode.SUBMISSION_CANCEL_NOT_ALLOWED);
         }
 

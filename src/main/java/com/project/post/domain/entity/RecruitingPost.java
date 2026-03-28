@@ -65,4 +65,22 @@ public class RecruitingPost extends SoftDeleteEntity {
             this.status = status;
         }
     }
+
+    public RecruitingStatus calculateCurrentStatus() {
+        Instant now = Instant.now();
+
+        if (startedAt != null && now.isBefore(startedAt)) {
+            return RecruitingStatus.UPCOMING;
+        }
+
+        if (deadlineAt != null && now.isAfter(deadlineAt)) {
+            return RecruitingStatus.CLOSED;
+        }
+
+        return RecruitingStatus.OPEN;
+    }
+
+    public boolean isOpenForApplication() {
+        return calculateCurrentStatus() == RecruitingStatus.OPEN;
+    }
 }

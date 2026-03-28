@@ -7,5 +7,5 @@ import java.util.Optional;
 
 public interface RecruitingPostRepository extends JpaRepository<RecruitingPost, Long> {
 
-    Optional<RecruitingPost> findActiveById(Long id);
+    Optional<RecruitingPost> findByIdAndDeletedAtIsNull(Long id);
 }

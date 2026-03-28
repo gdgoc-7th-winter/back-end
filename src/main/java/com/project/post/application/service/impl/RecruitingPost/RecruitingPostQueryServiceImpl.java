@@ -23,7 +23,7 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
     @Override
     public RecruitingPostDetailResponse getDetail(Long postId, Long userId) {
 
-        RecruitingPost recruitingPost = recruitingPostRepository.findActiveById(postId)
+        RecruitingPost recruitingPost = recruitingPostRepository.findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.RESOURCE_NOT_FOUND,
                         "모집글을 찾을 수 없습니다."

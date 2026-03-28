@@ -35,8 +35,16 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
         ApplicationSubmission submission = applicationSubmissionRepository.findByIdAndDeletedAtIsNull(submissionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "지원 내역을 찾을 수 없습니다."));
 
-        if (!submission.getUser().getId().equals(user.getId())) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED, "본인이 작성한 지원서만 조회할 수 있습니다.");
+        User applicant = submission.getUser();
+        User recruiter = submission.getRecruitingApplication()
+                .getRecruitingPost()
+                .getPost()
+                .getAuthor();
+
+        if (!applicant.getId().equals(user.getId()) &&
+                !recruiter.getId().equals(user.getId())) {
+
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "조회 권한이 없습니다.");
         }
 
         List<RecruitingApplicationAnswer> answers =

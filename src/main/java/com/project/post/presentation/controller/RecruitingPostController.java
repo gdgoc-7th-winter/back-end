@@ -114,4 +114,13 @@ public class RecruitingPostController {
         recruitingApplicationCommandService.cancelSubmission(submissionId, user);
         return CommonResponse.ok();
     }
+
+    @DeleteMapping("/recruitings/{postId}")
+    public CommonResponse<Void> deleteRecruitingPost(
+            @PathVariable Long postId,
+            @CurrentUser User user
+    ) {
+        recruitingPostCommandService.delete(postId, user);
+        return CommonResponse.ok();
+    }
 }
