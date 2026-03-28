@@ -74,7 +74,6 @@ public class RecruitingPostCommandServiceImpl implements RecruitingPostCommandSe
                 .applicationType(request.applicationType())
                 .startedAt(request.startedAt())
                 .deadlineAt(request.deadlineAt())
-                .status(calculateStatus(request.startedAt(), request.deadlineAt()))
                 .build();
 
         recruitingPostRepository.save(recruitingPost);
@@ -178,14 +177,9 @@ public class RecruitingPostCommandServiceImpl implements RecruitingPostCommandSe
             recruitingPost.updateDeadlineAt(request.deadlineAt());
         }
 
-        recruitingPost.updateStatus(calculateStatus(
-                recruitingPost.getStartedAt(),
-                recruitingPost.getDeadlineAt()
-        ));
-
         if (request.post() != null) {
             postCommandService.update(post.getId(), request.post(), user);
-        }
+        }/
 
         return recruitingPostQueryService.getDetail(postId, user.getId());
     }

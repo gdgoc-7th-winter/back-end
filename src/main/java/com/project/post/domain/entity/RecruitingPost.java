@@ -42,10 +42,6 @@ public class RecruitingPost extends SoftDeleteEntity {
     @Column(name = "deadline_at")
     private Instant deadlineAt;
 
-    @Column(name = "status", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private RecruitingStatus status;
-
     public void updateCategory(RecruitingCategory category) {
         if (category != null) {
             this.category = category;
@@ -58,12 +54,6 @@ public class RecruitingPost extends SoftDeleteEntity {
 
     public void updateDeadlineAt(Instant deadlineAt) {
         this.deadlineAt = deadlineAt;
-    }
-
-    public void updateStatus(RecruitingStatus status) {
-        if (status != null) {
-            this.status = status;
-        }
     }
 
     public RecruitingStatus calculateCurrentStatus() {
@@ -82,5 +72,19 @@ public class RecruitingPost extends SoftDeleteEntity {
 
     public boolean isOpenForApplication() {
         return calculateCurrentStatus() == RecruitingStatus.OPEN;
+    }
+
+    public RecruitingStatus getStatus() {
+        Instant now = Instant.now();
+
+        if (startedAt != null && now.isBefore(startedAt)) {
+            return RecruitingStatus.UPCOMING;
+        }
+
+        if (deadlineAt != null && now.isAfter(deadlineAt)) {
+            return RecruitingStatus.CLOSED;
+        }
+
+        return RecruitingStatus.OPEN;
     }
 }
