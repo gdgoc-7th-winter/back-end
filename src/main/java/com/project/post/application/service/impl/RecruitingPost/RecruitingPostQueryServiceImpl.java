@@ -3,6 +3,8 @@ package com.project.post.application.service.impl.RecruitingPost;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.PostDetailResponse;
+import com.project.post.application.dto.RecruitingPost.MyRecruitingPostListResponse;
+import com.project.post.application.dto.RecruitingPost.MyRecruitingPostSummaryResponse;
 import com.project.post.application.dto.RecruitingPost.RecruitingPostDetailResponse;
 import com.project.post.application.service.PostQueryService;
 import com.project.post.application.service.RecruitingPostQueryService;
@@ -38,6 +40,17 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
                 recruitingPost.getStartedAt(),
                 recruitingPost.getDeadlineAt(),
                 postDetail
+        );
+    }
+
+    @Override
+    public MyRecruitingPostListResponse getMyRecruitingPosts(Long userId) {
+        return new MyRecruitingPostListResponse(
+                recruitingPostRepository
+                        .findAllByPostAuthorIdAndDeletedAtIsNullAndPostDeletedAtIsNullOrderByCreatedAtDesc(userId)
+                        .stream()
+                        .map(MyRecruitingPostSummaryResponse::from)
+                        .toList()
         );
     }
 }

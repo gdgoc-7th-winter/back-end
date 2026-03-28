@@ -123,4 +123,13 @@ public class RecruitingPostController {
         recruitingPostCommandService.delete(postId, user);
         return CommonResponse.ok();
     }
+
+    @GetMapping("/recruitings/me")
+    public CommonResponse<MyRecruitingPostListResponse> getMyRecruitingPosts(
+            @CurrentUser User user
+    ) {
+        return CommonResponse.ok(
+                recruitingPostQueryService.getMyRecruitingPosts(user.getId())
+        );
+    }
 }
