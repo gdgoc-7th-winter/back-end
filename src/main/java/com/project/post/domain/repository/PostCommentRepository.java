@@ -34,8 +34,8 @@ public interface PostCommentRepository extends JpaRepository<PostComment, Long>,
     @Query("SELECT c.likeCount FROM PostComment c WHERE c.id = :commentId AND c.deletedAt IS NULL")
     Optional<Long> findLikeCountById(@Param("commentId") Long commentId);
 
-    @Query("SELECT DISTINCT c FROM PostComment c "
-            + "JOIN FETCH c.user JOIN FETCH c.post JOIN FETCH c.parentComment "
+    @Query("SELECT c FROM PostComment c "
+            + "JOIN FETCH c.user JOIN FETCH c.post "
             + "WHERE c.id IN :ids")
     List<PostComment> findAllByIdInWithAssociations(@Param("ids") Collection<Long> ids);
 }
