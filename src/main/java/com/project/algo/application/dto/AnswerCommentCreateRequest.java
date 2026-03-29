@@ -12,6 +12,7 @@ public record AnswerCommentCreateRequest(
         @Size(max = 5_000)
         String content,
 
+        @Size(max = 100)
         List<Integer> referencedLines,
 
         CommentTag commentTag

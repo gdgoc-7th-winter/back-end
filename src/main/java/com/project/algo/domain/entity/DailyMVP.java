@@ -16,6 +16,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 @Entity
 @Table(
@@ -54,6 +55,15 @@ public class DailyMVP {
 
     public static DailyMVP of(DailyChallenge dailyChallenge, User user,
                                int rank, long likeCount, LocalDate awardedAt) {
+        Objects.requireNonNull(dailyChallenge, "챌린지는 필수입니다.");
+        Objects.requireNonNull(user, "사용자는 필수입니다.");
+        Objects.requireNonNull(awardedAt, "수상 날짜는 필수입니다.");
+        if (rank < 1 || rank > 3) {
+            throw new IllegalArgumentException("rank는 1~3 사이여야 합니다: " + rank);
+        }
+        if (likeCount < 0) {
+            throw new IllegalArgumentException("likeCount는 0 이상이어야 합니다: " + likeCount);
+        }
         DailyMVP mvp = new DailyMVP();
         mvp.dailyChallenge = dailyChallenge;
         mvp.user = user;

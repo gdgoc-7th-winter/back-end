@@ -23,8 +23,9 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "daily_challenges")
@@ -61,7 +62,7 @@ public class DailyChallenge extends SoftDeleteEntity {
     )
     @Enumerated(EnumType.STRING)
     @Column(name = "tag", length = 50)
-    private List<AlgorithmTag> algorithmTags = new ArrayList<>();
+    private Set<AlgorithmTag> algorithmTags = new HashSet<>();
 
     @Column(name = "original_url", nullable = false, columnDefinition = "TEXT")
     private String originalUrl;

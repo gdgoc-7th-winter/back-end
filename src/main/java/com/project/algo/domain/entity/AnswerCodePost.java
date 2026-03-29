@@ -43,7 +43,7 @@ public class AnswerCodePost extends SoftDeleteEntity {
     private User author;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "language", nullable = false, length = 30)
+    @Column(name = "programming_language", nullable = false, length = 30)
     private ProgrammingLanguage language;
 
     @Column(nullable = false, columnDefinition = "TEXT")
