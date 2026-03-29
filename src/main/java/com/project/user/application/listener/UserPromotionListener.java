@@ -1,6 +1,6 @@
 package com.project.user.application.listener;
 
-import com.project.global.event.Impl.UserPromotionEvent;
+import com.project.global.event.impl.UserPromotionEvent;
 import com.project.user.application.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,9 +1,9 @@
-package com.project.global.event.Impl;
+package com.project.global.event.impl;
 
 import com.project.global.event.ActivityEvent;
 import com.project.global.event.ActivityType;
 
-public record PostActivityEvent(Long userId, Long postId) implements ActivityEvent {
+public record CommentActivityEvent(Long userId, Long commentId) implements ActivityEvent {
     @Override
     public Long getUserId() {
         return userId;
@@ -11,11 +11,11 @@ public record PostActivityEvent(Long userId, Long postId) implements ActivityEve
 
     @Override
     public Long getReferenceId() {
-        return postId;
+        return commentId;
     }
 
     @Override
     public ActivityType getActivityType() {
-        return ActivityType.POST_CREATED;
+        return ActivityType.COMMENT_WRITTEN;
     }
 }
