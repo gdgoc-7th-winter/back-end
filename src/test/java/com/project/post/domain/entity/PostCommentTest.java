@@ -47,7 +47,7 @@ class PostCommentTest {
 
         assertThatThrownBy(() -> PostComment.createReply(post, user, parent, "reply"))
                 .isInstanceOf(PostDomainException.class)
-                .hasMessage("대댓글은 1단계까지만 허용됩니다.");
+                .hasMessage("답글은 최상위 댓글에만 달 수 있습니다.");
     }
 
     private static Post buildPost(Long id, Board board, User author, String title) {

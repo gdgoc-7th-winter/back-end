@@ -1,10 +1,11 @@
 package com.project.post.domain.repository;
 
 import com.project.post.domain.entity.PostComment;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.project.post.domain.repository.dto.ReplyPreviewRow;
 import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -13,11 +14,21 @@ import java.util.List;
  */
 public interface PostCommentRepositoryCustom {
 
-    /** 루트 댓글 (삭제 포함, 마스킹은 서비스에서) */
-    Page<PostComment> findRootComments(@NonNull Long postId, @NonNull Pageable pageable);
+    List<PostComment> findRootCommentsWithCursor(
+            @NonNull Long postId,
+            @Nullable Instant cursorCreatedAt,
+            @Nullable Long cursorId,
+            int limitPlusOne);
 
-    List<PostComment> findRepliesByParentId(@NonNull Long parentId, int limit);
+    List<ReplyPreviewRow> findReplyPreviewRows(
+            @NonNull Long postId,
+            @NonNull List<Long> parentCommentIds,
+            int limitPlusOne);
 
-    /** 대댓글 (삭제 포함, 마스킹은 서비스에서) */
-    List<PostComment> findRepliesByParentIds(@NonNull List<Long> parentIds);
+    List<PostComment> findCommentsByParentWithCursor(
+            @NonNull Long postId,
+            @NonNull Long parentCommentId,
+            @Nullable Instant cursorCreatedAt,
+            @Nullable Long cursorId,
+            int limitPlusOne);
 }

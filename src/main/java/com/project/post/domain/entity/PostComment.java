@@ -83,7 +83,7 @@ public class PostComment extends SoftDeleteEntity {
             throw new PostDomainException("부모 댓글이 해당 게시글에 속하지 않습니다.");
         }
         if (parent.getDepth() >= 1) {
-            throw new PostDomainException("대댓글은 1단계까지만 허용됩니다.");
+            throw new PostDomainException("답글은 최상위 댓글에만 달 수 있습니다.");
         }
         return PostComment.builder()
                 .post(post)
