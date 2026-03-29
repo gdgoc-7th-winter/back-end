@@ -19,6 +19,7 @@ import com.project.user.domain.entity.LevelBadge;
 import com.project.user.domain.entity.TechStack;
 import com.project.user.domain.entity.Track;
 import com.project.user.domain.entity.SocialAccount;
+import com.project.user.domain.enums.Authority;
 
 import com.project.user.domain.repository.DepartmentRepository;
 import com.project.user.domain.repository.EmailAuthRepository;
@@ -141,6 +142,8 @@ public class UserServiceImpl implements UserService {
                 .build();
 
         session.setAttribute("LOGIN_USER", userSession);
+        log.info("[Login] 로그인 성공 - userId={}, authority={}, needsProfile={}",
+                userSession.getUserId(), userSession.getAuthority(), userSession.isNeedsProfile());
     }
 
     @Override
@@ -370,11 +373,21 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public void grantAuthority(Long userId, Authority authority) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        user.grantAuthority(authority);
+        updateSecurityContext(userId);
+    }
+
+    @Override
+    @Transactional
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        userRepository.delete(user);
+        user.withdraw();
+        log.info("[deleteUser] 회원 탈퇴 처리 완료 (soft delete) - userId={}", id);
 
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         logout(request.getSession(false));
