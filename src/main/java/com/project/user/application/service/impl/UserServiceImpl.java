@@ -177,6 +177,7 @@ public class UserServiceImpl implements UserService {
     public void updateProfile(Long userId, ProfileUpdateRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        validateNotWithdrawn(user);
 
         if (!user.needsInitialSetup()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "이미 초기 프로필 설정이 완료된 계정입니다.");
@@ -216,6 +217,7 @@ public class UserServiceImpl implements UserService {
     public void patchProfile(Long userId, ProfilePatchRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        validateNotWithdrawn(user);
 
         if (user.needsInitialSetup()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "초기 프로필 설정을 먼저 완료해주세요.");
@@ -249,6 +251,12 @@ public class UserServiceImpl implements UserService {
                 trackMasters,
                 techStackMasters
         );
+    }
+
+    private void validateNotWithdrawn(User user) {
+        if (user.isDeleted()) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "탈퇴한 회원입니다.");
+        }
     }
 
     private void validateAllFound(List<String> requested, List<String> found, String fieldName) {
@@ -306,6 +314,7 @@ public class UserServiceImpl implements UserService {
     public void changePassword(Long id, PasswordUpdateRequest request){
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        validateNotWithdrawn(user);
 
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
             throw new BusinessException(ErrorCode.PASSWORD_MISMATCH);
@@ -327,6 +336,7 @@ public class UserServiceImpl implements UserService {
     public User earnAScore(Long id, String scoreName, Long referenceId) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "회원 정보가 없습니다."));
+        validateNotWithdrawn(user);
         ContributionScore contributionScore = contributionScoreRepository.findByName(scoreName)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
@@ -351,6 +361,7 @@ public class UserServiceImpl implements UserService {
     public void linkSocialAccount(Long userId, String provider, String email, String providerId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        validateNotWithdrawn(user);
 
         boolean alreadyLinked = user.getSocialAccounts().stream()
                 .anyMatch(acc -> acc.getProvider().equals(provider));
@@ -376,6 +387,7 @@ public class UserServiceImpl implements UserService {
     public void grantAuthority(Long userId, Authority authority) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        validateNotWithdrawn(user);
         user.grantAuthority(authority);
         updateSecurityContext(userId);
     }
@@ -385,6 +397,10 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        if (user.isDeleted()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "이미 탈퇴한 회원입니다.");
+        }
 
         user.withdraw();
         log.info("[deleteUser] 회원 탈퇴 처리 완료 (soft delete) - userId={}", id);
