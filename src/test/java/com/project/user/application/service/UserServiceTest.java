@@ -219,7 +219,7 @@ class UserServiceTest {
 
     @Test
     @DisplayName("회원 탈퇴 성공 - soft delete 처리되고 세션이 무효화된다")
-    void deleteUser_softDeletesUser() {
+    void deleteUserSoftDeletesUser() {
         try (MockedStatic<RequestContextHolder> mockedContext = mockStatic(RequestContextHolder.class)) {
             // given
             mockedContext.when(RequestContextHolder::currentRequestAttributes)
@@ -243,7 +243,7 @@ class UserServiceTest {
 
     @Test
     @DisplayName("회원 탈퇴 성공 - 개인정보가 마스킹된다")
-    void deleteUser_masksPersonalInfo() {
+    void deleteUserMasksPersonalInfo() {
         try (MockedStatic<RequestContextHolder> mockedContext = mockStatic(RequestContextHolder.class)) {
             // given
             mockedContext.when(RequestContextHolder::currentRequestAttributes)
@@ -273,7 +273,7 @@ class UserServiceTest {
 
     @Test
     @DisplayName("회원 탈퇴 실패 - 존재하지 않는 유저")
-    void deleteUser_failsWhenUserNotFound() {
+    void deleteUserFailsWhenUserNotFound() {
         // given
         Long userId = 999L;
         given(userRepository.findById(userId)).willReturn(Optional.empty());
