@@ -28,6 +28,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@SQLRestriction("deleted_at IS NULL")
 @Entity
 @Table(name = "users")
 @BatchSize(size = 16)
@@ -111,6 +113,9 @@ public class User {
     @Column(name = "introduction", nullable = true)
     private String introduction;
 
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
+
     @Builder
     public User(String email, String password, String nickname) {
         this.email = email;
@@ -124,6 +129,10 @@ public class User {
 
     public void grantUserAuthority() {
         this.authority = Authority.USER;
+    }
+
+    public void grantAuthority(Authority authority) {
+        this.authority = authority;
     }
 
     public void updateProfile(String nickname, String studentId, Department department,
@@ -207,5 +216,22 @@ public class User {
         if (!alreadyExists) {
             this.socialAccounts.add(socialAccount);
         }
+    }
+
+    public boolean isDeleted() {
+        return this.deletedAt != null;
+    }
+
+    public void withdraw() {
+        this.deletedAt = OffsetDateTime.now();
+        this.email = "deleted_" + this.id + "@deleted.invalid";
+        this.nickname = "탈퇴한 회원";
+        this.password = "DELETED";
+        this.studentId = null;
+        this.profileImgUrl = null;
+        this.introduction = null;
+        this.socialAccounts.clear();
+        this.userTracks.clear();
+        this.userTechStacks.clear();
     }
 }

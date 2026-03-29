@@ -218,8 +218,8 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("회원 탈퇴 성공 - 유저가 삭제되고 세션이 무효화된다")
-    void deleteUserSuccess() {
+    @DisplayName("회원 탈퇴 성공 - soft delete 처리되고 세션이 무효화된다")
+    void deleteUserSoftDeletesUser() {
         try (MockedStatic<RequestContextHolder> mockedContext = mockStatic(RequestContextHolder.class)) {
             // given
             mockedContext.when(RequestContextHolder::currentRequestAttributes)
@@ -235,14 +235,45 @@ class UserServiceTest {
             userService.deleteUser(userId);
 
             // then
-            verify(userRepository, times(1)).delete(user);
+            assertThat(user.isDeleted()).isTrue();
+            verify(userRepository, never()).delete(any());
             assertThat(session.isInvalid()).isTrue();
         }
     }
 
     @Test
+    @DisplayName("회원 탈퇴 성공 - 개인정보가 마스킹된다")
+    void deleteUserMasksPersonalInfo() {
+        try (MockedStatic<RequestContextHolder> mockedContext = mockStatic(RequestContextHolder.class)) {
+            // given
+            mockedContext.when(RequestContextHolder::currentRequestAttributes)
+                    .thenReturn(new ServletRequestAttributes(request, response));
+
+            Long userId = 1L;
+            User user = new User("test@hufs.ac.kr", "encodedPassword", "홍길동");
+            ReflectionTestUtils.setField(user, "id", userId);
+            ReflectionTestUtils.setField(user, "studentId", "202001234");
+            ReflectionTestUtils.setField(user, "profileImgUrl", "https://s3.example.com/profile.jpg");
+            ReflectionTestUtils.setField(user, "introduction", "안녕하세요");
+
+            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+            // when
+            userService.deleteUser(userId);
+
+            // then
+            assertThat(user.getEmail()).isEqualTo("deleted_" + userId + "@deleted.invalid");
+            assertThat(user.getNickname()).isEqualTo("탈퇴한 회원");
+            assertThat(user.getPassword()).isEqualTo("DELETED");
+            assertThat(user.getStudentId()).isNull();
+            assertThat(user.getProfileImgUrl()).isNull();
+            assertThat(user.getIntroduction()).isNull();
+        }
+    }
+
+    @Test
     @DisplayName("회원 탈퇴 실패 - 존재하지 않는 유저")
-    void deleteUserFailNotFound() {
+    void deleteUserFailsWhenUserNotFound() {
         // given
         Long userId = 999L;
         given(userRepository.findById(userId)).willReturn(Optional.empty());
