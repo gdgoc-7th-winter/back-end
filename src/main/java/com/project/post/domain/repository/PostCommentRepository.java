@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.lang.NonNull;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 public interface PostCommentRepository extends JpaRepository<PostComment, Long>, PostCommentRepositoryCustom {
@@ -31,4 +33,9 @@ public interface PostCommentRepository extends JpaRepository<PostComment, Long>,
 
     @Query("SELECT c.likeCount FROM PostComment c WHERE c.id = :commentId AND c.deletedAt IS NULL")
     Optional<Long> findLikeCountById(@Param("commentId") Long commentId);
+
+    @Query("SELECT c FROM PostComment c "
+            + "JOIN FETCH c.user JOIN FETCH c.post "
+            + "WHERE c.id IN :ids")
+    List<PostComment> findAllByIdInWithAssociations(@Param("ids") Collection<Long> ids);
 }
