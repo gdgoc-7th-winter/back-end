@@ -41,7 +41,7 @@ class PostCommentCommandServiceTest {
     private PostCommentCommandServiceImpl postCommentCommandService;
 
     @Test
-    @DisplayName("루트 댓글 생성 시 댓글 수가 증가한다")
+    @DisplayName("최상위 댓글 생성 시 댓글 수가 증가한다")
     void createRootCommentIncrementsCount() {
         User user = buildUser(1L, "user");
         Post post = buildPost(1L, user);
@@ -61,7 +61,7 @@ class PostCommentCommandServiceTest {
     }
 
     @Test
-    @DisplayName("부모 댓글이 1단계 이상이면 대댓글 생성이 실패한다")
+    @DisplayName("부모 댓글이 1단계 이상이면 답글 생성이 실패한다")
     void createReplyFailsWhenParentDepthTooDeep() {
         User user = buildUser(1L, "user");
         Post post = buildPost(1L, user);

@@ -68,6 +68,7 @@ public class SecurityConfig {
                         // 비로그인 허용: 메인 홈 게시글 목록/상세 조회
                         .requestMatchers(HttpMethod.GET, "/api/v1/boards/*/posts").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/*/comments").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/posts/*/comments/*/comments").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/lectures").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/lectures/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/promotions").permitAll()
