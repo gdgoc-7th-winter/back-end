@@ -1,4 +1,4 @@
-package com.project.global.event.Impl;
+package com.project.global.event.impl;
 
 import com.project.global.event.ActivityEvent;
 import com.project.global.event.ActivityType;
