@@ -3,7 +3,7 @@ package com.project.post.presentation.controller;
 import com.project.global.annotation.CurrentUser;
 import com.project.global.annotation.OptionalSessionUser;
 import com.project.global.response.CommonResponse;
-import com.project.global.response.PageResponse;
+import com.project.global.response.PostPageResponse;
 import com.project.post.application.dto.LecturePost.LecturePostCreateRequest;
 import com.project.post.application.dto.LecturePost.LecturePostDetailResponse;
 import com.project.post.application.dto.LecturePost.LecturePostListResponse;
@@ -51,7 +51,7 @@ public class LecturePostController implements LecturePostControllerDocs {
 
     @Override
     @GetMapping
-    public ResponseEntity<CommonResponse<PageResponse<LecturePostListResponse>>> getList(
+    public ResponseEntity<CommonResponse<PostPageResponse<LecturePostListResponse>>> getList(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false, name = "tags") List<String> tags,
             @RequestParam(required = false) Campus campus,
@@ -62,7 +62,7 @@ public class LecturePostController implements LecturePostControllerDocs {
 
         Page<LecturePostListResponse> list = lecturePostQueryService.getList(
                 pageable, keyword, tags, campus, departments, order, ViewerUserId.from(optionalViewer));
-        return ResponseEntity.ok(CommonResponse.ok(PageResponse.of(list)));
+        return ResponseEntity.ok(CommonResponse.ok(PostPageResponse.of(list)));
     }
 
     @Override

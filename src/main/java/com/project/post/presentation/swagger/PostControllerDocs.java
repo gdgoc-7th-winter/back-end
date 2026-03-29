@@ -2,7 +2,7 @@ package com.project.post.presentation.swagger;
 
 import com.project.global.annotation.OptionalSessionUser;
 import com.project.global.response.CommonResponse;
-import com.project.global.response.PageResponse;
+import com.project.global.response.PostPageResponse;
 import com.project.post.application.dto.LikeScrapToggleResponse;
 import com.project.post.application.dto.PostCreateRequest;
 import com.project.post.application.dto.PostCreateResponse;
@@ -30,7 +30,7 @@ public interface PostControllerDocs {
 
     @Operation(summary = "게시글 목록 조회", description = "게시판 코드로 게시글 목록을 페이징하여 조회합니다. 목록 응답에 tagNames가 포함됩니다. 로그인 시 viewer.liked / viewer.scrapped / viewer.isAuthor 에 현재 사용자 기준 상태가 포함됩니다.")
     @ApiResponse(responseCode = "200", description = "성공")
-    ResponseEntity<CommonResponse<PageResponse<PostListResponse>>> getList(
+    ResponseEntity<CommonResponse<PostPageResponse<PostListResponse>>> getList(
             @Parameter(description = "게시판 코드. GENERAL(자유/정보), PROMOTION(동아리/행사/홍보), LECTURE(강의/수업)")
             @NotBlank @NonNull String code,
             @Parameter(description = "검색 키워드 (제목/본문/태그 부분 일치)") String keyword,

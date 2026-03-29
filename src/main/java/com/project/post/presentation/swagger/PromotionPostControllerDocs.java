@@ -2,7 +2,7 @@ package com.project.post.presentation.swagger;
 
 import com.project.global.annotation.OptionalSessionUser;
 import com.project.global.response.CommonResponse;
-import com.project.global.response.PageResponse;
+import com.project.global.response.PostPageResponse;
 import com.project.post.application.dto.PostCreateResponse;
 import com.project.post.application.dto.PromotionPost.PromotionPostCreateRequest;
 import com.project.post.application.dto.PromotionPost.PromotionPostDetailResponse;
@@ -44,7 +44,7 @@ public interface PromotionPostControllerDocs {
 
     @Operation(summary = "홍보글 목록 조회", description = "홍보글 목록을 페이징하여 조회합니다. 카테고리로 필터링할 수 있습니다. 로그인 시 post.viewer에 현재 사용자 기준 좋아요·스크랩·작성자 여부가 포함됩니다.")
     @ApiResponse(responseCode = "200", description = "성공")
-    ResponseEntity<CommonResponse<PageResponse<PromotionPostListResponse>>> getList(
+    ResponseEntity<CommonResponse<PostPageResponse<PromotionPostListResponse>>> getList(
             @Parameter(description = "홍보 카테고리") PromotionCategory category,
             @ParameterObject @Parameter(description = "페이지 정보 (page: 페이지 번호, size: 페이지 크기, sort: 정렬)") @NonNull Pageable pageable,
             @Parameter(hidden = true) @OptionalSessionUser Optional<User> optionalViewer
