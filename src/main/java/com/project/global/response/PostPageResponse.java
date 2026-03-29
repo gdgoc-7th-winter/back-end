@@ -12,12 +12,7 @@ public record PostPageResponse<T>(
     public static <T> PostPageResponse<T> of(Page<T> page) {
         return new PostPageResponse<>(
                 page.getContent(),
-                new PageMeta(
-                        page.getNumber(),
-                        page.getSize(),
-                        page.getTotalElements(),
-                        page.getTotalPages()
-                )
+                PageMeta.from(page)
         );
     }
 }
