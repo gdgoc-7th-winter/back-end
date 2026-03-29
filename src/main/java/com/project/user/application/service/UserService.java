@@ -2,6 +2,7 @@ package com.project.user.application.service;
 
 import com.project.user.application.dto.response.ProfileResponse;
 import com.project.user.domain.entity.User;
+import com.project.user.domain.enums.Authority;
 import com.project.user.presentation.dto.request.PasswordUpdateRequest;
 import com.project.user.presentation.dto.request.ProfilePatchRequest;
 import com.project.user.presentation.dto.request.ProfileUpdateRequest;
@@ -20,4 +21,5 @@ public interface UserService {
     public void linkSocialAccount(Long userId, String provider, String email, String providerId);
     public void patchProfile(Long id, ProfilePatchRequest request);
     public void deleteUser(Long id);
+    public void grantAuthority(Long userId, Authority authority);
 }
