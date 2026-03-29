@@ -3,7 +3,7 @@ package com.project.post.presentation.controller;
 import com.project.global.annotation.CurrentUser;
 import com.project.global.annotation.OptionalSessionUser;
 import com.project.global.response.CommonResponse;
-import com.project.global.response.PageResponse;
+import com.project.global.response.PostPageResponse;
 import com.project.post.application.dto.LikeScrapToggleResponse;
 import com.project.post.application.dto.PostCreateRequest;
 import com.project.post.application.dto.PostCreateResponse;
@@ -57,7 +57,7 @@ public class PostController implements PostControllerDocs {
 
     @Override
     @GetMapping("/boards/{code}/posts")
-    public ResponseEntity<CommonResponse<PageResponse<PostListResponse>>> getList(
+    public ResponseEntity<CommonResponse<PostPageResponse<PostListResponse>>> getList(
             @PathVariable @NotBlank @NonNull String code,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false, name = "tags") List<String> tags,
@@ -66,7 +66,7 @@ public class PostController implements PostControllerDocs {
             @OptionalSessionUser Optional<User> optionalViewer) {
         Page<PostListResponse> list = postQueryService.getList(
                 code, pageable, keyword, tags, order, ViewerUserId.from(optionalViewer));
-        return ResponseEntity.ok(CommonResponse.ok(PageResponse.of(list)));
+        return ResponseEntity.ok(CommonResponse.ok(PostPageResponse.of(list)));
     }
 
     @Override

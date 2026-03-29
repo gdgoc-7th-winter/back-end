@@ -4,13 +4,13 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-public record PageResponse<T>(
-        List<T> items,
+public record PostPageResponse<T>(
+        List<T> posts,
         PageMeta meta
 ) {
 
-    public static <T> PageResponse<T> of(Page<T> page) {
-        return new PageResponse<>(
+    public static <T> PostPageResponse<T> of(Page<T> page) {
+        return new PostPageResponse<>(
                 page.getContent(),
                 new PageMeta(
                         page.getNumber(),
