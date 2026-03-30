@@ -13,16 +13,12 @@ import com.project.user.domain.entity.User;
 import com.project.user.domain.enums.Authority;
 
 import com.project.user.domain.repository.DepartmentRepository;
-import com.project.user.domain.repository.LevelBadgeRepository;
 import com.project.user.domain.repository.TechStackRepository;
 import com.project.user.domain.repository.TrackRepository;
 import com.project.user.domain.repository.UserRepository;
-import com.project.user.domain.repository.EmailAuthRepository;
 
 import com.project.user.presentation.dto.request.PasswordUpdateRequest;
 import com.project.user.presentation.dto.request.ProfileUpdateRequest;
-import com.project.contribution.domain.repository.ContributionScoreRepository;
-import com.project.contribution.domain.repository.UserContributionRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -66,10 +62,6 @@ class UserServiceTest {
     @Mock private TrackRepository trackRepository;
     @Mock private TechStackRepository techStackRepository;
     @Mock private DepartmentRepository departmentRepository;
-    @Mock private EmailAuthRepository emailAuthRepository;
-    @Mock private LevelBadgeRepository levelBadgeRepository;
-    @Mock private ContributionScoreRepository contributionScoreRepository;
-    @Mock private UserContributionRepository userContributionRepository;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -154,7 +146,7 @@ class UserServiceTest {
                     .techStackNames(List.of("Spring"))
                     .build();
 
-            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(userRepository.findActiveById(userId)).willReturn(Optional.of(user));
             given(departmentRepository.findById(1L)).willReturn(Optional.of(mockDept));
             given(trackRepository.findByNameIn(anyList())).willReturn(List.of(mockTrack));
             given(techStackRepository.findByNameIn(anyList())).willReturn(List.of(mockTech));
@@ -183,7 +175,7 @@ class UserServiceTest {
         ReflectionTestUtils.setField(passwordUpdateRequest, "oldPassword", "currentPw");
         ReflectionTestUtils.setField(passwordUpdateRequest, "newPassword", "newPw123!");
 
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(userRepository.findActiveById(userId)).willReturn(Optional.of(user));
         given(passwordEncoder.matches("currentPw", encodedCurrent)).willReturn(true);
         given(passwordEncoder.encode("newPw123!")).willReturn(encodedNew);
 
@@ -209,7 +201,7 @@ class UserServiceTest {
         ReflectionTestUtils.setField(passwordUpdateRequest, "oldPassword", "wrongPw");
         ReflectionTestUtils.setField(passwordUpdateRequest, "newPassword", "newPw123!");
 
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(userRepository.findActiveById(userId)).willReturn(Optional.of(user));
         given(passwordEncoder.matches("wrongPw", encodedCurrent)).willReturn(false);
 
         // when & then
@@ -230,7 +222,7 @@ class UserServiceTest {
             User user = User.builder().email("test@hufs.ac.kr").password("pw").nickname("nick").build();
             ReflectionTestUtils.setField(user, "id", userId);
 
-            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(userRepository.findActiveById(userId)).willReturn(Optional.of(user));
 
             // when
             userService.deleteUser(userId);
@@ -257,15 +249,15 @@ class UserServiceTest {
             ReflectionTestUtils.setField(user, "profileImgUrl", "https://s3.example.com/profile.jpg");
             ReflectionTestUtils.setField(user, "introduction", "안녕하세요");
 
-            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(userRepository.findActiveById(userId)).willReturn(Optional.of(user));
 
             // when
             userService.deleteUser(userId);
 
             // then
             assertThat(user.getEmail()).isEqualTo("deleted_" + userId + "@deleted.invalid");
-            assertThat(user.getNickname()).isEqualTo("탈퇴한 회원");
-            assertThat(user.getPassword()).isEqualTo("DELETED");
+            assertThat(user.getNickname()).isEqualTo(null);
+            assertThat(user.getPassword()).isEqualTo(null);
             assertThat(user.getStudentId()).isNull();
             assertThat(user.getProfileImgUrl()).isNull();
             assertThat(user.getIntroduction()).isNull();
@@ -277,7 +269,7 @@ class UserServiceTest {
     void deleteUserFailsWhenUserNotFound() {
         // given
         Long userId = 999L;
-        given(userRepository.findById(userId)).willReturn(Optional.empty());
+        given(userRepository.findActiveById(userId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> userService.deleteUser(userId))

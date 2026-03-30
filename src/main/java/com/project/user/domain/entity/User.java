@@ -26,14 +26,12 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import org.hibernate.annotations.BatchSize;
-import org.hibernate.annotations.SQLRestriction;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@SQLRestriction("deleted_at IS NULL")
 @Entity
 @Table(name = "users")
 @BatchSize(size = 16)
@@ -199,8 +197,8 @@ public class User extends SoftDeleteEntity {
     public void withdraw() {
         softDelete();
         this.email = "deleted_" + this.getId() + "@deleted.invalid";
-        this.nickname = "탈퇴한 회원";
-        this.password = "DELETED";
+        this.nickname = null;
+        this.password = null;
         this.studentId = null;
         this.profileImgUrl = null;
         this.introduction = null;
