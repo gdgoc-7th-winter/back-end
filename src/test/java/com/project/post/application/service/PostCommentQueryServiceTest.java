@@ -111,6 +111,8 @@ class PostCommentQueryServiceTest {
         assertThat(rootResponse.replies().get(0).parentCommentId()).isEqualTo(10L);
         assertThat(rootResponse.replies().get(0).content()).isEqualTo("reply");
         assertThat(rootResponse.isDeleted()).isFalse();
+        assertThat(rootResponse.isWithdrawn()).isFalse();
+        assertThat(rootResponse.replies().get(0).isWithdrawn()).isFalse();
         assertThat(rootResponse.hasMoreReplies()).isFalse();
         assertThat(rootResponse.viewer()).isEqualTo(CommentViewerResponse.guest());
         assertThat(rootResponse.replies().get(0).viewer()).isEqualTo(CommentViewerResponse.guest());
@@ -141,6 +143,7 @@ class PostCommentQueryServiceTest {
         assertThat(rootResponse.content()).isNull();
         assertThat(rootResponse.userId()).isNull();
         assertThat(rootResponse.userNickname()).isNull();
+        assertThat(rootResponse.isWithdrawn()).isFalse();
         assertThat(rootResponse.hasMoreReplies()).isFalse();
 
         @SuppressWarnings("unchecked")
@@ -152,14 +155,9 @@ class PostCommentQueryServiceTest {
     // ── 탈퇴 사용자가 댓글 작성자인 경우 ──────────────────────────────────────
 
     /**
-     * 시나리오 1: 탈퇴 사용자가 댓글 작성자인 상태에서 댓글 목록 API 호출.
-     *
-     * PostCommentQueryServiceImpl.toResponse()는 비삭제 댓글에서 comment.getUser().getNickname()을 호출한다.
-     * @SQLRestriction 제거 전: User.user lazy-load 시 deleted_at IS NULL 조건에 걸려
-     * EntityNotFoundException 위험이 있었다.
-     * 제거 후: 익명화된 User 행(nickname="탈퇴한 회원")이 정상 로드되어 DTO에 반영되어야 한다.
-     *
-     * 삭제된 댓글(isDeleted=true)은 기존 마스킹 로직이 처리하므로 이 케이스와 별개다.
+     * 탈퇴 사용자가 작성자인 비삭제 댓글: 엔티티 연관 User 를 로드해 닉네임·{@link PostCommentResponse#isWithdrawn()} 을 채운다.
+     * {@code User.withdraw()} 는 닉네임을 비우고 soft-delete 하므로 닉네임은 null이 될 수 있다.
+     * 삭제된 댓글({@code isDeleted=true})은 작성자 마스킹·isWithdrawn=false 규칙이 별도다.
      */
     @Nested
     @DisplayName("탈퇴 사용자가 댓글 작성자인 경우")
@@ -171,13 +169,13 @@ class PostCommentQueryServiceTest {
         @BeforeEach
         void setUpWithdrawn() {
             withdrawnUser = buildUser(99L, "original");
-            withdrawnUser.withdraw(); // nickname → "탈퇴한 회원", deletedAt 설정
+            withdrawnUser.withdraw(); // 닉네임 null, deletedAt 설정(탈퇴)
             post = buildPost(1L, withdrawnUser);
             ReflectionTestUtils.setField(post, "commentCount", 1L);
         }
 
         @Test
-        @DisplayName("비삭제 댓글의 탈퇴 작성자 닉네임이 '탈퇴한 회원'으로 표시되고 댓글 내용은 유지된다")
+        @DisplayName("비삭제 댓글의 탈퇴 작성자: 닉네임 null·isWithdrawn true, 본문은 유지")
         void getCommentsShowsWithdrawnAuthorNicknameOnActiveComment() {
             PostComment root = PostComment.createRoot(post, withdrawnUser, "댓글 내용");
             ReflectionTestUtils.setField(root, "id", 10L);
@@ -196,6 +194,7 @@ class PostCommentQueryServiceTest {
             assertThat(response.isDeleted()).isFalse();        // 댓글 자체는 삭제되지 않음
             assertThat(response.userId()).isEqualTo(99L);      // FK는 여전히 유효
             assertThat(response.userNickname()).isEqualTo(null);
+            assertThat(response.isWithdrawn()).isTrue();
             assertThat(response.content()).isEqualTo("댓글 내용"); // 내용은 그대로 표시
         }
 
@@ -212,13 +211,12 @@ class PostCommentQueryServiceTest {
                     eq(1L), eq(List.of(10L)), eq(PostConstants.REPLY_PREVIEW_LIMIT + 1)))
                     .thenReturn(List.of());
 
-            // @SQLRestriction 제거 전이라면 comment.getUser() 로딩 시 EntityNotFoundException 발생 위치
             assertThatCode(() -> postCommentQueryService.getComments(1L, null, 10, null))
                     .doesNotThrowAnyException();
         }
 
         @Test
-        @DisplayName("탈퇴 사용자의 답글 닉네임이 '탈퇴한 회원'으로 표시된다")
+        @DisplayName("탈퇴 사용자의 답글: 닉네임 null·isWithdrawn true")
         void getCommentsShowsWithdrawnAuthorInReply() {
             User activeRootAuthor = buildUser(1L, "activeUser");
             Post postByActive = buildPost(1L, activeRootAuthor);
@@ -243,12 +241,14 @@ class PostCommentQueryServiceTest {
 
             PostCommentResponse rootResponse = result.comments().get(0);
             assertThat(rootResponse.userNickname()).isEqualTo("activeUser"); // 루트 작성자는 정상
+            assertThat(rootResponse.isWithdrawn()).isFalse();
             assertThat(rootResponse.replies()).hasSize(1);
 
             PostCommentResponse replyResponse = rootResponse.replies().get(0);
             assertThat(replyResponse.isDeleted()).isFalse();
             assertThat(replyResponse.userId()).isEqualTo(99L);
             assertThat(replyResponse.userNickname()).isEqualTo(null);
+            assertThat(replyResponse.isWithdrawn()).isTrue();
             assertThat(replyResponse.content()).isEqualTo("탈퇴자의 답글");
             assertThat(replyResponse.parentCommentId()).isEqualTo(10L);
         }
@@ -280,10 +280,12 @@ class PostCommentQueryServiceTest {
             assertThat(withdrawnResponse.userNickname()).isEqualTo(null);
             assertThat(withdrawnResponse.userId()).isEqualTo(99L);
             assertThat(withdrawnResponse.isDeleted()).isFalse();
+            assertThat(withdrawnResponse.isWithdrawn()).isTrue();
 
             PostCommentResponse activeResponse = result.comments().get(1);
             assertThat(activeResponse.userNickname()).isEqualTo("activeUser");
             assertThat(activeResponse.isDeleted()).isFalse();
+            assertThat(activeResponse.isWithdrawn()).isFalse();
         }
 
         @Test

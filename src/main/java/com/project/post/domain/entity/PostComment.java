@@ -18,8 +18,8 @@ import lombok.experimental.SuperBuilder;
 import java.util.Objects;
 
 /**
- * 댓글. 게시글과 달리 @SQLRestriction 없음.
- * 삭제 시 content null로 마스킹해서 목록에는 남지만 원문은 안 보임.
+ * 댓글 엔티티. {@link Post} 처럼 글로벌 필터(@SQLRestriction)를 두지 않아 삭제된 행도 조회 쿼리에서 다룰 수 있다.
+ * 삭제 시 content 를 비워 목록에는 남지만 원문은 노출하지 않는다.
  */
 @Entity
 @Table(name = "post_comments")

@@ -105,6 +105,7 @@ class PostQueryServiceTest {
                 null,
                 null,
                 null,
+                false,
                 3L,
                 2L,
                 1L,
@@ -136,7 +137,7 @@ class PostQueryServiceTest {
         when(boardRepository.findByCodeAndActiveTrue("GENERAL")).thenReturn(Optional.of(Board.of("GENERAL", "자유/정보 게시판")));
 
         Page<PostListQueryResult> queryPage = new PageImpl<>(Objects.requireNonNull(List.of(
-                new PostListQueryResult(1L, "t", "thumb", 1L, "nick", null, null, null, null, 0, 0, 0, 0, Instant.now())
+                new PostListQueryResult(1L, "t", "thumb", 1L, "nick", null, null, null, null, false, 0, 0, 0, 0, Instant.now())
         )));
         PostSearchCondition condition = new PostSearchCondition(null, null, PostListSort.LATEST);
         Pageable pageable = PageRequest.of(0, 10);
@@ -156,12 +157,9 @@ class PostQueryServiceTest {
     // ── 탈퇴 사용자가 게시글 작성자인 경우 ──────────────────────────────────────
 
     /**
-     * 시나리오 1: 탈퇴 사용자가 작성자인 게시글 목록/상세 API 호출.
-     *
-     * PostQueryServiceImpl은 QueryDSL 프로젝션(PostListQueryResult, PostDetailQueryResult)을 사용하므로
-     * User 엔티티를 직접 lazy-load하지 않는다. 탈퇴 처리 후 User 행은 익명화된 값으로 남아 있고,
-     * JOIN 결과에 authorNickname="탈퇴한 회원", profileImgUrl=null 등이 들어온다.
-     * DTO 매핑 레이어가 이 값들을 예외 없이 올바르게 반환하는지 검증한다.
+     * 탈퇴 사용자가 작성자인 게시글 목록/상세: 레포지토리 프로젝션 결과를 그대로 API로 매핑한다.
+     * {@code User.withdraw()} 는 닉네임 등을 비우고 {@code deleted_at} 을 설정하며,
+     * 탈퇴 여부는 {@code authorWithdrawn} 과 {@link PostAuthorResponse#isWithdrawn()} 으로 전달된다.
      */
     @Nested
     @DisplayName("탈퇴 사용자가 게시글 작성자인 경우")
@@ -170,15 +168,16 @@ class PostQueryServiceTest {
         private static final Long WITHDRAWN_AUTHOR_ID = 99L;
 
         @Test
-        @DisplayName("목록 조회: 탈퇴한 작성자 닉네임이 '탈퇴한 회원', 익명화된 null 필드도 정상 매핑된다")
+        @DisplayName("목록 조회: 탈퇴 작성자는 닉네임 등 null·authorWithdrawn=true 가 매핑된다")
         void getListWithWithdrawnAuthorMapsAnonymizedFields() {
             when(boardRepository.findByCodeAndActiveTrue("GENERAL"))
                     .thenReturn(Optional.of(Board.of("GENERAL", "자유/정보 게시판")));
 
-            // User.withdraw() 후 DB 행 상태: nickname="탈퇴한 회원", profileImgUrl=null, department=null
+            // withdraw() 이후 DB/프로젝션에 가깝게: nickname null, authorWithdrawn true
             PostListQueryResult result = new PostListQueryResult(
                     1L, "title", null,
                     WITHDRAWN_AUTHOR_ID, null, null, null, null, null,
+                    true,
                     0, 0, 0, 0, Instant.now()
             );
             Page<PostListQueryResult> queryPage = new PageImpl<>(List.of(result));
@@ -201,6 +200,7 @@ class PostQueryServiceTest {
             assertThat(author.profileImageUrl()).isNull();
             assertThat(author.departmentName()).isNull();
             assertThat(author.representativeTrackName()).isNull();
+            assertThat(author.isWithdrawn()).isTrue();
         }
 
         @Test
@@ -212,6 +212,7 @@ class PostQueryServiceTest {
             PostListQueryResult result = new PostListQueryResult(
                     1L, "title", null,
                     WITHDRAWN_AUTHOR_ID, null, null, null, null, null,
+                    true,
                     0, 0, 0, 0, Instant.now()
             );
             when(postRepository.findPostList(eq("GENERAL"), any(Pageable.class), any(PostSearchCondition.class)))
@@ -225,11 +226,12 @@ class PostQueryServiceTest {
         }
 
         @Test
-        @DisplayName("상세 조회: 탈퇴한 작성자 닉네임이 '탈퇴한 회원', 익명화된 null 필드도 정상 매핑된다")
+        @DisplayName("상세 조회: 탈퇴 작성자는 닉네임 등 null·isWithdrawn=true 가 매핑된다")
         void getDetailWithWithdrawnAuthorMapsAnonymizedFields() {
             PostDetailQueryResult result = new PostDetailQueryResult(
                     1L, "title", "content", null,
-                    WITHDRAWN_AUTHOR_ID, "탈퇴한 회원", null, null, null, null,
+                    WITHDRAWN_AUTHOR_ID, null, null, null, null, null,
+                    true,
                     0L, 5L, 2L, 3L,
                     Instant.now(), Instant.now(),
                     List.of(), List.of()
@@ -243,10 +245,11 @@ class PostQueryServiceTest {
             PostDetailResponse response = postQueryService.getDetail(1L, null);
 
             assertThat(response.author().authorId()).isEqualTo(WITHDRAWN_AUTHOR_ID);
-            assertThat(response.author().nickname()).isEqualTo("탈퇴한 회원");
+            assertThat(response.author().nickname()).isNull();
             assertThat(response.author().profileImageUrl()).isNull();
             assertThat(response.author().departmentName()).isNull();
             assertThat(response.author().representativeTrackName()).isNull();
+            assertThat(response.author().isWithdrawn()).isTrue();
             // 게시글 카운트는 그대로 유지
             assertThat(response.likeCount()).isEqualTo(5L);
             assertThat(response.scrapCount()).isEqualTo(2L);
@@ -257,7 +260,8 @@ class PostQueryServiceTest {
         void getDetailDoesNotThrowForWithdrawnAuthor() {
             PostDetailQueryResult result = new PostDetailQueryResult(
                     1L, "title", "content", null,
-                    WITHDRAWN_AUTHOR_ID, "탈퇴한 회원", null, null, null, null,
+                    WITHDRAWN_AUTHOR_ID, null, null, null, null, null,
+                    true,
                     0L, 0L, 0L, 0L,
                     Instant.now(), Instant.now(),
                     List.of(), List.of()
@@ -268,8 +272,6 @@ class PostQueryServiceTest {
                     isNull(), eq(List.of(1L)), eq(Map.of(1L, WITHDRAWN_AUTHOR_ID))))
                     .thenReturn(Map.of(1L, PostViewerResponse.guest()));
 
-            // @SQLRestriction 제거 전이라면 JOIN FETCH 경로에서 예외 발생 가능 위치.
-            // 프로젝션 방식이므로 직접적인 영향은 없으나, 쿼리 JOIN 결과가 올바르게 매핑됨을 보장
             org.assertj.core.api.Assertions.assertThatCode(
                     () -> postQueryService.getDetail(1L, null)
             ).doesNotThrowAnyException();
