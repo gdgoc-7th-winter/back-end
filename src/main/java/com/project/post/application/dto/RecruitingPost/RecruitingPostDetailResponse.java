@@ -12,6 +12,7 @@ public record RecruitingPostDetailResponse(
         RecruitingCategory category,
         ApplicationType applicationType,
         RecruitingStatus status,
+        String statusLabel,   // ⭐ 추가
 
         Instant startedAt,
         Instant deadlineAt,

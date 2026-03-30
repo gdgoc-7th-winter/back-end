@@ -59,7 +59,8 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         return new RecruitingPostDetailResponse(
                 recruitingPost.getCategory(),
                 recruitingPost.getApplicationType(),
-                recruitingPost.getStatus(),
+                calculateStatus(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt()),
+                calculateStatusLabel(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt()), // ⭐ 추가
                 recruitingPost.getStartedAt(),
                 recruitingPost.getDeadlineAt(),
                 postDetail
