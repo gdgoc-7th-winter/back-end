@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.data.domain.Sort;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -97,7 +97,8 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
             Long postId,
             User user,
             Campus campus,
-            Long departmentId
+            Long departmentId,
+            String sort
     ) {
         RecruitingPost recruitingPost = recruitingPostRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(
@@ -118,35 +119,41 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
                         "지원폼을 찾을 수 없습니다."
                 ));
 
+        Sort sortCondition = getSortCondition(sort);
+
         List<ApplicationSubmission> submissionEntities;
 
         if (campus != null && departmentId != null) {
             submissionEntities =
                     applicationSubmissionRepository
-                            .findAllByRecruitingApplicationAndCampusAndDepartment_IdAndDeletedAtIsNullOrderBySubmittedAtDesc(
+                            .findAllByRecruitingApplicationAndCampusAndDepartment_IdAndDeletedAtIsNull(
                                     recruitingApplication,
                                     campus,
-                                    departmentId
+                                    departmentId,
+                                    sortCondition
                             );
         } else if (campus != null) {
             submissionEntities =
                     applicationSubmissionRepository
-                            .findAllByRecruitingApplicationAndCampusAndDeletedAtIsNullOrderBySubmittedAtDesc(
+                            .findAllByRecruitingApplicationAndCampusAndDeletedAtIsNull(
                                     recruitingApplication,
-                                    campus
+                                    campus,
+                                    sortCondition
                             );
         } else if (departmentId != null) {
             submissionEntities =
                     applicationSubmissionRepository
-                            .findAllByRecruitingApplicationAndDepartment_IdAndDeletedAtIsNullOrderBySubmittedAtDesc(
+                            .findAllByRecruitingApplicationAndDepartment_IdAndDeletedAtIsNull(
                                     recruitingApplication,
-                                    departmentId
+                                    departmentId,
+                                    sortCondition
                             );
         } else {
             submissionEntities =
                     applicationSubmissionRepository
-                            .findAllByRecruitingApplicationAndDeletedAtIsNullOrderBySubmittedAtDesc(
-                                    recruitingApplication
+                            .findAllByRecruitingApplicationAndDeletedAtIsNull(
+                                    recruitingApplication,
+                                    sortCondition
                             );
         }
 
@@ -224,5 +231,18 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
         }
 
         return "D-" + days;
+    }
+
+    private Sort getSortCondition(String sort) {
+        if (sort == null || sort.isBlank() || "latest".equals(sort)) {
+            return Sort.by(Sort.Direction.DESC, "submittedAt");
+        }
+
+        if ("name".equals(sort)) {
+            return Sort.by(Sort.Direction.ASC, "applicantName")
+                    .and(Sort.by(Sort.Direction.DESC, "submittedAt"));
+        }
+
+        throw new BusinessException(ErrorCode.INVALID_INPUT, "지원하지 않는 정렬 방식입니다.");
     }
 }

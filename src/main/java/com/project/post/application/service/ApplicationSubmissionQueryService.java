@@ -16,7 +16,8 @@ public interface ApplicationSubmissionQueryService {
             Long postId,
             User user,
             Campus campus,
-            Long departmentId
+            Long departmentId,
+            String sort
     );
 
     AppliedRecruitingPostListResponse getAppliedRecruitings(@NonNull User user);

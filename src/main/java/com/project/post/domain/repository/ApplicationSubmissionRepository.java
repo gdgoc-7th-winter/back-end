@@ -4,6 +4,7 @@ import com.project.post.domain.entity.ApplicationSubmission;
 import com.project.post.domain.entity.RecruitingApplication;
 import com.project.post.domain.enums.Campus;
 import com.project.user.domain.entity.User;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -20,27 +21,31 @@ public interface ApplicationSubmissionRepository extends JpaRepository<Applicati
             RecruitingApplication recruitingApplication
     );
 
-    List<ApplicationSubmission> findAllByRecruitingApplicationAndDeletedAtIsNullOrderBySubmittedAtDesc(
-            RecruitingApplication recruitingApplication
+    List<ApplicationSubmission> findAllByRecruitingApplicationAndDeletedAtIsNull(
+            RecruitingApplication recruitingApplication,
+            Sort sort
+    );
+
+    List<ApplicationSubmission> findAllByRecruitingApplicationAndCampusAndDeletedAtIsNull(
+            RecruitingApplication recruitingApplication,
+            Campus campus,
+            Sort sort
+    );
+
+    List<ApplicationSubmission> findAllByRecruitingApplicationAndDepartment_IdAndDeletedAtIsNull(
+            RecruitingApplication recruitingApplication,
+            Long departmentId,
+            Sort sort
+    );
+
+    List<ApplicationSubmission> findAllByRecruitingApplicationAndCampusAndDepartment_IdAndDeletedAtIsNull(
+            RecruitingApplication recruitingApplication,
+            Campus campus,
+            Long departmentId,
+            Sort sort
     );
 
     List<ApplicationSubmission> findAllByUserAndDeletedAtIsNullOrderBySubmittedAtDesc(User user);
 
     Optional<ApplicationSubmission> findByIdAndDeletedAtIsNull(Long id);
-
-    List<ApplicationSubmission> findAllByRecruitingApplicationAndCampusAndDepartment_IdAndDeletedAtIsNullOrderBySubmittedAtDesc(
-            RecruitingApplication recruitingApplication,
-            Campus campus,
-            Long departmentId
-    );
-
-    List<ApplicationSubmission> findAllByRecruitingApplicationAndCampusAndDeletedAtIsNullOrderBySubmittedAtDesc(
-            RecruitingApplication recruitingApplication,
-            Campus campus
-    );
-
-    List<ApplicationSubmission> findAllByRecruitingApplicationAndDepartment_IdAndDeletedAtIsNullOrderBySubmittedAtDesc(
-            RecruitingApplication recruitingApplication,
-            Long departmentId
-    );
 }
