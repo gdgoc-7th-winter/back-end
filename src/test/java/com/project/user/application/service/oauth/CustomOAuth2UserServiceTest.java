@@ -97,7 +97,7 @@ class CustomOAuth2UserServiceTest {
         mockOAuth2User = new DefaultOAuth2User(
                 List.of(new SimpleGrantedAuthority("USER")), attributes, "sub");
 
-        user = new User(EMAIL, "encodedPw", "nickname");
+        user = User.builder().email(EMAIL).password("encodedPw").nickname("nickname").build();
         ReflectionTestUtils.setField(user, "id", USER_ID);
 
         // 필드로 선언된 delegate를 mock으로 교체

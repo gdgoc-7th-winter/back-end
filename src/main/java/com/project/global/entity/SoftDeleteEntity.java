@@ -14,11 +14,13 @@ import java.time.Instant;
 @MappedSuperclass
 public abstract class SoftDeleteEntity extends AuditEntity {
 
-    @Column(columnDefinition = "TIMESTAMPTZ")
+    @Column(name = "deleted_at", columnDefinition = "TIMESTAMPTZ")
     private Instant deletedAt;
 
     public void softDelete() {
-        this.deletedAt = Instant.now();
+        if (this.deletedAt == null) {
+            this.deletedAt = Instant.now();
+        }
     }
 
     public boolean isDeleted() {

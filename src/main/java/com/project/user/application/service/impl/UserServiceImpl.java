@@ -92,7 +92,11 @@ public class UserServiceImpl implements UserService {
             String encodedPassword = passwordEncoder.encode(request.getPassword());
             String email = request.getEmail();
             String nickname = request.getNickname();
-            User user = new User(email, encodedPassword, nickname);
+            User user = User.builder()
+                    .email(email)
+                    .password(encodedPassword)
+                    .nickname(nickname)
+                    .build();
             userRepository.save(user);
             LevelBadge initialBadge = levelBadgeRepository.findByPointWithinRange(user.getTotalPoint())
                     .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
@@ -175,7 +179,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void updateProfile(Long userId, ProfileUpdateRequest request) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findActiveById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         validateNotWithdrawn(user);
 
@@ -215,7 +219,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void patchProfile(Long userId, ProfilePatchRequest request) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findActiveById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         validateNotWithdrawn(user);
 
@@ -278,7 +282,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void updateSecurityContext(Long id) {
-        User user = userRepository.findById(id)
+        User user = userRepository.findActiveById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         HttpServletRequest request =  ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
 
@@ -312,7 +316,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void changePassword(Long id, PasswordUpdateRequest request){
-        User user = userRepository.findById(id)
+        User user = userRepository.findActiveById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         validateNotWithdrawn(user);
 
@@ -326,7 +330,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public ProfileResponse getUserProfile(Long id) {
-        User user = userRepository.findById(id)
+        User user = userRepository.findActiveById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "회원 정보가 없습니다."));
         return ProfileResponse.from(user);
     }
@@ -334,7 +338,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User earnAScore(Long id, String scoreName, Long referenceId) {
-        User user = userRepository.findById(id)
+        User user = userRepository.findActiveById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "회원 정보가 없습니다."));
         validateNotWithdrawn(user);
         ContributionScore contributionScore = contributionScoreRepository.findByName(scoreName)
@@ -359,7 +363,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void linkSocialAccount(Long userId, String provider, String email, String providerId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findActiveById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         validateNotWithdrawn(user);
 
@@ -385,7 +389,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void grantAuthority(Long userId, Authority authority) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findActiveById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         validateNotWithdrawn(user);
         user.grantAuthority(authority);
@@ -395,14 +399,11 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteUser(Long id) {
-        User user = userRepository.findById(id)
+        User user = userRepository.findActiveById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        if (user.isDeleted()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "이미 탈퇴한 회원입니다.");
-        }
-
         user.withdraw();
+        user.changePassword(passwordEncoder.encode(User.WITHDRAWN_PASSWORD_PLACEHOLDER));
         log.info("[deleteUser] 회원 탈퇴 처리 완료 (soft delete) - userId={}", id);
 
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();

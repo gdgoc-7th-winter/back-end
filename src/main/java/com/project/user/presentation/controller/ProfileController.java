@@ -11,6 +11,7 @@ import com.project.user.presentation.swagger.ProfileControllerDocs;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/me")
 @RequiredArgsConstructor
@@ -29,12 +31,16 @@ public class ProfileController implements ProfileControllerDocs {
     @Override
     @GetMapping("/profile")
     public ResponseEntity<CommonResponse<ProfileResponse>> getMyProfile(HttpSession session) {
+        log.debug("[GET /api/v1/me/profile] 요청 진입 - sessionId={}", session != null ? session.getId() : "null");
         UserSession sessionUser = (UserSession) session.getAttribute("LOGIN_USER");
 
         if (sessionUser == null) {
+            log.warn("[GET /api/v1/me/profile] 세션에 LOGIN_USER 없음 - sessionId={}", session != null ? session.getId() : "null");
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
 
+        log.debug("[GET /api/v1/me/profile] 세션 유저 확인 - userId={}, authority={}, needsProfile={}",
+                sessionUser.getUserId(), sessionUser.getAuthority(), sessionUser.isNeedsProfile());
         ProfileResponse response = userService.getUserProfile(sessionUser.getUserId());
         return ResponseEntity.ok(CommonResponse.ok(response));
     }

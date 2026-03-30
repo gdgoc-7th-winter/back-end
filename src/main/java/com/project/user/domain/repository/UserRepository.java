@@ -9,8 +9,13 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    /** 활성 사용자(미삭제)만 조회. socialAccounts fetch join 포함. */
     @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.socialAccounts WHERE u.id = :id AND u.deletedAt IS NULL")
-    Optional<User> findById(Long id);
+    Optional<User> findActiveById(@Param("id") Long id);
+
+    /** 탈퇴 사용자 포함 전체 조회. 관리/시스템용. */
+    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.socialAccounts WHERE u.id = :id")
+    Optional<User> findByIdIncludingDeleted(@Param("id") Long id);
 
     @Query("SELECT u FROM User u WHERE u.email = :email AND u.deletedAt IS NULL")
     Optional<User> findByEmail(@Param("email") String email);

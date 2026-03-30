@@ -137,7 +137,7 @@ class PostCommentQueryServiceCursorTest {
     }
 
     private static User buildUser(Long id) {
-        User user = new User("u@test.com", "pw", "u");
+        User user = User.builder().email("u@test.com").password("pw").nickname("u").build();
         ReflectionTestUtils.setField(user, "id", id);
         ReflectionTestUtils.setField(user, "nickname", "n");
         return user;
