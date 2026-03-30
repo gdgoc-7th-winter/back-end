@@ -17,6 +17,7 @@ public interface ApplicationSubmissionQueryService {
             User user,
             Campus campus,
             Long departmentId,
+            String applicantName,
             String sort
     );
 

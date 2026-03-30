@@ -105,11 +105,19 @@ public class RecruitingPostController {
             @PathVariable Long postId,
             @RequestParam(required = false) Campus campus,
             @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) String applicantName,
             @RequestParam(defaultValue = "latest") String sort,
             @CurrentUser User user
     ) {
         return CommonResponse.ok(
-                applicationSubmissionQueryService.getSubmissionList(postId, user, campus, departmentId, sort)
+                applicationSubmissionQueryService.getSubmissionList(
+                        postId,
+                        user,
+                        campus,
+                        departmentId,
+                        applicantName,
+                        sort
+                )
         );
     }
 

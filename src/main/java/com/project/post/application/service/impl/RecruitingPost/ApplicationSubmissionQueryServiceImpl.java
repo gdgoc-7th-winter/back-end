@@ -15,8 +15,10 @@ import com.project.post.domain.repository.ApplicationSubmissionRepository;
 import com.project.post.domain.repository.RecruitingApplicationAnswerRepository;
 import com.project.post.domain.repository.RecruitingApplicationRepository;
 import com.project.post.domain.repository.RecruitingPostRepository;
+import com.project.post.domain.specification.ApplicationSubmissionSpecification;
 import com.project.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -98,6 +100,7 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
             User user,
             Campus campus,
             Long departmentId,
+            String applicantName,
             String sort
     ) {
         RecruitingPost recruitingPost = recruitingPostRepository.findById(postId)
@@ -121,41 +124,15 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
 
         Sort sortCondition = getSortCondition(sort);
 
-        List<ApplicationSubmission> submissionEntities;
+        Specification<ApplicationSubmission> spec =
+                ApplicationSubmissionSpecification.hasRecruitingApplication(recruitingApplication)
+                        .and(ApplicationSubmissionSpecification.isNotDeleted())
+                        .and(ApplicationSubmissionSpecification.hasCampus(campus))
+                        .and(ApplicationSubmissionSpecification.hasDepartmentId(departmentId))
+                        .and(ApplicationSubmissionSpecification.applicantNameContains(applicantName));
 
-        if (campus != null && departmentId != null) {
-            submissionEntities =
-                    applicationSubmissionRepository
-                            .findAllByRecruitingApplicationAndCampusAndDepartment_IdAndDeletedAtIsNull(
-                                    recruitingApplication,
-                                    campus,
-                                    departmentId,
-                                    sortCondition
-                            );
-        } else if (campus != null) {
-            submissionEntities =
-                    applicationSubmissionRepository
-                            .findAllByRecruitingApplicationAndCampusAndDeletedAtIsNull(
-                                    recruitingApplication,
-                                    campus,
-                                    sortCondition
-                            );
-        } else if (departmentId != null) {
-            submissionEntities =
-                    applicationSubmissionRepository
-                            .findAllByRecruitingApplicationAndDepartment_IdAndDeletedAtIsNull(
-                                    recruitingApplication,
-                                    departmentId,
-                                    sortCondition
-                            );
-        } else {
-            submissionEntities =
-                    applicationSubmissionRepository
-                            .findAllByRecruitingApplicationAndDeletedAtIsNull(
-                                    recruitingApplication,
-                                    sortCondition
-                            );
-        }
+        List<ApplicationSubmission> submissionEntities =
+                applicationSubmissionRepository.findAll(spec, sortCondition);
 
         List<ApplicationSubmissionSummaryResponse> submissions = submissionEntities.stream()
                 .map(ApplicationSubmissionSummaryResponse::from)
