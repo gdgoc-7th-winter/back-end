@@ -4,14 +4,26 @@ import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.RecruitingPost.*;
 import com.project.post.application.service.ApplicationSubmissionQueryService;
-import com.project.post.domain.entity.*;
-import com.project.post.domain.repository.*;
+import com.project.post.domain.entity.ApplicationSubmission;
+import com.project.post.domain.entity.RecruitingApplication;
+import com.project.post.domain.entity.RecruitingApplicationAnswer;
+import com.project.post.domain.entity.RecruitingPost;
+import com.project.post.domain.enums.RecruitingStatus;
+import com.project.post.domain.repository.AnswerSelectedOptionRepository;
+import com.project.post.domain.repository.ApplicationSubmissionRepository;
+import com.project.post.domain.repository.RecruitingApplicationAnswerRepository;
+import com.project.post.domain.repository.RecruitingApplicationRepository;
+import com.project.post.domain.repository.RecruitingPostRepository;
 import com.project.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -97,7 +109,19 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
                         .map(ApplicationSubmissionSummaryResponse::from)
                         .toList();
 
-        return new ApplicationSubmissionListResponse(submissions);
+        RecruitingStatus status = calculateStatus(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt());
+
+        return new ApplicationSubmissionListResponse(
+                recruitingPost.getId(),
+                recruitingPost.getPost().getTitle(),
+                recruitingPost.getCategory(),
+                status,
+                calculateStatusLabel(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt()),
+                recruitingPost.getStartedAt(),
+                recruitingPost.getDeadlineAt(),
+                submissions.size(),
+                submissions
+        );
     }
 
     @Override
@@ -108,5 +132,46 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
                         .map(AppliedRecruitingPostSummaryResponse::from)
                         .toList()
         );
+    }
+
+    private RecruitingStatus calculateStatus(Instant startedAt, Instant deadlineAt) {
+        Instant now = Instant.now();
+
+        if (startedAt != null && now.isBefore(startedAt)) {
+            return RecruitingStatus.UPCOMING;
+        }
+
+        if (deadlineAt != null && now.isAfter(deadlineAt)) {
+            return RecruitingStatus.CLOSED;
+        }
+
+        return RecruitingStatus.OPEN;
+    }
+
+    private String calculateStatusLabel(Instant startedAt, Instant deadlineAt) {
+        Instant now = Instant.now();
+
+        if (startedAt != null && now.isBefore(startedAt)) {
+            return "모집 예정";
+        }
+
+        if (deadlineAt != null && now.isAfter(deadlineAt)) {
+            return "모집 마감";
+        }
+
+        if (deadlineAt == null) {
+            return "모집 중";
+        }
+
+        LocalDate today = now.atZone(ZoneId.of("Asia/Seoul")).toLocalDate();
+        LocalDate deadlineDate = deadlineAt.atZone(ZoneId.of("Asia/Seoul")).toLocalDate();
+
+        long days = ChronoUnit.DAYS.between(today, deadlineDate);
+
+        if (days <= 0) {
+            return "D-Day";
+        }
+
+        return "D-" + days;
     }
 }
