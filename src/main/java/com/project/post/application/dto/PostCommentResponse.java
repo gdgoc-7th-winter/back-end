@@ -8,6 +8,7 @@ public record PostCommentResponse(
         Long postId,
         Long userId,
         String userNickname,
+        boolean isWithdrawn,
         Long parentCommentId,
         int depth,
         String content,

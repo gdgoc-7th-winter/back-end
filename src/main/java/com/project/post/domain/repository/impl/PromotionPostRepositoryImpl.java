@@ -9,6 +9,7 @@ import com.project.user.domain.entity.QDepartment;
 import com.project.user.domain.entity.QLevelBadge;
 import com.project.user.domain.entity.QUser;
 import com.project.user.domain.repository.querydsl.UserRepresentativeTrackExpressions;
+import com.project.user.domain.repository.querydsl.UserWithdrawnExpressions;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
@@ -61,6 +62,7 @@ public class PromotionPostRepositoryImpl implements PromotionPostRepositoryCusto
                 department.name,
                 UserRepresentativeTrackExpressions.representativeTrackNameSubquery(user),
                 levelBadge.levelImage,
+                UserWithdrawnExpressions.authorIsWithdrawn(user),
                 post.viewCount,
                 post.likeCount,
                 post.scrapCount,

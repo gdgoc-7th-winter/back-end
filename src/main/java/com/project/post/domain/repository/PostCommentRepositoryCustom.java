@@ -9,8 +9,8 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * 댓글은 게시글과 달리 @SQLRestriction을 쓰지 않는다.
- * 삭제 댓글도 목록에 포함하고, 서비스에서 deleted/content 마스킹 처리.
+ * 댓글 커스텀 조회.
+ * 삭제된 댓글도 함께 조회할 수 있으며, 응답 마스킹은 애플리케이션 계층에서 처리한다.
  */
 public interface PostCommentRepositoryCustom {
 

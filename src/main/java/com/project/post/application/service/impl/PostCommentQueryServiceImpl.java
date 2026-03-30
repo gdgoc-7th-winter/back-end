@@ -240,11 +240,13 @@ public class PostCommentQueryServiceImpl implements PostCommentQueryService {
             Long parentId,
             Map<Long, CommentViewerResponse> viewerByCommentId) {
         boolean deleted = comment.isDeleted();
+        boolean isWithdrawn = authorWithdrawnForDisplay(deleted, comment);
         return new PostCommentResponse(
                 comment.getId(),
                 comment.getPost().getId(),
                 deleted ? null : comment.getUser().getId(),
                 deleted ? null : comment.getUser().getNickname(),
+                isWithdrawn,
                 parentId,
                 comment.getDepth(),
                 deleted ? null : comment.getContent(),
@@ -267,11 +269,13 @@ public class PostCommentQueryServiceImpl implements PostCommentQueryService {
                 .collect(Collectors.toList());
 
         boolean deleted = root.isDeleted();
+        boolean isWithdrawn = authorWithdrawnForDisplay(deleted, root);
         return new PostCommentResponse(
                 root.getId(),
                 root.getPost().getId(),
                 deleted ? null : root.getUser().getId(),
                 deleted ? null : root.getUser().getNickname(),
+                isWithdrawn,
                 null,
                 root.getDepth(),
                 deleted ? null : root.getContent(),
@@ -282,5 +286,15 @@ public class PostCommentQueryServiceImpl implements PostCommentQueryService {
                 replyList,
                 hasMoreReplies
         );
+    }
+
+    /**
+     * 댓글 자체가 삭제된 경우에는 작성자를 노출하지 않으므로 탈퇴 여부도 내지 않는다.
+     */
+    private static boolean authorWithdrawnForDisplay(boolean commentDeleted, PostComment comment) {
+        if (commentDeleted) {
+            return false;
+        }
+        return comment.getUser().isDeleted();
     }
 }

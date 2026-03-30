@@ -10,6 +10,7 @@ import com.project.post.domain.repository.dto.PostListQueryResult;
 import com.project.post.domain.enums.PostListSort;
 import com.project.post.domain.repository.dto.PostSearchCondition;
 import com.project.user.domain.repository.querydsl.UserRepresentativeTrackExpressions;
+import com.project.user.domain.repository.querydsl.UserWithdrawnExpressions;
 import com.project.user.domain.entity.QDepartment;
 import com.project.user.domain.entity.QLevelBadge;
 import com.project.user.domain.entity.QUser;
@@ -63,6 +64,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 department.name,
                 UserRepresentativeTrackExpressions.representativeTrackNameSubquery(user),
                 levelBadge.levelImage,
+                UserWithdrawnExpressions.authorIsWithdrawn(user),
                 post.viewCount,
                 post.likeCount,
                 post.scrapCount,
@@ -106,6 +108,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         QDepartment department = QDepartment.department;
         QLevelBadge levelBadge = QLevelBadge.levelBadge;
         Expression<String> representativeTrackName = UserRepresentativeTrackExpressions.representativeTrackNameSubquery(user);
+        Expression<Boolean> authorWithdrawn = UserWithdrawnExpressions.authorIsWithdrawn(user);
 
         Tuple base = queryFactory
                 .select(
@@ -119,6 +122,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         department.name,
                         representativeTrackName,
                         levelBadge.levelImage,
+                        authorWithdrawn,
                         post.viewCount,
                         post.likeCount,
                         post.scrapCount,
@@ -144,7 +148,11 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         List<PostDetailQueryResult.AttachmentDto> attachments = fetchAttachments(postId);
 
         return Optional.of(buildDetailResult(
-                base, post, user, department, levelBadge, representativeTrackName, tagNames, attachments));
+                base,
+                new PostDetailTupleProjection(
+                        post, user, department, levelBadge, representativeTrackName, authorWithdrawn),
+                tagNames,
+                attachments));
     }
 
     private List<String> fetchTagNames(Long postId) {
@@ -179,13 +187,13 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 
     private PostDetailQueryResult buildDetailResult(
             Tuple base,
-            QPost post,
-            QUser user,
-            QDepartment department,
-            QLevelBadge levelBadge,
-            Expression<String> representativeTrackName,
+            PostDetailTupleProjection p,
             List<String> tagNames,
             List<PostDetailQueryResult.AttachmentDto> attachments) {
+        QPost post = p.post();
+        QUser user = p.user();
+        QDepartment department = p.department();
+        QLevelBadge levelBadge = p.levelBadge();
         return new PostDetailQueryResult(
                 base.get(post.id),
                 base.get(post.title),
@@ -195,8 +203,9 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 base.get(user.nickname),
                 base.get(user.profileImgUrl),
                 base.get(department.name),
-                base.get(representativeTrackName),
+                base.get(p.representativeTrackName()),
                 base.get(levelBadge.levelImage),
+                base.get(p.authorWithdrawn()),
                 base.get(post.viewCount),
                 base.get(post.likeCount),
                 base.get(post.scrapCount),
@@ -206,6 +215,15 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 tagNames,
                 attachments
         );
+    }
+
+    private record PostDetailTupleProjection(
+            QPost post,
+            QUser user,
+            QDepartment department,
+            QLevelBadge levelBadge,
+            Expression<String> representativeTrackName,
+            Expression<Boolean> authorWithdrawn) {
     }
 
     private BooleanBuilder buildPostListWhere(

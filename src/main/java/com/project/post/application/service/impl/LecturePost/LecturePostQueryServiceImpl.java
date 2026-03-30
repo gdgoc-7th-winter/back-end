@@ -2,7 +2,7 @@ package com.project.post.application.service.impl.LecturePost;
 
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
-import com.project.post.application.dto.PostAuthorResponse;
+import com.project.post.application.mapper.PostAuthorMapper;
 import com.project.post.application.dto.PostDetailResponse;
 import com.project.post.application.dto.PostViewerResponse;
 import com.project.post.application.dto.LecturePost.LecturePostDetailResponse;
@@ -91,13 +91,7 @@ public class LecturePostQueryServiceImpl implements LecturePostQueryService {
                 result.postId(),
                 result.title(),
                 result.thumbnailUrl(),
-                PostAuthorResponse.fromParts(
-                        result.authorId(),
-                        result.authorNickname(),
-                        result.authorProfileImgUrl(),
-                        result.authorDepartmentName(),
-                        result.authorRepresentativeTrackName(),
-                        result.authorTierBadgeImageUrl()),
+                PostAuthorMapper.from(result),
                 result.department(),
                 result.campus(),
                 result.viewCount(),
@@ -137,13 +131,7 @@ public class LecturePostQueryServiceImpl implements LecturePostQueryService {
                 result.title(),
                 result.content(),
                 result.thumbnailUrl(),
-                PostAuthorResponse.fromParts(
-                        result.authorId(),
-                        result.authorNickname(),
-                        result.authorProfileImgUrl(),
-                        result.authorDepartmentName(),
-                        result.authorRepresentativeTrackName(),
-                        result.authorTierBadgeImageUrl()),
+                PostAuthorMapper.from(result),
                 result.department(),
                 result.campus(),
                 result.viewCount(),

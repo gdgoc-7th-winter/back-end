@@ -12,6 +12,7 @@ import com.project.post.domain.repository.dto.LecturePostListQueryResult;
 import com.project.post.domain.repository.dto.LecturePostSearchCondition;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
 import com.project.user.domain.repository.querydsl.UserRepresentativeTrackExpressions;
+import com.project.user.domain.repository.querydsl.UserWithdrawnExpressions;
 import com.project.user.domain.entity.QDepartment;
 import com.project.user.domain.entity.QLevelBadge;
 import com.project.user.domain.entity.QUser;
@@ -68,6 +69,7 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
                 department.name,
                 UserRepresentativeTrackExpressions.representativeTrackNameSubquery(user),
                 levelBadge.levelImage,
+                UserWithdrawnExpressions.authorIsWithdrawn(user),
                 lecturePost.department,
                 lecturePost.campus,
                 post.viewCount,
@@ -115,6 +117,7 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
         QDepartment department = QDepartment.department;
         QLevelBadge levelBadge = QLevelBadge.levelBadge;
         Expression<String> representativeTrackName = UserRepresentativeTrackExpressions.representativeTrackNameSubquery(user);
+        Expression<Boolean> authorWithdrawn = UserWithdrawnExpressions.authorIsWithdrawn(user);
 
         Tuple base = queryFactory
                 .select(
@@ -128,6 +131,7 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
                         department.name,
                         representativeTrackName,
                         levelBadge.levelImage,
+                        authorWithdrawn,
                         lecturePost.department,
                         lecturePost.campus,
                         post.viewCount,
@@ -167,6 +171,7 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
                 base.get(department.name),
                 base.get(representativeTrackName),
                 base.get(levelBadge.levelImage),
+                base.get(authorWithdrawn),
                 base.get(lecturePost.department),
                 base.get(lecturePost.campus),
                 base.get(post.viewCount),
