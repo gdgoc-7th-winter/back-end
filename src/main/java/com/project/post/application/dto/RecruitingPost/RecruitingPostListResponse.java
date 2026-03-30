@@ -11,6 +11,7 @@ public record RecruitingPostListResponse(
         RecruitingCategory category,
         ApplicationType applicationType,
         RecruitingStatus status,
+        String statusLabel,
         Instant startedAt,
         Instant deadlineAt,
         PostListResponse post

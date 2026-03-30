@@ -29,6 +29,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -90,18 +93,23 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         Map<Long, PostViewerResponse> viewerByPostId =
                 postViewerStateService.resolveForPosts(viewerUserId, postIds, authorByPostId);
 
-        return page.map(result -> new RecruitingPostListResponse(
-                result.category(),
-                result.applicationType(),
-                calculateStatus(result.startedAt(), result.deadlineAt()),
-                result.startedAt(),
-                result.deadlineAt(),
-                toPostListResponse(
-                        result,
-                        tagNamesByPostId.getOrDefault(result.postId(), List.of()),
-                        viewerByPostId.getOrDefault(result.postId(), PostViewerResponse.guest())
-                )
-        ));
+        return page.map(result -> {
+            RecruitingStatus status = calculateStatus(result.startedAt(), result.deadlineAt());
+
+            return new RecruitingPostListResponse(
+                    result.category(),
+                    result.applicationType(),
+                    status,
+                    calculateStatusLabel(result.startedAt(), result.deadlineAt()),
+                    result.startedAt(),
+                    result.deadlineAt(),
+                    toPostListResponse(
+                            result,
+                            tagNamesByPostId.getOrDefault(result.postId(), List.of()),
+                            viewerByPostId.getOrDefault(result.postId(), PostViewerResponse.guest())
+                    )
+            );
+        });
     }
 
     @Override
@@ -154,5 +162,32 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         }
 
         return RecruitingStatus.OPEN;
+    }
+
+    private String calculateStatusLabel(Instant startedAt, Instant deadlineAt) {
+        Instant now = Instant.now();
+
+        if (startedAt != null && now.isBefore(startedAt)) {
+            return "모집 예정";
+        }
+
+        if (deadlineAt != null && now.isAfter(deadlineAt)) {
+            return "모집 마감";
+        }
+
+        if (deadlineAt == null) {
+            return "모집 중";
+        }
+
+        LocalDate today = now.atZone(ZoneId.of("Asia/Seoul")).toLocalDate();
+        LocalDate deadlineDate = deadlineAt.atZone(ZoneId.of("Asia/Seoul")).toLocalDate();
+
+        long days = ChronoUnit.DAYS.between(today, deadlineDate);
+
+        if (days <= 0) {
+            return "D-Day";
+        }
+
+        return "D-" + days;
     }
 }
