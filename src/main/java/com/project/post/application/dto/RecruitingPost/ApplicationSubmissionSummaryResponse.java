@@ -15,8 +15,8 @@ public record ApplicationSubmissionSummaryResponse(
         return new ApplicationSubmissionSummaryResponse(
                 submission.getId(),
                 submission.getApplicantName(),
-                submission.getCampus().name(),   // enum → String
-                submission.getDepartment(),
+                submission.getCampus().name(),
+                submission.getDepartment().getName(),
                 submission.getSubmittedAt()
         );
     }

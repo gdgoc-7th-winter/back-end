@@ -5,6 +5,7 @@ import com.project.global.response.CommonResponse;
 import com.project.post.application.dto.PostCreateResponse;
 import com.project.post.application.dto.RecruitingPost.*;
 import com.project.post.application.service.*;
+import com.project.post.domain.enums.Campus;
 import com.project.post.domain.enums.RecruitingCategory;
 import com.project.user.domain.entity.User;
 import jakarta.validation.Valid;
@@ -102,10 +103,12 @@ public class RecruitingPostController {
     @GetMapping("/recruitings/{postId}/applications")
     public CommonResponse<ApplicationSubmissionListResponse> getApplicationSubmissionList(
             @PathVariable Long postId,
+            @RequestParam(required = false) Campus campus,
+            @RequestParam(required = false) Long departmentId,
             @CurrentUser User user
     ) {
         return CommonResponse.ok(
-                applicationSubmissionQueryService.getSubmissionList(postId, user)
+                applicationSubmissionQueryService.getSubmissionList(postId, user, campus, departmentId)
         );
     }
 

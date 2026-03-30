@@ -8,6 +8,7 @@ import com.project.post.domain.entity.ApplicationSubmission;
 import com.project.post.domain.entity.RecruitingApplication;
 import com.project.post.domain.entity.RecruitingApplicationAnswer;
 import com.project.post.domain.entity.RecruitingPost;
+import com.project.post.domain.enums.Campus;
 import com.project.post.domain.enums.RecruitingStatus;
 import com.project.post.domain.repository.AnswerSelectedOptionRepository;
 import com.project.post.domain.repository.ApplicationSubmissionRepository;
@@ -84,7 +85,7 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
                 submission.getRecruitingApplication().getRecruitingPost().getId(),
                 submission.getApplicantName(),
                 submission.getCampus(),
-                submission.getDepartment(),
+                submission.getDepartment().getName(),
                 submission.getSubmittedAt(),
                 answerResponses
         );
@@ -92,31 +93,81 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
 
     @Override
     @Transactional(readOnly = true)
-    public ApplicationSubmissionListResponse getSubmissionList(Long postId, User user) {
+    public ApplicationSubmissionListResponse getSubmissionList(
+            Long postId,
+            User user,
+            Campus campus,
+            Long departmentId
+    ) {
         RecruitingPost recruitingPost = recruitingPostRepository.findById(postId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "리크루팅 게시글을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND,
+                        "리크루팅 게시글을 찾을 수 없습니다."
+                ));
 
         if (!recruitingPost.getPost().getAuthor().getId().equals(user.getId())) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED, "해당 모집글의 지원서는 작성자만 조회할 수 있습니다.");
+            throw new BusinessException(
+                    ErrorCode.ACCESS_DENIED,
+                    "해당 모집글의 지원서는 작성자만 조회할 수 있습니다."
+            );
         }
 
         RecruitingApplication recruitingApplication = recruitingApplicationRepository.findByRecruitingPost(recruitingPost)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "지원폼을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND,
+                        "지원폼을 찾을 수 없습니다."
+                ));
 
-        List<ApplicationSubmissionSummaryResponse> submissions =
-                applicationSubmissionRepository.findAllByRecruitingApplicationAndDeletedAtIsNullOrderBySubmittedAtDesc(recruitingApplication)
-                        .stream()
-                        .map(ApplicationSubmissionSummaryResponse::from)
-                        .toList();
+        List<ApplicationSubmission> submissionEntities;
 
-        RecruitingStatus status = calculateStatus(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt());
+        if (campus != null && departmentId != null) {
+            submissionEntities =
+                    applicationSubmissionRepository
+                            .findAllByRecruitingApplicationAndCampusAndDepartment_IdAndDeletedAtIsNullOrderBySubmittedAtDesc(
+                                    recruitingApplication,
+                                    campus,
+                                    departmentId
+                            );
+        } else if (campus != null) {
+            submissionEntities =
+                    applicationSubmissionRepository
+                            .findAllByRecruitingApplicationAndCampusAndDeletedAtIsNullOrderBySubmittedAtDesc(
+                                    recruitingApplication,
+                                    campus
+                            );
+        } else if (departmentId != null) {
+            submissionEntities =
+                    applicationSubmissionRepository
+                            .findAllByRecruitingApplicationAndDepartment_IdAndDeletedAtIsNullOrderBySubmittedAtDesc(
+                                    recruitingApplication,
+                                    departmentId
+                            );
+        } else {
+            submissionEntities =
+                    applicationSubmissionRepository
+                            .findAllByRecruitingApplicationAndDeletedAtIsNullOrderBySubmittedAtDesc(
+                                    recruitingApplication
+                            );
+        }
+
+        List<ApplicationSubmissionSummaryResponse> submissions = submissionEntities.stream()
+                .map(ApplicationSubmissionSummaryResponse::from)
+                .toList();
+
+        RecruitingStatus status = calculateStatus(
+                recruitingPost.getStartedAt(),
+                recruitingPost.getDeadlineAt()
+        );
 
         return new ApplicationSubmissionListResponse(
                 recruitingPost.getId(),
                 recruitingPost.getPost().getTitle(),
                 recruitingPost.getCategory(),
                 status,
-                calculateStatusLabel(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt()),
+                calculateStatusLabel(
+                        recruitingPost.getStartedAt(),
+                        recruitingPost.getDeadlineAt()
+                ),
                 recruitingPost.getStartedAt(),
                 recruitingPost.getDeadlineAt(),
                 submissions.size(),

@@ -81,7 +81,7 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                 .submittedAt(Instant.now())
                 .applicantName(request.getApplicantName())
                 .campus(request.getCampus())
-                .department(department.getName())
+                .department(department)
                 .build();
 
         ApplicationSubmission savedSubmission = applicationSubmissionRepository.save(submission);
@@ -168,7 +168,7 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
         submission.updateApplicantInfo(
                 request.getApplicantName(),
                 request.getCampus(),
-                department.getName()
+                department
         );
 
         answerSelectedOptionRepository.deleteAllByRecruitingApplicationAnswerApplicationSubmissionId(submissionId);

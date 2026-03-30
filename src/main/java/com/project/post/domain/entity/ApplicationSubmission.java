@@ -2,6 +2,7 @@ package com.project.post.domain.entity;
 
 import com.project.global.entity.SoftDeleteEntity;
 import com.project.post.domain.enums.Campus;
+import com.project.user.domain.entity.Department;
 import com.project.user.domain.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -34,13 +35,14 @@ public class ApplicationSubmission extends SoftDeleteEntity {
     @Column(nullable = false, length = 20)
     private Campus campus;
 
-    @Column(nullable = false, length = 100)
-    private String department;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id", nullable = false)
+    private Department department;
 
     @Column(name = "submitted_at")
     private Instant submittedAt;
 
-    public void updateApplicantInfo(String applicantName, Campus campus, String department) {
+    public void updateApplicantInfo(String applicantName, Campus campus, Department department) {
         this.applicantName = applicantName;
         this.campus = campus;
         this.department = department;
