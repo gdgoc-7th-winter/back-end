@@ -407,6 +407,7 @@ public class UserServiceImpl implements UserService {
         }
 
         user.withdraw();
+        user.changePassword(passwordEncoder.encode(User.WITHDRAWN_PASSWORD_PLACEHOLDER));
         log.info("[deleteUser] 회원 탈퇴 처리 완료 (soft delete) - userId={}", id);
 
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();

@@ -45,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -223,6 +224,7 @@ class UserServiceTest {
             ReflectionTestUtils.setField(user, "id", userId);
 
             given(userRepository.findActiveById(userId)).willReturn(Optional.of(user));
+            given(passwordEncoder.encode(eq(User.WITHDRAWN_PASSWORD_PLACEHOLDER))).willReturn("encoded-withdrawn");
 
             // when
             userService.deleteUser(userId);
@@ -250,6 +252,7 @@ class UserServiceTest {
             ReflectionTestUtils.setField(user, "introduction", "안녕하세요");
 
             given(userRepository.findActiveById(userId)).willReturn(Optional.of(user));
+            given(passwordEncoder.encode(eq(User.WITHDRAWN_PASSWORD_PLACEHOLDER))).willReturn("encoded-withdrawn");
 
             // when
             userService.deleteUser(userId);
@@ -257,7 +260,7 @@ class UserServiceTest {
             // then
             assertThat(user.getEmail()).isEqualTo("deleted_" + userId + "@deleted.invalid");
             assertThat(user.getNickname()).isEqualTo(null);
-            assertThat(user.getPassword()).isEqualTo(null);
+            assertThat(user.getPassword()).isEqualTo("encoded-withdrawn");
             assertThat(user.getStudentId()).isNull();
             assertThat(user.getProfileImgUrl()).isNull();
             assertThat(user.getIntroduction()).isNull();

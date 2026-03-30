@@ -41,6 +41,9 @@ import java.util.Set;
 @AttributeOverride(name = "id", column = @Column(name = "user_id"))
 public class User extends SoftDeleteEntity {
 
+    // 탈퇴 시 비밀번호 치환에 사용하는 평문 표식
+    public static final String WITHDRAWN_PASSWORD_PLACEHOLDER = "WITHDRAWN_ACCOUNT_NO_LOGIN";
+
     // 프로필 사진 S3 url
     @Column(name = "profile_img_url", columnDefinition = "TEXT")
     private String profileImgUrl;
@@ -198,7 +201,6 @@ public class User extends SoftDeleteEntity {
         softDelete();
         this.email = "deleted_" + this.getId() + "@deleted.invalid";
         this.nickname = null;
-        this.password = null;
         this.studentId = null;
         this.profileImgUrl = null;
         this.introduction = null;
