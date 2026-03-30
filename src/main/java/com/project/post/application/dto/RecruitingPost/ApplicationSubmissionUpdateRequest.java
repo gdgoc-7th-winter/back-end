@@ -22,6 +22,6 @@ public class ApplicationSubmissionUpdateRequest {
     @NotNull(message = "캠퍼스는 필수입니다.")
     private Campus campus;
 
-    @NotBlank(message = "학과는 필수입니다.")
-    private String department;
+    @NotNull(message = "학과는 필수입니다.")
+    private Long departmentId;
 }
