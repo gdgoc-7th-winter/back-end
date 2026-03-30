@@ -3,6 +3,7 @@ package com.project.user.application.service;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.global.event.impl.UserPromotionEvent;
+
 import com.project.user.application.dto.UserSession;
 import com.project.user.application.service.impl.UserServiceImpl;
 import com.project.user.domain.entity.Department;
@@ -95,7 +96,7 @@ class UserServiceTest {
 
             String email = "test@hufs.ac.kr";
             String password = "password123";
-            User user = new User(email, "encodedPassword", "testuser");
+            User user = User.builder().email(email).password("encodedPassword").nickname("testuser").build();
 
             given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
             given(passwordEncoder.matches(password, user.getPassword())).willReturn(true);
@@ -118,7 +119,7 @@ class UserServiceTest {
             mockedContext.when(RequestContextHolder::currentRequestAttributes)
                     .thenReturn(new ServletRequestAttributes(request));
 
-            User user = new User("test@hufs.ac.kr", "encoded", "nick");
+            User user = User.builder().email("test@hufs.ac.kr").password("encoded").nickname("nick").build();
             given(userRepository.findByEmail(anyString())).willReturn(Optional.of(user));
             given(passwordEncoder.matches(anyString(), anyString())).willReturn(false);
 
@@ -138,7 +139,7 @@ class UserServiceTest {
                     .thenReturn(new ServletRequestAttributes(request));
 
             Long userId = 1L;
-            User user = new User("test@hufs.ac.kr", "pw", "nick");
+            User user = User.builder().email("test@hufs.ac.kr").password("pw").nickname("nick").build();
             ReflectionTestUtils.setField(user, "id", userId);
 
             Department mockDept = Department.builder().college("공과대학").name("컴퓨터공학").build();
@@ -175,7 +176,7 @@ class UserServiceTest {
         Long userId = 1L;
         String encodedCurrent = "encoded_currentPw";
         String encodedNew = "encoded_newPw123!";
-        User user = new User("test@hufs.ac.kr", encodedCurrent, "nick");
+        User user = User.builder().email("test@hufs.ac.kr").password(encodedCurrent).nickname("nick").build();
         ReflectionTestUtils.setField(user, "id", userId);
 
         PasswordUpdateRequest passwordUpdateRequest = new PasswordUpdateRequest();
@@ -201,7 +202,7 @@ class UserServiceTest {
         // given
         Long userId = 1L;
         String encodedCurrent = "encoded_correctPw";
-        User user = new User("test@hufs.ac.kr", encodedCurrent, "nick");
+        User user = User.builder().email("test@hufs.ac.kr").password(encodedCurrent).nickname("nick").build();
         ReflectionTestUtils.setField(user, "id", userId);
 
         PasswordUpdateRequest passwordUpdateRequest = new PasswordUpdateRequest();
@@ -226,7 +227,7 @@ class UserServiceTest {
                     .thenReturn(new ServletRequestAttributes(request, response));
 
             Long userId = 1L;
-            User user = new User("test@hufs.ac.kr", "pw", "nick");
+            User user = User.builder().email("test@hufs.ac.kr").password("pw").nickname("nick").build();
             ReflectionTestUtils.setField(user, "id", userId);
 
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
@@ -250,7 +251,7 @@ class UserServiceTest {
                     .thenReturn(new ServletRequestAttributes(request, response));
 
             Long userId = 1L;
-            User user = new User("test@hufs.ac.kr", "encodedPassword", "홍길동");
+            User user = User.builder().email("test@hufs.ac.kr").password("encodedPassword").nickname("홍길동").build();
             ReflectionTestUtils.setField(user, "id", userId);
             ReflectionTestUtils.setField(user, "studentId", "202001234");
             ReflectionTestUtils.setField(user, "profileImgUrl", "https://s3.example.com/profile.jpg");

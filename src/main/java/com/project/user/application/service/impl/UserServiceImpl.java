@@ -92,7 +92,11 @@ public class UserServiceImpl implements UserService {
             String encodedPassword = passwordEncoder.encode(request.getPassword());
             String email = request.getEmail();
             String nickname = request.getNickname();
-            User user = new User(email, encodedPassword, nickname);
+            User user = User.builder()
+                    .email(email)
+                    .password(encodedPassword)
+                    .nickname(nickname)
+                    .build();
             userRepository.save(user);
             LevelBadge initialBadge = levelBadgeRepository.findByPointWithinRange(user.getTotalPoint())
                     .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));

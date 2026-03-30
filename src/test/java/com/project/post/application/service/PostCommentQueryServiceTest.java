@@ -148,7 +148,7 @@ class PostCommentQueryServiceTest {
     }
 
     private static User buildUser(Long id, String nickname) {
-        User user = new User("user@test.com", "pw", "testuser1");
+        User user = User.builder().email("user@test.com").password("pw").nickname("testuser1").build();
         ReflectionTestUtils.setField(user, "id", id);
         ReflectionTestUtils.setField(user, "nickname", nickname);
         return user;
