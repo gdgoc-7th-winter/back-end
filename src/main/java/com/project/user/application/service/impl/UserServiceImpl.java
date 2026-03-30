@@ -402,10 +402,6 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findActiveById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        if (user.isDeleted()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "이미 탈퇴한 회원입니다.");
-        }
-
         user.withdraw();
         user.changePassword(passwordEncoder.encode(User.WITHDRAWN_PASSWORD_PLACEHOLDER));
         log.info("[deleteUser] 회원 탈퇴 처리 완료 (soft delete) - userId={}", id);
