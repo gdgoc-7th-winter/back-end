@@ -5,9 +5,12 @@ import com.project.global.response.CommonResponse;
 import com.project.post.application.dto.PostCreateResponse;
 import com.project.post.application.dto.RecruitingPost.*;
 import com.project.post.application.service.*;
+import com.project.post.domain.enums.RecruitingCategory;
 import com.project.user.domain.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -139,6 +142,17 @@ public class RecruitingPostController {
     ) {
         return CommonResponse.ok(
                 applicationSubmissionQueryService.getAppliedRecruitings(user)
+        );
+    }
+
+    @GetMapping("/recruitings")
+    public CommonResponse<Page<RecruitingPostListResponse>> getRecruitingPostList(
+            @RequestParam(required = false) RecruitingCategory category,
+            Pageable pageable,
+            @CurrentUser User user
+    ) {
+        return CommonResponse.ok(
+                recruitingPostQueryService.getList(category, pageable, user.getId())
         );
     }
 }

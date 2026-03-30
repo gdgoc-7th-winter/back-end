@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
-public interface RecruitingPostRepository extends JpaRepository<RecruitingPost, Long> {
+public interface RecruitingPostRepository extends JpaRepository<RecruitingPost, Long>, RecruitingPostRepositoryCustom {
 
     Optional<RecruitingPost> findByIdAndDeletedAtIsNull(Long id);
 
