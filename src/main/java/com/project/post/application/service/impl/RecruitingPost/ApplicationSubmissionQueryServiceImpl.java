@@ -2,6 +2,9 @@ package com.project.post.application.service.impl.RecruitingPost;
 
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
+import com.project.post.application.dto.PostAuthorResponse;
+import com.project.post.application.dto.PostListResponse;
+import com.project.post.application.dto.PostViewerResponse;
 import com.project.post.application.dto.RecruitingPost.*;
 import com.project.post.application.service.ApplicationSubmissionQueryService;
 import com.project.post.domain.entity.ApplicationSubmission;
@@ -15,6 +18,7 @@ import com.project.post.domain.repository.ApplicationSubmissionRepository;
 import com.project.post.domain.repository.RecruitingApplicationAnswerRepository;
 import com.project.post.domain.repository.RecruitingApplicationRepository;
 import com.project.post.domain.repository.RecruitingPostRepository;
+import com.project.post.domain.repository.dto.AppliedRecruitingPostListQueryResult;
 import com.project.post.domain.specification.ApplicationSubmissionSpecification;
 import com.project.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -161,12 +165,47 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
 
     @Override
     public AppliedRecruitingPostListResponse getAppliedRecruitings(@NonNull User user) {
-        return new AppliedRecruitingPostListResponse(
-                applicationSubmissionRepository.findAllByUserAndDeletedAtIsNullOrderBySubmittedAtDesc(user)
-                        .stream()
-                        .map(AppliedRecruitingPostSummaryResponse::from)
-                        .toList()
-        );
+
+        List<AppliedRecruitingPostListQueryResult> results =
+                applicationSubmissionRepository.findAppliedRecruitingPostListByUserId(user.getId());
+
+        List<AppliedRecruitingPostSummaryResponse> recruitings = results.stream()
+                .map(result -> {
+                    RecruitingStatus status = calculateStatus(result.startedAt(), result.deadlineAt());
+
+                    return new AppliedRecruitingPostSummaryResponse(
+                            result.submissionId(),
+                            result.category(),
+                            status,
+                            calculateStatusLabel(result.startedAt(), result.deadlineAt()),
+                            result.startedAt(),
+                            result.deadlineAt(),
+                            result.submittedAt(),
+                            new PostListResponse(
+                                    result.postId(),
+                                    result.title(),
+                                    result.thumbnailUrl(),
+                                    PostAuthorResponse.fromParts(
+                                            result.authorId(),
+                                            result.authorNickname(),
+                                            result.authorProfileImgUrl(),
+                                            result.authorDepartmentName(),
+                                            result.authorRepresentativeTrackName(),
+                                            result.authorLevelImageUrl()
+                                    ),
+                                    result.viewCount(),
+                                    result.likeCount(),
+                                    result.scrapCount(),
+                                    result.commentCount(),
+                                    PostViewerResponse.guest(), // 여기 단순화
+                                    List.of(),
+                                    result.createdAt()
+                            )
+                    );
+                })
+                .toList();
+
+        return new AppliedRecruitingPostListResponse(recruitings);
     }
 
     private RecruitingStatus calculateStatus(Instant startedAt, Instant deadlineAt) {
