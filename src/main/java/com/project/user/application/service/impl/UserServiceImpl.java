@@ -1,16 +1,12 @@
 package com.project.user.application.service.impl;
 
-import com.project.contribution.domain.entity.ContributionScore;
-import com.project.contribution.domain.entity.UserContribution;
-import com.project.contribution.domain.repository.ContributionScoreRepository;
-import com.project.contribution.domain.repository.UserContributionRepository;
-import com.project.contribution.domain.support.IdempotencyKeys;
+import com.project.contribution.application.service.ContributionCommandService;
+import com.project.contribution.application.service.ContributionFacade;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 
 import com.project.user.application.dto.EarnScoreResult;
 import com.project.user.application.dto.UserSession;
-import com.project.global.event.impl.UserPromotionEvent;
 import com.project.user.application.dto.request.UserRegistrationCompletedEvent;
 import com.project.user.application.dto.response.ProfileResponse;
 import com.project.user.application.service.UserService;
@@ -43,7 +39,6 @@ import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -58,9 +53,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.Locale;
 
 @Slf4j
 @Service
@@ -75,8 +68,8 @@ public class UserServiceImpl implements UserService {
     private final TrackRepository trackRepository;
     private final DepartmentRepository departmentRepository;
 
-    private final ContributionScoreRepository contributionScoreRepository;
-    private final UserContributionRepository userContributionRepository;
+    private final ContributionCommandService contributionCommandService;
+    private final ContributionFacade contributionFacade;
 
     // 회원가입
     @Override
@@ -214,10 +207,10 @@ public class UserServiceImpl implements UserService {
         );
 
         if (!user.needsInitialSetup()) {
+            // 기여 지급이 같은 TX에서 실패할 수 있으므로, 성공한 뒤에만 권한·세션 갱신
+            contributionFacade.grantOnProfileInitialSetupCompleted(user.getId(), user.getId());
             user.grantUserAuthority();
             updateSecurityContext(user.getId());
-            eventPublisher.publishEvent(new UserPromotionEvent(user.getId(), user.getId()));
-            log.info("유저 승급 이벤트 형성");
         }
     }
 
@@ -343,46 +336,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public EarnScoreResult earnAScore(Long id, String scoreName, Long referenceId) {
-        User user = userRepository.findActiveById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "회원 정보가 없습니다."));
-        validateNotWithdrawn(user);
-        ContributionScore contributionScore = contributionScoreRepository.findByName(scoreName)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-
-        String idempotencyKey = IdempotencyKeys.grant(user.getId(), contributionScore.getId(), referenceId);
-        if (userContributionRepository.existsByIdempotencyKey(idempotencyKey)) {
-            return new EarnScoreResult(user, false);
-        }
-
-        UserContribution contribution = UserContribution.grant(
-                user, contributionScore, referenceId, Instant.now(), null, idempotencyKey);
-
-        try {
-            userContributionRepository.save(contribution);
-        } catch (DataIntegrityViolationException e) {
-            if (isDuplicateIdempotencyKey(e)) {
-                log.debug("Idempotent duplicate user_contribution ignored: {}", idempotencyKey);
-                return new EarnScoreResult(user, false);
-            }
-            log.error("Unexpected error during ledger save for score {}: {}",
-                    contributionScore.getName(), e.getMessage());
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "작업 실행 중 오류가 발생했습니다. 관리팀에 문의주세요.");
-        }
-
-        user.updatePoint(contributionScore.getPoint());
-        return new EarnScoreResult(user, true);
-    }
-
-    private static boolean isDuplicateIdempotencyKey(DataIntegrityViolationException e) {
-        Throwable cause = e.getMostSpecificCause();
-        if (cause instanceof ConstraintViolationException cve) {
-            String name = cve.getConstraintName();
-            if (name != null && name.toLowerCase(Locale.ROOT).contains("idempotency")) {
-                return true;
-            }
-        }
-        String msg = cause.getMessage();
-        return msg != null && msg.toLowerCase(Locale.ROOT).contains("idempotency");
+        return contributionCommandService.grantScore(id, scoreName, referenceId);
     }
 
     @Override
