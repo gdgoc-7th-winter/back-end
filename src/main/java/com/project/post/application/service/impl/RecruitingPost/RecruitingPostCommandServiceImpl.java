@@ -184,36 +184,27 @@ public class RecruitingPostCommandServiceImpl implements RecruitingPostCommandSe
         return recruitingPostQueryService.getDetail(postId, user.getId());
     }
 
-    @Override
     @Transactional
+    @Override
     public void delete(@NonNull Long postId, @NonNull User user) {
-
         RecruitingPost recruitingPost = recruitingPostRepository.findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.RESOURCE_NOT_FOUND,
-                        "모집글을 찾을 수 없습니다."
+                        "리크루팅 게시글을 찾을 수 없습니다."
                 ));
 
-        Post post = recruitingPost.getPost();
-
-        if (!post.getAuthor().getId().equals(user.getId())) {
-            throw new BusinessException(
-                    ErrorCode.ACCESS_DENIED,
-                    "본인이 작성한 모집글만 삭제할 수 있습니다."
-            );
+        if (!recruitingPost.getPost().getAuthor().getId().equals(user.getId())) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
 
-        recruitingApplicationRepository.findByRecruitingPost(recruitingPost)
+        recruitingApplicationRepository.findByRecruitingPostForUpdate(recruitingPost)
                 .ifPresent(recruitingApplication -> {
-                    boolean hasSubmission = applicationSubmissionRepository
-                            .existsByRecruitingApplicationAndDeletedAtIsNull(recruitingApplication);
-
-                    if (hasSubmission) {
+                    if (applicationSubmissionRepository.existsByRecruitingApplicationAndDeletedAtIsNull(recruitingApplication)) {
                         throw new BusinessException(ErrorCode.RECRUITING_POST_DELETE_NOT_ALLOWED);
                     }
                 });
 
         recruitingPost.softDelete();
-        post.softDelete();
+        recruitingPost.getPost().softDelete();
     }
 }

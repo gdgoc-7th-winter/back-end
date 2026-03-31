@@ -30,7 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,11 +59,18 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                         "리크루팅 게시글을 찾을 수 없습니다."
                 ));
 
-        RecruitingApplication recruitingApplication = recruitingApplicationRepository.findByRecruitingPost(recruitingPost)
+        RecruitingApplication recruitingApplication = recruitingApplicationRepository.findByRecruitingPostForUpdate(recruitingPost)
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.RESOURCE_NOT_FOUND,
                         "지원폼을 찾을 수 없습니다."
                 ));
+
+        if (recruitingPost.getDeletedAt() != null) {
+            throw new BusinessException(
+                    ErrorCode.RESOURCE_NOT_FOUND,
+                    "삭제된 모집글입니다."
+            );
+        }
 
         if (applicationSubmissionRepository.existsByRecruitingApplicationAndUserAndDeletedAtIsNull(recruitingApplication, user)) {
             throw new BusinessException(ErrorCode.ALREADY_APPLIED);
