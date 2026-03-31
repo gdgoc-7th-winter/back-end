@@ -17,7 +17,7 @@ public interface UserService {
     public void updateSecurityContext(Long id);
     public void changePassword(Long id, PasswordUpdateRequest request);
     public ProfileResponse getUserProfile(Long id);
-    EarnScoreResult earnAScore(Long id, String scoreName, Long referenceId);
+    EarnScoreResult earnAScore(Long id, String scoreCode, Long referenceId);
     public void linkSocialAccount(Long userId, String provider, String email, String providerId);
     public void patchProfile(Long id, ProfilePatchRequest request);
     public void deleteUser(Long id);

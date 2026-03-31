@@ -72,4 +72,19 @@ public class UserContribution extends AuditEntity {
                 .idempotencyKey(idempotencyKey)
                 .build();
     }
+
+    public static UserContribution revoke(User user, ContributionScore contributionScore, Long referenceId,
+            Instant occurredAt, ActivityType activityType, String idempotencyKey) {
+        int magnitude = Math.abs(contributionScore.getPoint());
+        return UserContribution.builder()
+                .user(user)
+                .contributionScore(contributionScore)
+                .referenceId(referenceId)
+                .entryType(ContributionEntryType.REVOKE)
+                .signedPoint(-magnitude)
+                .occurredAt(occurredAt)
+                .activityType(activityType)
+                .idempotencyKey(idempotencyKey)
+                .build();
+    }
 }

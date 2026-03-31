@@ -335,8 +335,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public EarnScoreResult earnAScore(Long id, String scoreName, Long referenceId) {
-        return contributionCommandService.grantScore(id, scoreName, referenceId);
+    public EarnScoreResult earnAScore(Long id, String scoreCode, Long referenceId) {
+        return contributionCommandService.grantScore(id, scoreCode, referenceId);
     }
 
     @Override

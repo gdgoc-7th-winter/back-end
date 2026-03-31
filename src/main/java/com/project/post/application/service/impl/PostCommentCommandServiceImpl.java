@@ -6,6 +6,8 @@ import com.project.post.application.dto.PostCommentRequest;
 import com.project.post.application.service.PostCommentCommandService;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.PostComment;
+import com.project.contribution.application.dto.ActivityContext;
+import com.project.contribution.application.service.ContributionFacade;
 import com.project.post.domain.repository.PostCommentRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
@@ -22,6 +24,7 @@ public class PostCommentCommandServiceImpl implements PostCommentCommandService 
 
     private final PostRepository postRepository;
     private final PostCommentRepository commentRepository;
+    private final ContributionFacade contributionFacade;
 
     @Override
     @Transactional
@@ -40,6 +43,7 @@ public class PostCommentCommandServiceImpl implements PostCommentCommandService 
 
         PostComment savedComment = commentRepository.save(Objects.requireNonNull(comment));
         postRepository.incrementCommentCount(postId);
+        contributionFacade.applyActivity(ActivityContext.commentWritten(user.getId(), savedComment.getId()));
         return savedComment.getId();
     }
 
@@ -61,6 +65,9 @@ public class PostCommentCommandServiceImpl implements PostCommentCommandService 
             throw new BusinessException(ErrorCode.ACCESS_DENIED, "삭제 권한이 없습니다.");
         }
 
+        long commentAuthorId = comment.getUser().getId();
+        long cid = comment.getId();
+        contributionFacade.applyActivity(ActivityContext.commentDeleted(commentAuthorId, cid));
         comment.softDelete();
     }
 }
