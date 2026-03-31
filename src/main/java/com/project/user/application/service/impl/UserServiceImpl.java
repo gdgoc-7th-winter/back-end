@@ -4,9 +4,11 @@ import com.project.contribution.domain.entity.ContributionScore;
 import com.project.contribution.domain.entity.UserContribution;
 import com.project.contribution.domain.repository.ContributionScoreRepository;
 import com.project.contribution.domain.repository.UserContributionRepository;
+import com.project.contribution.domain.support.IdempotencyKeys;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 
+import com.project.user.application.dto.EarnScoreResult;
 import com.project.user.application.dto.UserSession;
 import com.project.global.event.impl.UserPromotionEvent;
 import com.project.user.application.dto.request.UserRegistrationCompletedEvent;
@@ -41,6 +43,7 @@ import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -55,7 +58,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 
 @Slf4j
 @Service
@@ -337,27 +342,47 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public User earnAScore(Long id, String scoreName, Long referenceId) {
+    public EarnScoreResult earnAScore(Long id, String scoreName, Long referenceId) {
         User user = userRepository.findActiveById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "회원 정보가 없습니다."));
         validateNotWithdrawn(user);
         ContributionScore contributionScore = contributionScoreRepository.findByName(scoreName)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        user.updatePoint(contributionScore.getPoint());
+        String idempotencyKey = IdempotencyKeys.grant(user.getId(), contributionScore.getId(), referenceId);
+        if (userContributionRepository.existsByIdempotencyKey(idempotencyKey)) {
+            return new EarnScoreResult(user, false);
+        }
+
+        UserContribution contribution = UserContribution.grant(
+                user, contributionScore, referenceId, Instant.now(), null, idempotencyKey);
 
         try {
-            UserContribution contribution = UserContribution.builder()
-                    .user(user)
-                    .contributionScore(contributionScore)
-                    .referenceId(referenceId)
-                    .build();
             userContributionRepository.save(contribution);
         } catch (DataIntegrityViolationException e) {
-            log.error("Unexpected error during score initialization for: {}", contributionScore.getName() + e.getMessage());
+            if (isDuplicateIdempotencyKey(e)) {
+                log.debug("Idempotent duplicate user_contribution ignored: {}", idempotencyKey);
+                return new EarnScoreResult(user, false);
+            }
+            log.error("Unexpected error during ledger save for score {}: {}",
+                    contributionScore.getName(), e.getMessage());
             throw new BusinessException(ErrorCode.INVALID_INPUT, "작업 실행 중 오류가 발생했습니다. 관리팀에 문의주세요.");
         }
-        return user;
+
+        user.updatePoint(contributionScore.getPoint());
+        return new EarnScoreResult(user, true);
+    }
+
+    private static boolean isDuplicateIdempotencyKey(DataIntegrityViolationException e) {
+        Throwable cause = e.getMostSpecificCause();
+        if (cause instanceof ConstraintViolationException cve) {
+            String name = cve.getConstraintName();
+            if (name != null && name.toLowerCase(Locale.ROOT).contains("idempotency")) {
+                return true;
+            }
+        }
+        String msg = cause.getMessage();
+        return msg != null && msg.toLowerCase(Locale.ROOT).contains("idempotency");
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.project.contribution.domain.entity.ContributionScore;
 import com.project.contribution.policy.ContributionPolicy;
 import com.project.global.event.ActivityType;
 
+import com.project.user.application.dto.EarnScoreResult;
 import com.project.user.application.service.UserService;
 import com.project.user.domain.entity.User;
 import com.project.user.event.UserPointChangeEvent;
@@ -60,7 +61,7 @@ class ContributionServiceTest {
         when(mockPolicy.isSatisfied(userId)).thenReturn(true);
 
 
-        when(userService.earnAScore(userId, scoreName, referenceId)).thenReturn(mockUser);
+        when(userService.earnAScore(userId, scoreName, referenceId)).thenReturn(new EarnScoreResult(mockUser, true));
         scoreService.checkAndGrantScores(userId, activityType, referenceId);
 
         verify(mockPolicy, times(1)).isSatisfied(userId);

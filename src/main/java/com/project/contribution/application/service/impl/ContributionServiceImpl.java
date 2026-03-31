@@ -6,6 +6,7 @@ import com.project.contribution.application.service.ContributionService;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.global.event.ActivityType;
+import com.project.user.application.dto.EarnScoreResult;
 import com.project.user.application.service.UserService;
 import com.project.user.domain.entity.User;
 import com.project.user.event.UserPointChangeEvent;
@@ -52,8 +53,11 @@ public class ContributionServiceImpl implements ContributionService {
 
     @Override
     @Transactional
-    public void grantScore(Long id, String scoreName, Long referenceId){
-        User updatedUser = userService.earnAScore(id, scoreName, referenceId);
-        eventPublisher.publishEvent(new UserPointChangeEvent(updatedUser.getId(), updatedUser.getTotalPoint()));
+    public void grantScore(Long id, String scoreName, Long referenceId) {
+        EarnScoreResult result = userService.earnAScore(id, scoreName, referenceId);
+        if (result.grantedNewLedger()) {
+            User updatedUser = result.user();
+            eventPublisher.publishEvent(new UserPointChangeEvent(updatedUser.getId(), updatedUser.getTotalPoint()));
+        }
     }
 }
