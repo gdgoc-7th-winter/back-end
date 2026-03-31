@@ -31,4 +31,11 @@ public record RecruitingPostCreateRequest(
     public boolean isValidApplicationForm() {
         return applicationType != ApplicationType.FORM || applicationForm != null;
     }
+    @AssertTrue(message = "모집 시작일은 마감일보다 늦을 수 없습니다.")
+    public boolean isValidRecruitingPeriod() {
+        if (startedAt == null || deadlineAt == null) {
+            return true;
+        }
+        return !startedAt.isAfter(deadlineAt);
+    }
 }
