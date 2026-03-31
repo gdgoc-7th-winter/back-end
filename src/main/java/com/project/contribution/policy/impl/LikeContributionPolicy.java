@@ -15,24 +15,19 @@ public class LikeContributionPolicy implements ContributionPolicy {
 
     @Override
     public boolean supports(ActivityType activityType) {
-        return activityType == ActivityType.LIKE_PRESSED || activityType == ActivityType.LIKE_CANCELLED;
+        return activityType == ActivityType.LIKE_PRESSED;
     }
 
     @Override
     public List<ContributionPointCommand> evaluate(ActivityContext context) {
-        return switch (context.activityType()) {
-            case LIKE_PRESSED -> List.of(ContributionPointCommand.grant(
-                    context.subjectUserId(),
-                    ContributionScoreCodes.LIKE_RECEIVED,
-                    context.referenceId(),
-                    ActivityType.LIKE_PRESSED));
-            case LIKE_CANCELLED -> List.of(ContributionPointCommand.revoke(
-                    context.subjectUserId(),
-                    ContributionScoreCodes.LIKE_RECEIVED,
-                    context.referenceId(),
-                    ActivityType.LIKE_CANCELLED,
-                    ActivityType.LIKE_CANCELLED.name()));
-            default -> List.of();
-        };
+        if (context.activityType() != ActivityType.LIKE_PRESSED) {
+            return List.of();
+        }
+        return List.of(ContributionPointCommand.grant(
+                context.subjectUserId(),
+                ContributionScoreCodes.LIKE_RECEIVED,
+                context.referenceId(),
+                ActivityType.LIKE_PRESSED,
+                context.occurredAt()));
     }
 }

@@ -74,13 +74,13 @@ public record ActivityContext(
                 Instant.now());
     }
 
-    public static ActivityContext likeCancelled(long postAuthorId, long postLikeId, long likerUserId) {
+    public static ActivityContext scrapReceived(long postAuthorId, long postScrapId, long scraperUserId) {
         return new ActivityContext(
                 postAuthorId,
-                likerUserId,
-                ActivityType.LIKE_CANCELLED,
-                ReferenceKind.LIKE,
-                postLikeId,
+                scraperUserId,
+                ActivityType.SCRAP_PRESSED,
+                ReferenceKind.SCRAP,
+                postScrapId,
                 Instant.now());
     }
 }

@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -66,14 +67,19 @@ class ContributionServiceTest {
     void applyActivityExecutesGrant() {
         ActivityContext ctx = ActivityContext.postCreated(1L, 10L);
         ContributionPointCommand cmd = ContributionPointCommand.grant(
-                1L, ContributionScoreCodes.POST_WRITE, 10L, ActivityType.POST_CREATED);
+                1L, ContributionScoreCodes.POST_WRITE, 10L, ActivityType.POST_CREATED, ctx.occurredAt());
         when(mockPolicy.supports(ActivityType.POST_CREATED)).thenReturn(true);
         when(mockPolicy.evaluate(ctx)).thenReturn(List.of(cmd));
 
         contributionService.applyActivity(ctx);
 
-        verify(contributionCommandService).grantScore(1L, ContributionScoreCodes.POST_WRITE, 10L, ActivityType.POST_CREATED);
-        verify(contributionCommandService, never()).revokeScore(any(), any(), any(), any(), any());
+        verify(contributionCommandService).grantScore(
+                eq(1L),
+                eq(ContributionScoreCodes.POST_WRITE),
+                eq(10L),
+                eq(ActivityType.POST_CREATED),
+                eq(ctx.occurredAt()));
+        verify(contributionCommandService, never()).revokeScore(any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -85,7 +91,8 @@ class ContributionServiceTest {
                 ContributionScoreCodes.POST_WRITE,
                 10L,
                 ActivityType.POST_DELETED,
-                ActivityType.POST_DELETED.name());
+                ActivityType.POST_DELETED.name(),
+                ctx.occurredAt());
         when(mockPolicy.supports(ActivityType.POST_DELETED)).thenReturn(true);
         when(mockPolicy.evaluate(ctx)).thenReturn(List.of(cmd));
 
@@ -93,10 +100,11 @@ class ContributionServiceTest {
 
         verify(contributionCommandService)
                 .revokeScore(
-                        1L,
-                        ContributionScoreCodes.POST_WRITE,
-                        10L,
-                        ActivityType.POST_DELETED,
-                        ActivityType.POST_DELETED.name());
+                        eq(1L),
+                        eq(ContributionScoreCodes.POST_WRITE),
+                        eq(10L),
+                        eq(ActivityType.POST_DELETED),
+                        eq(ActivityType.POST_DELETED.name()),
+                        eq(ctx.occurredAt()));
     }
 }

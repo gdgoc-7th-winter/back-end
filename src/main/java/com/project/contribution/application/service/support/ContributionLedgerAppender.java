@@ -29,14 +29,15 @@ public class ContributionLedgerAppender {
             User user,
             ContributionScore contributionScore,
             Long referenceId,
-            @Nullable ActivityType activityType) {
+            @Nullable ActivityType activityType,
+            Instant occurredAt) {
         String idempotencyKey = IdempotencyKeys.grant(user.getId(), contributionScore.getId(), referenceId);
         if (userContributionRepository.existsByIdempotencyKey(idempotencyKey)) {
             return GrantAppendResult.skipped(user);
         }
 
         UserContribution contribution = UserContribution.grant(
-                user, contributionScore, referenceId, Instant.now(), activityType, idempotencyKey);
+                user, contributionScore, referenceId, occurredAt, activityType, idempotencyKey);
 
         try {
             userContributionRepository.save(contribution);
@@ -59,7 +60,8 @@ public class ContributionLedgerAppender {
             ContributionScore contributionScore,
             Long referenceId,
             ActivityType activityType,
-            String revokeReasonToken) {
+            String revokeReasonToken,
+            Instant occurredAt) {
         String grantKey = IdempotencyKeys.grant(user.getId(), contributionScore.getId(), referenceId);
         if (!userContributionRepository.existsByIdempotencyKey(grantKey)) {
             log.info("skip revoke — no matching GRANT ledger: userId={}, code={}, ref={}",
@@ -83,7 +85,7 @@ public class ContributionLedgerAppender {
         }
 
         UserContribution contribution = UserContribution.revoke(
-                user, contributionScore, referenceId, Instant.now(), activityType, revokeKey, actualRevoke);
+                user, contributionScore, referenceId, occurredAt, activityType, revokeKey, actualRevoke);
 
         try {
             userContributionRepository.save(contribution);

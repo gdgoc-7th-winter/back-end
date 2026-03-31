@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 
 @Slf4j
@@ -33,18 +34,21 @@ public class ContributionServiceImpl implements ContributionService {
             return;
         }
         for (ContributionPointCommand cmd : commands) {
+            Instant occurredAt = cmd.occurredAt();
             switch (cmd.kind()) {
                 case GRANT -> contributionCommandService.grantScore(
                         cmd.subjectUserId(),
                         cmd.scoreCode(),
                         cmd.referenceId(),
-                        cmd.activityType());
+                        cmd.activityType(),
+                        occurredAt);
                 case REVOKE -> contributionCommandService.revokeScore(
                         cmd.subjectUserId(),
                         cmd.scoreCode(),
                         cmd.referenceId(),
                         cmd.activityType(),
-                        cmd.revokeReasonToken());
+                        cmd.revokeReasonToken(),
+                        occurredAt);
                 default -> throw new IllegalStateException("Unexpected command kind: " + cmd.kind());
             }
         }

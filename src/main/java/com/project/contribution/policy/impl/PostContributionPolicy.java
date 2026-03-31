@@ -25,13 +25,15 @@ public class PostContributionPolicy implements ContributionPolicy {
                     context.subjectUserId(),
                     ContributionScoreCodes.POST_WRITE,
                     context.referenceId(),
-                    ActivityType.POST_CREATED));
+                    ActivityType.POST_CREATED,
+                    context.occurredAt()));
             case POST_DELETED -> List.of(ContributionPointCommand.revoke(
                     context.subjectUserId(),
                     ContributionScoreCodes.POST_WRITE,
                     context.referenceId(),
                     ActivityType.POST_DELETED,
-                    ActivityType.POST_DELETED.name()));
+                    ActivityType.POST_DELETED.name(),
+                    context.occurredAt()));
             default -> List.of();
         };
     }

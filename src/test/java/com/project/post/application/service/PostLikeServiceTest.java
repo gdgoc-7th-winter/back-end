@@ -3,7 +3,6 @@ package com.project.post.application.service;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.contribution.application.dto.ActivityContext;
-import com.project.contribution.application.event.ContributionActivityEvent;
 import com.project.contribution.application.service.ContributionFacade;
 import com.project.global.event.ActivityType;
 import com.project.post.application.dto.LikeScrapToggleResponse;
@@ -20,7 +19,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
@@ -45,9 +43,6 @@ class PostLikeServiceTest {
 
     @Mock
     private ContributionFacade contributionFacade;
-
-    @Mock
-    private ApplicationEventPublisher applicationEventPublisher;
 
     @InjectMocks
     private PostLikeServiceImpl postLikeService;
@@ -131,13 +126,7 @@ class PostLikeServiceTest {
         assertThat(result.liked()).isFalse();
         assertThat(result.count()).isEqualTo(0);
         verify(postRepository).decrementLikeCount(1L);
-        verify(applicationEventPublisher)
-                .publishEvent(
-                        argThat(
-                                (ContributionActivityEvent e) ->
-                                        e.context().activityType() == ActivityType.LIKE_CANCELLED
-                                                && e.context().subjectUserId() == 2L
-                                                && e.context().referenceId() == 99L));
+        verify(contributionFacade, never()).applyActivity(any());
     }
 
     @Test
@@ -155,7 +144,7 @@ class PostLikeServiceTest {
         assertThat(result.liked()).isFalse();
         assertThat(result.count()).isEqualTo(0);
         verify(postRepository, never()).decrementLikeCount(1L);
-        verify(applicationEventPublisher, never()).publishEvent(any());
+        verify(contributionFacade, never()).applyActivity(any());
     }
 
     private static User buildUser(Long id) {

@@ -2,13 +2,16 @@ package com.project.contribution.application.dto;
 
 import com.project.global.event.ActivityType;
 
+import java.time.Instant;
+
 public record ContributionPointCommand(
         Kind kind,
         long subjectUserId,
         String scoreCode,
         long referenceId,
         ActivityType activityType,
-        String revokeReasonToken
+        String revokeReasonToken,
+        Instant occurredAt
 ) {
     public enum Kind {
         GRANT,
@@ -19,8 +22,9 @@ public record ContributionPointCommand(
             long subjectUserId,
             String scoreCode,
             long referenceId,
-            ActivityType activityType) {
-        return new ContributionPointCommand(Kind.GRANT, subjectUserId, scoreCode, referenceId, activityType, null);
+            ActivityType activityType,
+            Instant occurredAt) {
+        return new ContributionPointCommand(Kind.GRANT, subjectUserId, scoreCode, referenceId, activityType, null, occurredAt);
     }
 
     public static ContributionPointCommand revoke(
@@ -28,8 +32,9 @@ public record ContributionPointCommand(
             String scoreCode,
             long referenceId,
             ActivityType activityType,
-            String revokeReasonToken) {
+            String revokeReasonToken,
+            Instant occurredAt) {
         return new ContributionPointCommand(
-                Kind.REVOKE, subjectUserId, scoreCode, referenceId, activityType, revokeReasonToken);
+                Kind.REVOKE, subjectUserId, scoreCode, referenceId, activityType, revokeReasonToken, occurredAt);
     }
 }

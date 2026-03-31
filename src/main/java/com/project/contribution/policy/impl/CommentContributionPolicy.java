@@ -25,13 +25,15 @@ public class CommentContributionPolicy implements ContributionPolicy {
                     context.subjectUserId(),
                     ContributionScoreCodes.COMMENT_WRITE,
                     context.referenceId(),
-                    ActivityType.COMMENT_WRITTEN));
+                    ActivityType.COMMENT_WRITTEN,
+                    context.occurredAt()));
             case COMMENT_DELETED -> List.of(ContributionPointCommand.revoke(
                     context.subjectUserId(),
                     ContributionScoreCodes.COMMENT_WRITE,
                     context.referenceId(),
                     ActivityType.COMMENT_DELETED,
-                    ActivityType.COMMENT_DELETED.name()));
+                    ActivityType.COMMENT_DELETED.name(),
+                    context.occurredAt()));
             default -> List.of();
         };
     }
