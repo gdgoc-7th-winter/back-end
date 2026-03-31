@@ -31,7 +31,7 @@ public class ContributionScoreInitializer implements CommandLineRunner {
         ClassPathResource resource = new ClassPathResource("contributionScores.json");
 
         if (!resource.exists()) {
-            log.warn("contributionScores.json not found in classpath. Skipping initialization.");
+            log.warn("classpath에서 contributionScores.json을 찾을 수 없습니다. 초기화를 건너뜁니다.");
             return;
         }
 
@@ -47,11 +47,11 @@ public class ContributionScoreInitializer implements CommandLineRunner {
                         .build();
                 upsertScore(score);
             }
-            log.info("Successfully initialized scores from JSON.");
+            log.info("contributionScores.json 기반 점수 초기화를 완료했습니다.");
 
         } catch (IOException e) {
-            log.error("Critical error reading contributionScores.json", e);
-            throw new RuntimeException("Failed to load initial data", e);
+            log.error("contributionScores.json 읽기 중 오류가 발생했습니다.", e);
+            throw new RuntimeException("초기 데이터를 불러오지 못했습니다.", e);
         }
     }
 
@@ -62,17 +62,17 @@ public class ContributionScoreInitializer implements CommandLineRunner {
                     .ifPresentOrElse(
                             existing -> {
                                 existing.update(incomingScore.getName(), incomingScore.getPoint());
-                                log.debug("Updated existing score: {}", incomingScore.getName());
+                                log.debug("기존 점수 항목을 갱신했습니다: {}", incomingScore.getName());
                             },
                             () -> {
                                 scoreRepository.saveAndFlush(incomingScore);
-                                log.info("Inserted new score: {}", incomingScore.getName());
+                                log.info("새 점수 항목을 추가했습니다: {}", incomingScore.getName());
                             }
                     );
         } catch (DataIntegrityViolationException e) {
-            log.warn("Score '{}' was already inserted by another instance. Skipping.", incomingScore.getName());
+            log.warn("점수 항목 '{}'은(는) 다른 인스턴스에서 이미 삽입되었습니다. 건너뜁니다.", incomingScore.getName());
         } catch (Exception e) {
-            log.error("Unexpected error during score initialization for: {}", incomingScore.getName());
+            log.error("점수 항목 초기화 중 예기치 않은 오류가 발생했습니다: {}", incomingScore.getName());
             throw e;
         }
     }
