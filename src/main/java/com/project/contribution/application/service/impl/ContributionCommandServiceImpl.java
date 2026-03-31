@@ -41,11 +41,8 @@ public class ContributionCommandServiceImpl implements ContributionCommandServic
     @Override
     @Transactional
     public EarnScoreResult grantScore(Long userId, String scoreName, Long referenceId) {
-        User user = userRepository.findActiveById(userId)
+        User user = userRepository.findActiveByIdLean(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "회원 정보가 없습니다."));
-        if (user.isDeleted()) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED, "탈퇴한 회원입니다.");
-        }
         ContributionScore contributionScore = contributionScoreRepository.findByName(scoreName)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
@@ -59,6 +56,7 @@ public class ContributionCommandServiceImpl implements ContributionCommandServic
 
         try {
             userContributionRepository.save(contribution);
+            userContributionRepository.flush();
         } catch (DataIntegrityViolationException e) {
             if (isDuplicateIdempotencyKey(e)) {
                 log.debug("Idempotent duplicate user_contribution ignored: {}", idempotencyKey);
@@ -66,7 +64,7 @@ public class ContributionCommandServiceImpl implements ContributionCommandServic
             }
             log.error("Unexpected error during ledger save for score {}: {}",
                     contributionScore.getName(), e.getMessage());
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "작업 실행 중 오류가 발생했습니다. 관리팀에 문의주세요.");
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "작업 실행 중 오류가 발생했습니다. 관리팀에 문의주세요.");
         }
 
         int delta = contributionScore.getPoint();
@@ -75,7 +73,7 @@ public class ContributionCommandServiceImpl implements ContributionCommandServic
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "회원 정보가 없습니다.");
         }
 
-        User userAfter = userRepository.findActiveById(userId)
+        User userAfter = userRepository.findActiveByIdLean(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         applyLevelIfNeeded(userAfter);
 
@@ -88,12 +86,10 @@ public class ContributionCommandServiceImpl implements ContributionCommandServic
         LevelBadge current = user.getLevelBadge();
         if (current == null) {
             user.updateBadge(resolved);
-            userRepository.save(user);
             return;
         }
         if (!Objects.equals(current.getId(), resolved.getId())) {
             user.updateBadge(resolved);
-            userRepository.save(user);
         }
     }
 
