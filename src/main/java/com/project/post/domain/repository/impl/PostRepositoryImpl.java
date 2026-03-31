@@ -7,8 +7,9 @@ import com.project.post.domain.entity.QTag;
 import com.project.post.domain.repository.PostRepositoryCustom;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
 import com.project.post.domain.repository.dto.PostListQueryResult;
-import com.project.post.domain.enums.PostListSort;
 import com.project.post.domain.repository.dto.PostSearchCondition;
+import com.project.post.domain.repository.querydsl.PostListSortOrderSpecifiers;
+import com.project.post.domain.repository.querydsl.QuerydslLikeExpressions;
 import com.project.user.domain.repository.querydsl.UserRepresentativeTrackExpressions;
 import com.project.user.domain.repository.querydsl.UserWithdrawnExpressions;
 import com.project.user.domain.entity.QDepartment;
@@ -17,14 +18,14 @@ import com.project.user.domain.entity.QUser;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.ConstructorExpression;
 import com.querydsl.core.types.Projections;
-import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
@@ -47,13 +48,24 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
             @NonNull Pageable pageable,
             @NonNull PostSearchCondition condition) {
         QPost post = QPost.post;
+        BooleanBuilder where = buildPostListWhere(boardCode, condition, post);
+        return fetchPostListPage(pageable, condition, post, where, postListProjection(post));
+    }
+
+    @Override
+    public Page<PostListQueryResult> findPostListAllActiveBoards(
+            @NonNull Pageable pageable,
+            @NonNull PostSearchCondition condition) {
+        QPost post = QPost.post;
+        BooleanBuilder where = buildPostListWhere(null, condition, post);
+        return fetchPostListPage(pageable, condition, post, where, postListProjection(post));
+    }
+
+    private ConstructorExpression<PostListQueryResult> postListProjection(QPost post) {
         QUser user = QUser.user;
         QDepartment department = QDepartment.department;
         QLevelBadge levelBadge = QLevelBadge.levelBadge;
-
-        BooleanBuilder where = buildPostListWhere(boardCode, condition, post);
-
-        var projection = Projections.constructor(
+        return Projections.constructor(
                 PostListQueryResult.class,
                 post.id,
                 post.title,
@@ -71,6 +83,17 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 post.commentCount,
                 post.createdAt
         );
+    }
+
+    private Page<PostListQueryResult> fetchPostListPage(
+            Pageable pageable,
+            PostSearchCondition condition,
+            QPost post,
+            BooleanBuilder where,
+            ConstructorExpression<PostListQueryResult> projection) {
+        QUser user = QUser.user;
+        QDepartment department = QDepartment.department;
+        QLevelBadge levelBadge = QLevelBadge.levelBadge;
         var content = queryFactory
                 .select(projection)
                 .from(post)
@@ -78,7 +101,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 .leftJoin(user.department, department)
                 .leftJoin(user.levelBadge, levelBadge)
                 .where(where)
-                .orderBy(toOrderSpecifiers(condition.sort(), post))
+                .orderBy(PostListSortOrderSpecifiers.forPost(condition.sort(), post))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -227,17 +250,21 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
     }
 
     private BooleanBuilder buildPostListWhere(
-            String boardCode,
+            @Nullable String boardCode,
             PostSearchCondition condition,
             QPost post) {
         BooleanBuilder where = new BooleanBuilder();
-        where.and(post.board.code.eq(boardCode));
+        if (boardCode != null) {
+            where.and(post.board.code.eq(boardCode));
+        } else {
+            where.and(post.board.active.isTrue());
+        }
         where.and(post.deletedAt.isNull());
 
         if (condition.hasKeyword()) {
-            String escapedKeyword = escapeLikeWildcard(condition.keyword());
-            BooleanExpression keywordMatch = likeIgnoreCaseWithEscape(post.title, escapedKeyword)
-                    .or(likeIgnoreCaseWithEscape(post.content, escapedKeyword));
+            String escapedKeyword = QuerydslLikeExpressions.escapeLikeWildcard(condition.keyword());
+            BooleanExpression keywordMatch = QuerydslLikeExpressions.likeIgnoreCaseContains(post.title, escapedKeyword)
+                    .or(QuerydslLikeExpressions.likeIgnoreCaseContains(post.content, escapedKeyword));
             QPostTag keywordPostTag = new QPostTag("keywordPostTag");
             QTag keywordTag = new QTag("keywordTag");
             BooleanExpression tagKeywordMatch = JPAExpressions.selectOne()
@@ -245,7 +272,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                     .join(keywordPostTag.tag, keywordTag)
                     .where(
                             keywordPostTag.post.eq(post),
-                            likeIgnoreCaseWithEscape(keywordTag.name, escapedKeyword)
+                            QuerydslLikeExpressions.likeIgnoreCaseContains(keywordTag.name, escapedKeyword)
                     )
                     .exists();
             keywordMatch = keywordMatch.or(tagKeywordMatch);
@@ -266,40 +293,5 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         }
 
         return where;
-    }
-
-    private OrderSpecifier<?>[] toOrderSpecifiers(PostListSort sort, QPost post) {
-        List<OrderSpecifier<?>> specifiers = new ArrayList<>();
-        if (sort == PostListSort.VIEWS) {
-            specifiers.add(post.viewCount.desc());
-            specifiers.add(post.createdAt.desc());
-        } else if (sort == PostListSort.LIKES) {
-            specifiers.add(post.likeCount.desc());
-            specifiers.add(post.createdAt.desc());
-        } else {
-            specifiers.add(post.createdAt.desc());
-        }
-        specifiers.add(post.id.desc());
-        return specifiers.toArray(new OrderSpecifier<?>[0]);
-    }
-
-    private static String escapeLikeWildcard(String value) {
-        if (value == null || value.isEmpty()) {
-            return value;
-        }
-        return value
-                .replace("!", "!!")
-                .replace("%", "!%")
-                .replace("_", "!_");
-    }
-
-    private static BooleanExpression likeIgnoreCaseWithEscape(
-            com.querydsl.core.types.dsl.StringExpression expr,
-            String escapedKeyword) {
-        return Expressions.booleanTemplate(
-                "LOWER({0}) LIKE LOWER(CONCAT('%', {1}, '%')) ESCAPE '!'",
-                expr,
-                escapedKeyword
-        );
     }
 }

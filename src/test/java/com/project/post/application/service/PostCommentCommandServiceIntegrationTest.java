@@ -1,8 +1,7 @@
 package com.project.post.application.service;
 
-import com.project.global.error.BusinessException;
-import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.PostCommentRequest;
+import com.project.post.domain.exception.PostDomainException;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.PostComment;
@@ -63,9 +62,7 @@ class PostCommentCommandServiceIntegrationTest {
         PostCommentRequest request = new PostCommentRequest("reply", 20L);
 
         assertThatThrownBy(() -> postCommentCommandService.create(1L, request, user))
-                .isInstanceOf(BusinessException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.INVALID_INPUT);
+                .isInstanceOf(PostDomainException.class);
     }
 
     private static Post buildPost(Long id, Board board, User author, String title) {

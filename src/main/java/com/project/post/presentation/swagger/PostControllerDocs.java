@@ -35,7 +35,16 @@ public interface PostControllerDocs {
             @NotBlank @NonNull String code,
             @Parameter(description = "검색 키워드 (제목/본문/태그 부분 일치)") String keyword,
             @Parameter(description = "태그 필터 (복수 가능)") List<String> tags,
-            @Parameter(description = "정렬 기준 (latest: 최신, views: 조회수, likes: 좋아요)") String order,
+            @Parameter(description = "정렬 기준 (latest: 최신, views: 조회수만, likes: 좋아요만, popular: 좋아요+조회수 합·인기)") String order,
+            @NonNull Pageable pageable,
+            @Parameter(hidden = true) @OptionalSessionUser Optional<User> optionalViewer);
+
+    @Operation(summary = "전체 게시판 게시글 목록", description = "활성 게시판(GENERAL, LECTURE, PROMOTION 등)에 속한 게시글을 게시판 구분 없이 한 목록으로 페이징 조회합니다. 정렬: latest(최신), views(조회수), likes(좋아요), popular(좋아요+조회수 합·인기). 검색·태그 필터는 게시판별 목록과 동일합니다.")
+    @ApiResponse(responseCode = "200", description = "성공")
+    ResponseEntity<CommonResponse<PostPageResponse<PostListResponse>>> getListAllBoards(
+            @Parameter(description = "검색 키워드 (제목/본문/태그 부분 일치)") String keyword,
+            @Parameter(description = "태그 필터 (복수 가능)") List<String> tags,
+            @Parameter(description = "정렬 기준 (latest: 최신, views: 조회수만, likes: 좋아요만, popular: 좋아요+조회수 합·인기)") String order,
             @NonNull Pageable pageable,
             @Parameter(hidden = true) @OptionalSessionUser Optional<User> optionalViewer);
 

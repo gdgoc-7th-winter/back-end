@@ -68,7 +68,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/", "/index.html", "/css/**", "/js/**").permitAll()
                         // 비로그인 허용: 학과 목록 조회
                         .requestMatchers(HttpMethod.GET, "/api/v1/departments").permitAll()
-                        // 비로그인 허용: 메인 홈 게시글 목록/상세 조회
+                        // 비로그인 허용: 게시글 목록·댓글 목록 등 (게시글 본문 상세는 인증 필요)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/posts").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/boards/*/posts").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/*/comments").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/*/comments/*/comments").permitAll()

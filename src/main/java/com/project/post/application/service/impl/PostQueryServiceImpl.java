@@ -51,17 +51,41 @@ public class PostQueryServiceImpl implements PostQueryService {
         boardRepository.findByCodeAndActiveTrue(boardCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시판을 찾을 수 없습니다."));
 
-        PostListSort sortType = PostListSort.from(order);
+        Pageable bounded = clampPageSize(pageable);
+        PostSearchCondition condition = buildPostSearchCondition(keyword, tagNames, order);
+        Page<PostListQueryResult> page = postRepository.findPostList(boardCode, bounded, condition);
+        return mapQueryPageToResponses(page, viewerUserId);
+    }
+
+    @Override
+    public Page<PostListResponse> getListAllBoards(
+            @NonNull Pageable pageable,
+            String keyword,
+            List<String> tagNames,
+            String order,
+            @Nullable Long viewerUserId) {
+        Pageable bounded = clampPageSize(pageable);
+        PostSearchCondition condition = buildPostSearchCondition(keyword, tagNames, order);
+        Page<PostListQueryResult> page = postRepository.findPostListAllActiveBoards(bounded, condition);
+        return mapQueryPageToResponses(page, viewerUserId);
+    }
+
+    private static Pageable clampPageSize(Pageable pageable) {
         int pageSize = Math.min(pageable.getPageSize(), PostConstants.MAX_PAGE_SIZE);
-        Pageable safePageable = PageRequest.of(pageable.getPageNumber(), pageSize);
+        return PageRequest.of(pageable.getPageNumber(), pageSize);
+    }
 
-        PostSearchCondition condition = new PostSearchCondition(
-                keyword,
-                tagNames,
-                sortType
-        );
+    private static PostSearchCondition buildPostSearchCondition(
+            String keyword,
+            List<String> tagNames,
+            String order) {
+        PostListSort sortType = PostListSort.from(order);
+        return new PostSearchCondition(keyword, tagNames, sortType);
+    }
 
-        Page<PostListQueryResult> page = postRepository.findPostList(boardCode, safePageable, condition);
+    private Page<PostListResponse> mapQueryPageToResponses(
+            Page<PostListQueryResult> page,
+            @Nullable Long viewerUserId) {
         List<Long> postIds = page.getContent().stream().map(PostListQueryResult::postId).toList();
         Map<Long, Long> authorByPostId = page.getContent().stream()
                 .collect(Collectors.toMap(PostListQueryResult::postId, PostListQueryResult::authorId));

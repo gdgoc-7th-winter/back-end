@@ -70,6 +70,19 @@ public class PostController implements PostControllerDocs {
     }
 
     @Override
+    @GetMapping("/posts")
+    public ResponseEntity<CommonResponse<PostPageResponse<PostListResponse>>> getListAllBoards(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, name = "tags") List<String> tags,
+            @RequestParam(required = false, defaultValue = "latest") String order,
+            @ParameterObject @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) @NonNull Pageable pageable,
+            @OptionalSessionUser Optional<User> optionalViewer) {
+        Page<PostListResponse> list = postQueryService.getListAllBoards(
+                pageable, keyword, tags, order, ViewerUserId.from(optionalViewer));
+        return ResponseEntity.ok(CommonResponse.ok(PostPageResponse.of(list)));
+    }
+
+    @Override
     @GetMapping("/posts/{postId}")
     public ResponseEntity<CommonResponse<PostDetailResponse>> getDetail(
             @PathVariable @Positive @NonNull Long postId,
