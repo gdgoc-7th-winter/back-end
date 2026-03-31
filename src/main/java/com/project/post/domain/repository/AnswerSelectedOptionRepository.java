@@ -11,4 +11,5 @@ public interface AnswerSelectedOptionRepository extends JpaRepository<AnswerSele
     void deleteAllByRecruitingApplicationAnswerApplicationSubmissionId(Long applicationSubmissionId);
 
     List<AnswerSelectedOption> findAllByRecruitingApplicationAnswerId(Long recruitingApplicationAnswerId);
+    List<AnswerSelectedOption> findAllByRecruitingApplicationAnswerIdIn(List<Long> answerIds);
 }

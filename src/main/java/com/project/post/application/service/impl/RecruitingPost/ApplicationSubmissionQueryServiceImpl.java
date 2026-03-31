@@ -37,6 +37,8 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -71,24 +73,31 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
         List<RecruitingApplicationAnswer> answers =
                 recruitingApplicationAnswerRepository.findAllByApplicationSubmissionId(submissionId);
 
-        List<ApplicationSubmissionAnswerResponse> answerResponses = answers.stream()
-                .map(answer -> {
-                    List<Long> selectedOptionIds =
-                            answerSelectedOptionRepository.findAllByRecruitingApplicationAnswerId(answer.getId())
-                                    .stream()
-                                    .map(selectedOption -> selectedOption.getQuestionOption().getId())
-                                    .toList();
+        List<Long> answerIds = answers.stream()
+                .map(RecruitingApplicationAnswer::getId)
+                .toList();
 
-                    return new ApplicationSubmissionAnswerResponse(
-                            answer.getQuestion().getId(),
-                            answer.getQuestion().getContent(),
-                            answer.getQuestion().getType(),
-                            answer.getQuestion().isRequired(),
-                            answer.getQuestion().getSortOrder(),
-                            answer.getAnswer(),
-                            selectedOptionIds
-                    );
-                })
+        Map<Long, List<Long>> selectedOptionIdsMap = answerSelectedOptionRepository
+                .findAllByRecruitingApplicationAnswerIdIn(answerIds)
+                .stream()
+                .collect(Collectors.groupingBy(
+                        selectedOption -> selectedOption.getRecruitingApplicationAnswer().getId(),
+                        Collectors.mapping(
+                                selectedOption -> selectedOption.getQuestionOption().getId(),
+                                Collectors.toList()
+                        )
+                ));
+
+        List<ApplicationSubmissionAnswerResponse> answerResponses = answers.stream()
+                .map(answer -> new ApplicationSubmissionAnswerResponse(
+                        answer.getQuestion().getId(),
+                        answer.getQuestion().getContent(),
+                        answer.getQuestion().getType(),
+                        answer.getQuestion().isRequired(),
+                        answer.getQuestion().getSortOrder(),
+                        answer.getAnswer(),
+                        selectedOptionIdsMap.getOrDefault(answer.getId(), List.of())
+                ))
                 .toList();
 
         return new ApplicationSubmissionDetailResponse(
