@@ -45,6 +45,7 @@ public class ContributionServiceImpl implements ContributionService {
                         cmd.referenceId(),
                         cmd.activityType(),
                         cmd.revokeReasonToken());
+                default -> throw new IllegalStateException("Unexpected command kind: " + cmd.kind());
             }
         }
     }

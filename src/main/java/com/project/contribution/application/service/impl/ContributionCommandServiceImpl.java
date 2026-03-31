@@ -52,7 +52,8 @@ public class ContributionCommandServiceImpl implements ContributionCommandServic
         User user = userRepository.findActiveByIdLean(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "회원 정보가 없습니다."));
         ContributionScore contributionScore = contributionScoreRepository.findByCode(scoreCode)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND, "해당 코드의 점수 항목을 찾을 수 없습니다: " + scoreCode));
 
         String idempotencyKey = IdempotencyKeys.grant(user.getId(), contributionScore.getId(), referenceId);
         if (userContributionRepository.existsByIdempotencyKey(idempotencyKey)) {
@@ -90,7 +91,8 @@ public class ContributionCommandServiceImpl implements ContributionCommandServic
         User user = userRepository.findActiveByIdLean(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "회원 정보가 없습니다."));
         ContributionScore contributionScore = contributionScoreRepository.findByCode(scoreCode)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND, "회수할 점수 항목을 찾을 수 없습니다: " + scoreCode));
 
         String grantKey = IdempotencyKeys.grant(userId, contributionScore.getId(), referenceId);
         if (!userContributionRepository.existsByIdempotencyKey(grantKey)) {
