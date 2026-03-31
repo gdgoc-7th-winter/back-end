@@ -27,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Instant;
 
@@ -84,7 +85,12 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                 .department(department)
                 .build();
 
-        ApplicationSubmission savedSubmission = applicationSubmissionRepository.save(submission);
+        ApplicationSubmission savedSubmission;
+        try {
+            savedSubmission = applicationSubmissionRepository.save(submission);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorCode.ALREADY_APPLIED);
+        }
 
         if (request.getAnswers() == null || request.getAnswers().isEmpty()) {
             return savedSubmission.getId();
