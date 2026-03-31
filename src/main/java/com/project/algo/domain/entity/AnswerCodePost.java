@@ -68,6 +68,7 @@ public class AnswerCodePost extends SoftDeleteEntity {
     @Column(name = "tag", length = 50)
     private List<AlgorithmTag> algorithmTags = new ArrayList<>();
 
+    @Builder.Default
     @Column(name = "like_count", nullable = false)
     private long likeCount = 0L;
 
