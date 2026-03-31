@@ -20,6 +20,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
+import java.util.Objects;
 
 @Entity
 @Table(name = "application_submissions")
@@ -52,8 +53,8 @@ public class ApplicationSubmission extends SoftDeleteEntity {
     private Instant submittedAt;
 
     public void updateApplicantInfo(String applicantName, Campus campus, Department department) {
-        this.applicantName = applicantName;
-        this.campus = campus;
-        this.department = department;
+        this.applicantName = Objects.requireNonNull(applicantName, "applicantName must not be null");
+        this.campus = Objects.requireNonNull(campus, "campus must not be null");
+        this.department = Objects.requireNonNull(department, "department must not be null");
     }
 }
