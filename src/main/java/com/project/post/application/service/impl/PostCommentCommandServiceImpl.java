@@ -6,7 +6,6 @@ import com.project.post.application.dto.PostCommentRequest;
 import com.project.post.application.service.PostCommentCommandService;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.PostComment;
-import com.project.post.domain.exception.PostDomainException;
 import com.project.post.domain.repository.PostCommentRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
@@ -32,19 +31,11 @@ public class PostCommentCommandServiceImpl implements PostCommentCommandService 
 
         PostComment comment;
         if (request.parentCommentId() == null) {
-            try {
-                comment = PostComment.createRoot(post, user, request.content());
-            } catch (PostDomainException | NullPointerException ex) {
-                throw new BusinessException(ErrorCode.INVALID_INPUT, ex.getMessage());
-            }
+            comment = PostComment.createRoot(post, user, request.content());
         } else {
             PostComment parent = commentRepository.findActiveById(request.parentCommentId())
                     .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "부모 댓글을 찾을 수 없습니다."));
-            try {
-                comment = PostComment.createReply(post, user, parent, request.content());
-            } catch (PostDomainException | NullPointerException ex) {
-                throw new BusinessException(ErrorCode.INVALID_INPUT, ex.getMessage());
-            }
+            comment = PostComment.createReply(post, user, parent, request.content());
         }
 
         PostComment savedComment = commentRepository.save(Objects.requireNonNull(comment));

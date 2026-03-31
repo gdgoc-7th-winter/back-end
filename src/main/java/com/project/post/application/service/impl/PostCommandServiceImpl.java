@@ -9,7 +9,6 @@ import com.project.post.application.service.PostCommandService;
 import com.project.post.application.service.PostTagService;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
-import com.project.post.domain.exception.PostDomainException;
 import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
@@ -59,15 +58,11 @@ public class PostCommandServiceImpl implements PostCommandService {
             throw new BusinessException(ErrorCode.ACCESS_DENIED, "수정 권한이 없습니다.");
         }
 
-        try {
-            post.update(
-                    request.title(),
-                    request.content(),
-                    request.thumbnailUrl()
-            );
-        } catch (PostDomainException ex) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, ex.getMessage());
-        }
+        post.update(
+                request.title(),
+                request.content(),
+                request.thumbnailUrl()
+        );
 
         postTagService.replaceTags(post, request.tagNames());
         postAttachmentService.replaceAttachments(post, request.attachments());

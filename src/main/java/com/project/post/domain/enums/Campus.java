@@ -1,6 +1,7 @@
 package com.project.post.domain.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.project.post.domain.exception.PostDomainException;
 
 public enum Campus {
 
@@ -29,6 +30,6 @@ public enum Campus {
                 return campus;
             }
         }
-        throw new IllegalArgumentException("유효하지 않은 캠퍼스입니다: " + value);
+        throw new PostDomainException("유효하지 않은 캠퍼스입니다: " + value);
     }
 }

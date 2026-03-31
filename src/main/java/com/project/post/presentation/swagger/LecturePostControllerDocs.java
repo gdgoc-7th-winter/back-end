@@ -41,7 +41,7 @@ public interface LecturePostControllerDocs {
             @Parameter(description = "태그 필터 (복수 가능)") List<String> tags,
             @Parameter(description = "캠퍼스 필터 (SEOUL: 서울, GLOBAL: 글로벌)") Campus campus,
             @Parameter(description = "학과 필터 (복수 가능)") List<String> departments,
-            @Parameter(description = "정렬 기준 (latest: 최신, views: 조회수, likes: 좋아요)") String order,
+            @Parameter(description = "정렬 기준 (latest: 최신, views: 조회수만, likes: 좋아요만, popular: 좋아요+조회수 합·인기)") String order,
             @NonNull Pageable pageable,
             @Parameter(hidden = true) @OptionalSessionUser Optional<User> optionalViewer
     );

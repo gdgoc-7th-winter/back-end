@@ -5,12 +5,13 @@ import com.project.post.domain.entity.QPost;
 import com.project.post.domain.entity.QPostAttachment;
 import com.project.post.domain.entity.QPostTag;
 import com.project.post.domain.entity.QTag;
-import com.project.post.domain.enums.PostListSort;
 import com.project.post.domain.repository.LecturePostRepositoryCustom;
 import com.project.post.domain.repository.dto.LecturePostDetailQueryResult;
 import com.project.post.domain.repository.dto.LecturePostListQueryResult;
 import com.project.post.domain.repository.dto.LecturePostSearchCondition;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
+import com.project.post.domain.repository.querydsl.PostListSortOrderSpecifiers;
+import com.project.post.domain.repository.querydsl.QuerydslLikeExpressions;
 import com.project.user.domain.repository.querydsl.UserRepresentativeTrackExpressions;
 import com.project.user.domain.repository.querydsl.UserWithdrawnExpressions;
 import com.project.user.domain.entity.QDepartment;
@@ -19,10 +20,8 @@ import com.project.user.domain.entity.QUser;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Expression;
-import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -87,7 +86,7 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
                 .leftJoin(user.department, department)
                 .leftJoin(user.levelBadge, levelBadge)
                 .where(where)
-                .orderBy(toOrderSpecifiers(condition.sort(), post))
+                .orderBy(PostListSortOrderSpecifiers.forPost(condition.sort(), post))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -191,6 +190,7 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
             QLecturePost lecturePost) {
 
         BooleanBuilder where = new BooleanBuilder();
+        where.and(post.board.active.isTrue());
         where.and(post.board.code.eq(BOARD_CODE));
         where.and(post.deletedAt.isNull());
         where.and(lecturePost.deletedAt.isNull());
@@ -204,10 +204,10 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
         }
 
         if (condition.hasKeyword()) {
-            String escapedKeyword = escapeLikeWildcard(condition.keyword());
-            BooleanExpression keywordMatch = likeIgnoreCaseWithEscape(post.title, escapedKeyword)
-                    .or(likeIgnoreCaseWithEscape(post.content, escapedKeyword))
-                    .or(likeIgnoreCaseWithEscape(lecturePost.department, escapedKeyword));
+            String escapedKeyword = QuerydslLikeExpressions.escapeLikeWildcard(condition.keyword());
+            BooleanExpression keywordMatch = QuerydslLikeExpressions.likeIgnoreCaseContains(post.title, escapedKeyword)
+                    .or(QuerydslLikeExpressions.likeIgnoreCaseContains(post.content, escapedKeyword))
+                    .or(QuerydslLikeExpressions.likeIgnoreCaseContains(lecturePost.department, escapedKeyword));
 
             BooleanExpression campusMatch = buildCampusKeywordMatch(condition.keyword());
             if (campusMatch != null) {
@@ -221,7 +221,7 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
                     .join(keywordPostTag.tag, keywordTag)
                     .where(
                             keywordPostTag.post.eq(post),
-                            likeIgnoreCaseWithEscape(keywordTag.name, escapedKeyword)
+                            QuerydslLikeExpressions.likeIgnoreCaseContains(keywordTag.name, escapedKeyword)
                     )
                     .exists();
             keywordMatch = keywordMatch.or(tagKeywordMatch);
@@ -285,40 +285,5 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
                 .where(attachment.post.id.eq(postId))
                 .orderBy(attachment.sortOrder.asc())
                 .fetch());
-    }
-
-    private OrderSpecifier<?>[] toOrderSpecifiers(PostListSort sort, QPost post) {
-        List<OrderSpecifier<?>> specifiers = new ArrayList<>();
-        if (sort == PostListSort.VIEWS) {
-            specifiers.add(post.viewCount.desc());
-            specifiers.add(post.createdAt.desc());
-        } else if (sort == PostListSort.LIKES) {
-            specifiers.add(post.likeCount.desc());
-            specifiers.add(post.createdAt.desc());
-        } else {
-            specifiers.add(post.createdAt.desc());
-        }
-        specifiers.add(post.id.desc());
-        return specifiers.toArray(new OrderSpecifier<?>[0]);
-    }
-
-    private static String escapeLikeWildcard(String value) {
-        if (value == null || value.isEmpty()) {
-            return value;
-        }
-        return value
-                .replace("!", "!!")
-                .replace("%", "!%")
-                .replace("_", "!_");
-    }
-
-    private static BooleanExpression likeIgnoreCaseWithEscape(
-            com.querydsl.core.types.dsl.StringExpression expr,
-            String escapedKeyword) {
-        return Expressions.booleanTemplate(
-                "LOWER({0}) LIKE LOWER(CONCAT('%', {1}, '%')) ESCAPE '!'",
-                expr,
-                escapedKeyword
-        );
     }
 }

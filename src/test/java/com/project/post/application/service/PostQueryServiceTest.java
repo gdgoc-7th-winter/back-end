@@ -154,6 +154,27 @@ class PostQueryServiceTest {
         assertThat(result.getContent().get(0).viewer()).isEqualTo(PostViewerResponse.guest());
     }
 
+    @Test
+    @DisplayName("전체 게시판 목록은 게시판 검증 없이 활성 게시판 전체 레포지토리를 호출한다")
+    void getListAllBoardsCallsRepositoryWithoutBoardLookup() {
+        Page<PostListQueryResult> queryPage = new PageImpl<>(Objects.requireNonNull(List.of(
+                new PostListQueryResult(1L, "t", "thumb", 1L, "nick", null, null, null, null, false, 0, 0, 0, 0, Instant.now())
+        )));
+        PostSearchCondition condition = new PostSearchCondition(null, null, PostListSort.LATEST);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(postRepository.findPostListAllActiveBoards(pageable, condition)).thenReturn(queryPage);
+        when(postTagQueryService.getTagNamesByPostIds(List.of(1L))).thenReturn(
+                java.util.Map.of(1L, List.of("java")));
+        when(postViewerStateService.resolveForPosts(isNull(), eq(List.of(1L)), eq(Map.of(1L, 1L)))).thenReturn(
+                Map.of(1L, PostViewerResponse.guest()));
+
+        Page<PostListResponse> result = postQueryService.getListAllBoards(PageRequest.of(0, 10), null, null, null, null);
+
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).postId()).isEqualTo(1L);
+        verifyNoInteractions(boardRepository);
+    }
+
     // ── 탈퇴 사용자가 게시글 작성자인 경우 ──────────────────────────────────────
 
     /**
