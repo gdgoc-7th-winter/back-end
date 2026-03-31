@@ -207,9 +207,10 @@ public class UserServiceImpl implements UserService {
         );
 
         if (!user.needsInitialSetup()) {
+            // 기여 지급이 같은 TX에서 실패할 수 있으므로, 성공한 뒤에만 권한·세션 갱신
+            contributionFacade.grantOnProfileInitialSetupCompleted(user.getId(), user.getId());
             user.grantUserAuthority();
             updateSecurityContext(user.getId());
-            contributionFacade.grantOnProfileInitialSetupCompleted(user.getId(), user.getId());
         }
     }
 
