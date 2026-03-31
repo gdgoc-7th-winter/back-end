@@ -154,7 +154,8 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
                         result.authorProfileImgUrl(),
                         result.authorDepartmentName(),
                         result.authorRepresentativeTrackName(),
-                        result.authorLevelImageUrl()
+                        result.authorLevelImageUrl(),
+                        result.authorIsWithdrawn()
                 ),
                 result.viewCount(),
                 result.likeCount(),

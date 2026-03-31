@@ -49,6 +49,7 @@ public interface ApplicationSubmissionRepository
             dept.name,
             null,
             lb.levelImage,
+            case when author.deletedAt is null then false else true end,
             p.viewCount,
             p.likeCount,
             p.scrapCount,

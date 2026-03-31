@@ -22,6 +22,7 @@ public record AppliedRecruitingPostListQueryResult(
         String authorDepartmentName,
         String authorRepresentativeTrackName,
         String authorLevelImageUrl,
+        boolean authorIsWithdrawn,
 
         long viewCount,
         long likeCount,

@@ -191,7 +191,8 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
                                             result.authorProfileImgUrl(),
                                             result.authorDepartmentName(),
                                             result.authorRepresentativeTrackName(),
-                                            result.authorLevelImageUrl()
+                                            result.authorLevelImageUrl(),
+                                            result.authorIsWithdrawn()
                                     ),
                                     result.viewCount(),
                                     result.likeCount(),
