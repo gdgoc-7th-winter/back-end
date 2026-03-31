@@ -41,7 +41,8 @@ public enum ErrorCode {
     SUBMISSION_UPDATE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "R005", "모집 마감 후에는 지원서를 수정할 수 없습니다."),
     SUBMISSION_CANCEL_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "R006", "모집 마감 후에는 지원을 취소할 수 없습니다."),
     APPLICATION_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "R007", "현재는 지원할 수 없는 모집글입니다."),
-    RECRUITING_POST_DELETE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "R008", "지원자가 있는 모집글은 삭제할 수 없습니다.");
+    RECRUITING_POST_DELETE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "R008", "지원자가 있는 모집글은 삭제할 수 없습니다."),
+    MISSING_REQUIRED_ANSWER(HttpStatus.BAD_REQUEST, "R009", "필수 질문에 대한 답변이 누락되었습니다.");
 
     private final HttpStatus status;
     private final String code;

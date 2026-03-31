@@ -8,4 +8,5 @@ import java.util.List;
 public interface RecruitingQuestionRepository extends JpaRepository<RecruitingQuestion, Long> {
 
     List<RecruitingQuestion> findAllByRecruitingApplicationIdOrderBySortOrderAsc(Long recruitingApplicationId);
+
 }

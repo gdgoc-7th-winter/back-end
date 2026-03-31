@@ -30,6 +30,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -75,6 +79,8 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                         ErrorCode.RESOURCE_NOT_FOUND,
                         "존재하지 않는 학과입니다."
                 ));
+
+        validateRequiredAnswers(recruitingApplication, request.getAnswers());
 
         ApplicationSubmission submission = ApplicationSubmission.builder()
                 .recruitingApplication(recruitingApplication)
@@ -171,6 +177,8 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                         "존재하지 않는 학과입니다."
                 ));
 
+        validateRequiredAnswers(recruitingApplication, request.getAnswers());
+
         submission.updateApplicantInfo(
                 request.getApplicantName(),
                 request.getCampus(),
@@ -248,5 +256,46 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
         }
 
         submission.softDelete();
+    }
+
+    private void validateRequiredAnswers(RecruitingApplication recruitingApplication,
+                                         List<AnswerRequest> answerRequests) {
+
+        List<RecruitingQuestion> questions =
+                recruitingQuestionRepository.findAllByRecruitingApplicationIdOrderBySortOrderAsc(
+                        recruitingApplication.getId()
+                );
+
+        Map<Long, AnswerRequest> answerRequestMap = new HashMap<>();
+        if (answerRequests != null) {
+            for (AnswerRequest answerRequest : answerRequests) {
+                answerRequestMap.put(answerRequest.getQuestionId(), answerRequest);
+            }
+        }
+
+        for (RecruitingQuestion question : questions) {
+            AnswerRequest answerRequest = answerRequestMap.get(question.getId());
+
+            if (!question.isRequired()) {
+                continue;
+            }
+
+            if (answerRequest == null) {
+                throw new BusinessException(ErrorCode.MISSING_REQUIRED_ANSWER);
+            }
+
+            boolean hasTextAnswer =
+                    answerRequest.getAnswer() != null && !answerRequest.getAnswer().trim().isEmpty();
+
+            boolean hasSelectedOptions =
+                    answerRequest.getSelectedOptionIds() != null && !answerRequest.getSelectedOptionIds().isEmpty();
+
+            // 주관식 필수인데 텍스트 없음
+            // 객관식 필수인데 선택지 없음
+            // 둘 다 비어 있으면 무조건 실패
+            if (!hasTextAnswer && !hasSelectedOptions) {
+                throw new BusinessException(ErrorCode.MISSING_REQUIRED_ANSWER);
+            }
+        }
     }
 }
