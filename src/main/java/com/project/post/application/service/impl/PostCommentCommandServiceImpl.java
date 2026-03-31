@@ -7,11 +7,13 @@ import com.project.post.application.service.PostCommentCommandService;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.PostComment;
 import com.project.contribution.application.dto.ActivityContext;
+import com.project.contribution.application.event.ContributionActivityEvent;
 import com.project.contribution.application.service.ContributionFacade;
 import com.project.post.domain.repository.PostCommentRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,7 @@ public class PostCommentCommandServiceImpl implements PostCommentCommandService 
     private final PostRepository postRepository;
     private final PostCommentRepository commentRepository;
     private final ContributionFacade contributionFacade;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @Transactional
@@ -67,7 +70,8 @@ public class PostCommentCommandServiceImpl implements PostCommentCommandService 
 
         long commentAuthorId = comment.getUser().getId();
         long cid = comment.getId();
-        contributionFacade.applyActivity(ActivityContext.commentDeleted(commentAuthorId, cid));
         comment.softDelete();
+        applicationEventPublisher.publishEvent(
+                new ContributionActivityEvent(ActivityContext.commentDeleted(commentAuthorId, cid)));
     }
 }

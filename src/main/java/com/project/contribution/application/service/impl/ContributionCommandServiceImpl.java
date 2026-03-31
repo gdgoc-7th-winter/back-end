@@ -1,44 +1,31 @@
 package com.project.contribution.application.service.impl;
 
 import com.project.contribution.application.service.ContributionCommandService;
+import com.project.contribution.application.service.support.ContributionLedgerAppender;
+import com.project.contribution.application.service.support.GrantAppendResult;
+import com.project.contribution.application.service.support.RevokeAppendResult;
+import com.project.contribution.application.service.support.UserPointBalanceApplier;
 import com.project.contribution.domain.entity.ContributionScore;
-import com.project.contribution.domain.entity.UserContribution;
 import com.project.contribution.domain.repository.ContributionScoreRepository;
-import com.project.contribution.domain.repository.UserContributionRepository;
-import com.project.contribution.domain.support.IdempotencyKeys;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.global.event.ActivityType;
 import com.project.user.application.dto.EarnScoreResult;
-import com.project.user.domain.entity.LevelBadge;
 import com.project.user.domain.entity.User;
 import com.project.user.domain.repository.UserRepository;
-import com.project.user.domain.service.LevelBadgeResolver;
-import com.project.user.event.UserPointChangeEvent;
-
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.hibernate.exception.ConstraintViolationException;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.util.Locale;
-import java.util.Objects;
-
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ContributionCommandServiceImpl implements ContributionCommandService {
 
     private final UserRepository userRepository;
-    private final UserContributionRepository userContributionRepository;
     private final ContributionScoreRepository contributionScoreRepository;
-    private final LevelBadgeResolver levelBadgeResolver;
-    private final ApplicationEventPublisher eventPublisher;
+    private final ContributionLedgerAppender ledgerAppender;
+    private final UserPointBalanceApplier userPointBalanceApplier;
 
     @Override
     @Transactional
@@ -55,29 +42,13 @@ public class ContributionCommandServiceImpl implements ContributionCommandServic
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.RESOURCE_NOT_FOUND, "해당 코드의 점수 항목을 찾을 수 없습니다: " + scoreCode));
 
-        String idempotencyKey = IdempotencyKeys.grant(user.getId(), contributionScore.getId(), referenceId);
-        if (userContributionRepository.existsByIdempotencyKey(idempotencyKey)) {
-            return new EarnScoreResult(user, false);
-        }
-
-        UserContribution contribution = UserContribution.grant(
-                user, contributionScore, referenceId, Instant.now(), activityType, idempotencyKey);
-
-        try {
-            userContributionRepository.save(contribution);
-            userContributionRepository.flush();
-        } catch (DataIntegrityViolationException e) {
-            if (isDuplicateIdempotencyKey(e)) {
-                log.debug("Idempotent duplicate user_contribution ignored: {}", idempotencyKey);
-                return new EarnScoreResult(user, false);
-            }
-            log.error("Unexpected error during ledger save for score {}: {}",
-                    contributionScore.getCode(), e.getMessage());
-            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "작업 실행 중 오류가 발생했습니다. 관리팀에 문의주세요.");
+        GrantAppendResult grantAppend = ledgerAppender.appendGrant(user, contributionScore, referenceId, activityType);
+        if (grantAppend.isSkip()) {
+            return new EarnScoreResult(grantAppend.skippedWithUser().orElseThrow(), false);
         }
 
         int delta = contributionScore.getPoint();
-        return applyPointsAndFinish(userId, user, delta, contributionScore.getCode());
+        return userPointBalanceApplier.applyDelta(userId, delta, contributionScore.getCode());
     }
 
     @Override
@@ -94,73 +65,13 @@ public class ContributionCommandServiceImpl implements ContributionCommandServic
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.RESOURCE_NOT_FOUND, "회수할 점수 항목을 찾을 수 없습니다: " + scoreCode));
 
-        String grantKey = IdempotencyKeys.grant(userId, contributionScore.getId(), referenceId);
-        if (!userContributionRepository.existsByIdempotencyKey(grantKey)) {
-            log.info("skip revoke — no matching GRANT ledger: userId={}, code={}, ref={}", userId, scoreCode, referenceId);
-            return new EarnScoreResult(user, false);
+        RevokeAppendResult revokeAppend = ledgerAppender.appendRevoke(
+                user, contributionScore, referenceId, activityType, revokeReasonToken);
+        if (revokeAppend.isSkip()) {
+            return new EarnScoreResult(revokeAppend.skippedWithUser().orElseThrow(), false);
         }
 
-        String revokeKey = IdempotencyKeys.revoke(userId, contributionScore.getId(), referenceId, revokeReasonToken);
-        if (userContributionRepository.existsByIdempotencyKey(revokeKey)) {
-            return new EarnScoreResult(user, false);
-        }
-
-        UserContribution contribution = UserContribution.revoke(
-                user, contributionScore, referenceId, Instant.now(), activityType, revokeKey);
-
-        try {
-            userContributionRepository.save(contribution);
-            userContributionRepository.flush();
-        } catch (DataIntegrityViolationException e) {
-            if (isDuplicateIdempotencyKey(e)) {
-                log.debug("Idempotent duplicate revoke ignored: {}", revokeKey);
-                return new EarnScoreResult(user, false);
-            }
-            log.error("Unexpected error during revoke ledger for score {}: {}",
-                    contributionScore.getCode(), e.getMessage());
-            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "작업 실행 중 오류가 발생했습니다. 관리팀에 문의주세요.");
-        }
-
-        int delta = -Math.abs(contributionScore.getPoint());
-        return applyPointsAndFinish(userId, user, delta, contributionScore.getCode());
-    }
-
-    private EarnScoreResult applyPointsAndFinish(Long userId, User userBefore, int delta, String scoreCodeForLog) {
-        int updatedRows = userRepository.addTotalPoints(userId, delta);
-        if (updatedRows == 0) {
-            log.warn("total_point update skipped or insufficient: userId={}, delta={}, code={}", userId, delta, scoreCodeForLog);
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "점수를 반영할 수 없습니다. 총점이 부족하거나 회원 상태를 확인해 주세요.");
-        }
-
-        User userAfter = userRepository.findActiveByIdLean(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-        applyLevelIfNeeded(userAfter);
-
-        eventPublisher.publishEvent(new UserPointChangeEvent(userAfter.getId(), userAfter.getTotalPoint()));
-        return new EarnScoreResult(userAfter, true);
-    }
-
-    private void applyLevelIfNeeded(User user) {
-        LevelBadge resolved = levelBadgeResolver.resolveForTotalPoints(user.getTotalPoint());
-        LevelBadge current = user.getLevelBadge();
-        if (current == null) {
-            user.updateBadge(resolved);
-            return;
-        }
-        if (!Objects.equals(current.getId(), resolved.getId())) {
-            user.updateBadge(resolved);
-        }
-    }
-
-    private static boolean isDuplicateIdempotencyKey(DataIntegrityViolationException e) {
-        Throwable cause = e.getMostSpecificCause();
-        if (cause instanceof ConstraintViolationException cve) {
-            String name = cve.getConstraintName();
-            if (name != null && name.toLowerCase(Locale.ROOT).contains("idempotency")) {
-                return true;
-            }
-        }
-        String msg = cause.getMessage();
-        return msg != null && msg.toLowerCase(Locale.ROOT).contains("idempotency");
+        int delta = -revokeAppend.actualRevokeMagnitude();
+        return userPointBalanceApplier.applyDelta(userId, delta, contributionScore.getCode());
     }
 }

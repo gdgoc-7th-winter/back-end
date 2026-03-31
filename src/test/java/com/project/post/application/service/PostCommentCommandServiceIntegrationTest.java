@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
@@ -92,6 +93,11 @@ class PostCommentCommandServiceIntegrationTest {
         @Bean
         ContributionFacade contributionFacade() {
             return Mockito.mock(ContributionFacade.class);
+        }
+
+        @Bean
+        ApplicationEventPublisher applicationEventPublisher() {
+            return Mockito.mock(ApplicationEventPublisher.class);
         }
     }
 }

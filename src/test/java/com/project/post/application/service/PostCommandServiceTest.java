@@ -7,6 +7,7 @@ import com.project.post.application.dto.PostUpdateRequest;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
 import com.project.contribution.application.dto.ActivityContext;
+import com.project.contribution.application.event.ContributionActivityEvent;
 import com.project.contribution.application.service.ContributionFacade;
 import com.project.post.application.service.impl.PostCommandServiceImpl;
 import com.project.post.domain.repository.BoardRepository;
@@ -20,6 +21,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -50,6 +52,9 @@ class PostCommandServiceTest {
 
     @Mock
     private ContributionFacade contributionFacade;
+
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @InjectMocks
     private PostCommandServiceImpl postCommandService;
@@ -201,13 +206,13 @@ class PostCommandServiceTest {
         postCommandService.softDelete(1L, author);
 
         assertThat(post.isDeleted()).isTrue();
-        verify(contributionFacade)
-                .applyActivity(
+        verify(applicationEventPublisher)
+                .publishEvent(
                         argThat(
-                                (ActivityContext c) ->
-                                        c.activityType() == ActivityType.POST_DELETED
-                                                && c.subjectUserId() == 1L
-                                                && c.referenceId() == 1L));
+                                (ContributionActivityEvent e) ->
+                                        e.context().activityType() == ActivityType.POST_DELETED
+                                                && e.context().subjectUserId() == 1L
+                                                && e.context().referenceId() == 1L));
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.project.post.application.service.impl;
 
 import com.project.contribution.application.dto.ActivityContext;
+import com.project.contribution.application.event.ContributionActivityEvent;
 import com.project.contribution.application.service.ContributionFacade;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
@@ -12,6 +13,7 @@ import com.project.post.domain.repository.PostRepository;
 import com.project.post.domain.repository.PostLikeRepository;
 import com.project.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,7 @@ public class PostLikeServiceImpl implements PostLikeService {
     private final PostRepository postRepository;
     private final PostLikeRepository postLikeRepository;
     private final ContributionFacade contributionFacade;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @Transactional
@@ -63,8 +66,6 @@ public class PostLikeServiceImpl implements PostLikeService {
         }
 
         PostLike like = likeOpt.get();
-        contributionFacade.applyActivity(ActivityContext.likeCancelled(authorId, like.getId(), user.getId()));
-
         int deleted = postLikeRepository.deleteByPostIdAndUserId(postId, user.getId());
         if (deleted > 0) {
             int updated = postRepository.decrementLikeCount(postId);
@@ -72,6 +73,8 @@ public class PostLikeServiceImpl implements PostLikeService {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다.");
             }
         }
+        applicationEventPublisher.publishEvent(
+                new ContributionActivityEvent(ActivityContext.likeCancelled(authorId, like.getId(), user.getId())));
         long count = postRepository.findLikeCountById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
         return new LikeScrapToggleResponse(false, count);

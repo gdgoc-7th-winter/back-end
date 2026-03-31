@@ -73,9 +73,12 @@ public class UserContribution extends AuditEntity {
                 .build();
     }
 
+    /**
+     * @param revokeMagnitudePositive 회수하려는 점수(양수). 총점보다 크면 원장에는 실제로 깎인 양만 반영한다.
+     */
     public static UserContribution revoke(User user, ContributionScore contributionScore, Long referenceId,
-            Instant occurredAt, ActivityType activityType, String idempotencyKey) {
-        int magnitude = Math.abs(contributionScore.getPoint());
+            Instant occurredAt, ActivityType activityType, String idempotencyKey, int revokeMagnitudePositive) {
+        int magnitude = Math.max(0, revokeMagnitudePositive);
         return UserContribution.builder()
                 .user(user)
                 .contributionScore(contributionScore)

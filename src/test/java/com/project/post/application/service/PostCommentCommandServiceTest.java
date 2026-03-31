@@ -7,6 +7,7 @@ import com.project.post.domain.exception.PostDomainException;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
 import com.project.contribution.application.dto.ActivityContext;
+import com.project.contribution.application.event.ContributionActivityEvent;
 import com.project.contribution.application.service.ContributionFacade;
 import com.project.global.event.ActivityType;
 import com.project.post.domain.entity.PostComment;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
@@ -44,6 +46,9 @@ class PostCommentCommandServiceTest {
 
     @Mock
     private ContributionFacade contributionFacade;
+
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @InjectMocks
     private PostCommentCommandServiceImpl postCommentCommandService;
@@ -136,13 +141,13 @@ class PostCommentCommandServiceTest {
         assertThat(comment.isDeleted()).isTrue();
         assertThat(comment.getContent()).isNull();
         verify(postRepository, never()).decrementCommentCount(1L);
-        verify(contributionFacade)
-                .applyActivity(
+        verify(applicationEventPublisher)
+                .publishEvent(
                         argThat(
-                                (ActivityContext c) ->
-                                        c.activityType() == ActivityType.COMMENT_DELETED
-                                                && c.subjectUserId() == 1L
-                                                && c.referenceId() == 100L));
+                                (ContributionActivityEvent e) ->
+                                        e.context().activityType() == ActivityType.COMMENT_DELETED
+                                                && e.context().subjectUserId() == 1L
+                                                && e.context().referenceId() == 100L));
     }
 
     private static User buildUser(Long id, String nickname) {
