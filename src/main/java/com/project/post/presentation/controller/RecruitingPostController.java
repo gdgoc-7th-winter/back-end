@@ -3,8 +3,25 @@ package com.project.post.presentation.controller;
 import com.project.global.annotation.CurrentUser;
 import com.project.global.response.CommonResponse;
 import com.project.post.application.dto.PostCreateResponse;
-import com.project.post.application.dto.RecruitingPost.*;
-import com.project.post.application.service.*;
+import com.project.post.application.dto.RecruitingPost.RecruitingPostCreateRequest;
+import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionCreateResponse;
+import com.project.post.application.dto.RecruitingPost.SubmitApplicationRequest;
+import com.project.post.application.dto.RecruitingPost.RecruitingPostDetailResponse;
+import com.project.post.application.dto.RecruitingPost.ApplicationFormDetailResponse;
+import com.project.post.application.dto.RecruitingPost.RecruitingPostUpdateRequest;
+import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionUpdateRequest;
+import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionDetailResponse;
+import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionListResponse;
+import com.project.post.application.dto.RecruitingPost.MyRecruitingPostListResponse;
+import com.project.post.application.dto.RecruitingPost.AppliedRecruitingPostListResponse;
+import com.project.post.application.dto.RecruitingPost.RecruitingPostListResponse;
+
+import com.project.post.application.service.RecruitingPostCommandService;
+import com.project.post.application.service.RecruitingApplicationCommandService;
+import com.project.post.application.service.RecruitingPostQueryService;
+import com.project.post.application.service.ApplicationFormQueryService;
+import com.project.post.application.service.ApplicationSubmissionQueryService;
+
 import com.project.post.domain.enums.Campus;
 import com.project.post.domain.enums.RecruitingCategory;
 import com.project.post.presentation.swagger.RecruitingPostControllerDocs;
@@ -16,7 +33,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 @RestController
 @RequestMapping("/api/v1")

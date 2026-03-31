@@ -1,7 +1,5 @@
 package com.project.post.application.dto.RecruitingPost;
 
-import com.project.post.domain.entity.RecruitingPost;
-import com.project.post.domain.entity.Post;
 import com.project.post.domain.enums.RecruitingStatus;
 import com.project.post.domain.enums.RecruitingCategory;
 

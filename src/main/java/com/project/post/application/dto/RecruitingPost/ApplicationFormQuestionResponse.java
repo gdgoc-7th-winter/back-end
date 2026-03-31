@@ -1,6 +1,5 @@
 package com.project.post.application.dto.RecruitingPost;
 
-import com.project.post.domain.entity.RecruitingPost;
 import com.project.post.domain.entity.RecruitingQuestion;
 import com.project.post.domain.enums.RecruitingQuestionType;
 
