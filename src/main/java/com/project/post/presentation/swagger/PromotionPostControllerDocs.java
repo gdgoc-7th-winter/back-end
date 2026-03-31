@@ -24,46 +24,46 @@ import org.springframework.lang.NonNull;
 
 import java.util.Optional;
 
-@Tag(name = "Promotion Post", description = "홍보글 API")
+@Tag(name = "Promotion Post", description = "동아리/행사/홍보 게시글 API")
 public interface PromotionPostControllerDocs {
 
-    @Operation(summary = "홍보글 작성", description = "새 홍보글을 작성합니다.")
+    @Operation(summary = "동아리/행사/홍보 게시글 작성", description = "새 동아리/행사/홍보 게시글을 작성합니다.")
     @ApiResponse(responseCode = "201", description = "생성됨")
     @ApiResponse(responseCode = "401", description = "인증 필요")
     ResponseEntity<CommonResponse<PostCreateResponse>> create(
-            @RequestBody(description = "홍보글 작성 요청") @Valid @NonNull PromotionPostCreateRequest request,
+            @RequestBody(description = "동아리/행사/홍보 게시글 작성 요청") @Valid @NonNull PromotionPostCreateRequest request,
             @Parameter(hidden = true) @NonNull User user
     );
 
-    @Operation(summary = "홍보글 상세 조회", description = "홍보글 ID로 상세 정보를 조회합니다. 로그인 시 post.viewer.liked / post.viewer.scrapped / post.viewer.isAuthor 에 현재 사용자 기준 상태가 포함됩니다.")
+    @Operation(summary = "동아리/행사/홍보 게시글 상세 조회", description = "동아리/행사/홍보 게시글 ID로 상세 정보를 조회합니다. 로그인 시 post.viewer.liked / post.viewer.scrapped / post.viewer.isAuthor 에 현재 사용자 기준 상태가 포함됩니다.")
     @ApiResponse(responseCode = "200", description = "성공")
     ResponseEntity<CommonResponse<PromotionPostDetailResponse>> getDetail(
-            @Parameter(description = "홍보글 ID") @Positive @NonNull Long postId,
+            @Parameter(description = "동아리/행사/홍보 게시글 ID") @Positive @NonNull Long postId,
             @Parameter(hidden = true) @OptionalSessionUser Optional<User> optionalViewer
     );
 
-    @Operation(summary = "홍보글 목록 조회", description = "홍보글 목록을 페이징하여 조회합니다. 카테고리로 필터링할 수 있습니다. 로그인 시 post.viewer에 현재 사용자 기준 좋아요·스크랩·작성자 여부가 포함됩니다.")
+    @Operation(summary = "동아리/행사/홍보 게시글 목록 조회", description = "동아리/행사/홍보 게시글 목록을 페이징하여 조회합니다. 카테고리로 필터링할 수 있습니다. 로그인 시 post.viewer에 현재 사용자 기준 좋아요·스크랩·작성자 여부가 포함됩니다.")
     @ApiResponse(responseCode = "200", description = "성공")
     ResponseEntity<CommonResponse<PostPageResponse<PromotionPostListResponse>>> getList(
-            @Parameter(description = "홍보 카테고리") PromotionCategory category,
+            @Parameter(description = "동아리/행사/홍보 카테고리") PromotionCategory category,
             @ParameterObject @Parameter(description = "페이지 정보 (page: 페이지 번호, size: 페이지 크기, sort: 정렬)") @NonNull Pageable pageable,
             @Parameter(hidden = true) @OptionalSessionUser Optional<User> optionalViewer
     );
 
-    @Operation(summary = "홍보글 수정", description = "홍보글을 수정합니다.")
+    @Operation(summary = "동아리/행사/홍보 게시글 수정", description = "동아리/행사/홍보 게시글을 수정합니다.")
     @ApiResponse(responseCode = "200", description = "성공")
     @ApiResponse(responseCode = "401", description = "인증 필요")
     ResponseEntity<CommonResponse<Void>> update(
-            @Parameter(description = "홍보글 ID") @Positive @NonNull Long postId,
-            @RequestBody(description = "홍보글 수정 요청") @Valid @NonNull PromotionPostUpdateRequest request,
+            @Parameter(description = "동아리/행사/홍보 게시글 ID") @Positive @NonNull Long postId,
+            @RequestBody(description = "동아리/행사/홍보 게시글 수정 요청") @Valid @NonNull PromotionPostUpdateRequest request,
             @Parameter(hidden = true) @NonNull User user
     );
 
-    @Operation(summary = "홍보글 삭제", description = "홍보글을 소프트 삭제합니다.")
+    @Operation(summary = "동아리/행사/홍보 게시글 삭제", description = "동아리/행사/홍보 게시글을 소프트 삭제합니다.")
     @ApiResponse(responseCode = "200", description = "성공")
     @ApiResponse(responseCode = "401", description = "인증 필요")
     ResponseEntity<CommonResponse<Void>> delete(
-            @Parameter(description = "홍보글 ID") @Positive @NonNull Long postId,
+            @Parameter(description = "동아리/행사/홍보 게시글 ID") @Positive @NonNull Long postId,
             @Parameter(hidden = true) @NonNull User user
     );
 }
