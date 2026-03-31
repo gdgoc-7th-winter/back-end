@@ -71,6 +71,9 @@ public class PostQueryServiceImpl implements PostQueryService {
     }
 
     private static Pageable clampPageSize(Pageable pageable) {
+        if (!pageable.isPaged()) {
+            return PageRequest.of(0, PostConstants.MAX_PAGE_SIZE);
+        }
         int pageSize = Math.min(pageable.getPageSize(), PostConstants.MAX_PAGE_SIZE);
         return PageRequest.of(pageable.getPageNumber(), pageSize);
     }

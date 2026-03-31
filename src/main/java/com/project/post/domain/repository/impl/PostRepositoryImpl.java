@@ -254,10 +254,9 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
             PostSearchCondition condition,
             QPost post) {
         BooleanBuilder where = new BooleanBuilder();
+        where.and(post.board.active.isTrue());
         if (boardCode != null) {
             where.and(post.board.code.eq(boardCode));
-        } else {
-            where.and(post.board.active.isTrue());
         }
         where.and(post.deletedAt.isNull());
 

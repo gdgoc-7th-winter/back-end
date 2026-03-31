@@ -190,6 +190,7 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
             QLecturePost lecturePost) {
 
         BooleanBuilder where = new BooleanBuilder();
+        where.and(post.board.active.isTrue());
         where.and(post.board.code.eq(BOARD_CODE));
         where.and(post.deletedAt.isNull());
         where.and(lecturePost.deletedAt.isNull());
