@@ -119,7 +119,22 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
                 recruitingPostRepository
                         .findAllByPostAuthorIdAndDeletedAtIsNullAndPostDeletedAtIsNullOrderByCreatedAtDesc(userId)
                         .stream()
-                        .map(MyRecruitingPostSummaryResponse::from)
+                        .map(recruitingPost -> new MyRecruitingPostSummaryResponse(
+                                recruitingPost.getId(),
+                                recruitingPost.getPost().getTitle(),
+                                recruitingPost.getPost().getThumbnailUrl(),
+                                recruitingPost.getPost().getContent(),
+                                recruitingPost.getPost().getAuthor().getNickname(),
+                                recruitingPost.getPost().getViewCount(),
+                                recruitingPost.getPost().getLikeCount(),
+                                recruitingPost.getPost().getCommentCount(),
+                                recruitingPost.getPost().getCreatedAt(),
+                                calculateStatus(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt()),
+                                calculateStatusLabel(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt()),
+                                recruitingPost.getCategory(),
+                                recruitingPost.getStartedAt(),
+                                recruitingPost.getDeadlineAt()
+                        ))
                         .toList()
         );
     }

@@ -18,27 +18,9 @@ public record MyRecruitingPostSummaryResponse(
         Long commentCount,
         Instant createdAt,
         RecruitingStatus status,
+        String statusLabel,
         RecruitingCategory category,
         Instant startedAt,
         Instant deadlineAt
 ) {
-    public static MyRecruitingPostSummaryResponse from(RecruitingPost recruitingPost) {
-        Post post = recruitingPost.getPost();
-
-        return new MyRecruitingPostSummaryResponse(
-                recruitingPost.getId(),
-                post.getTitle(),
-                post.getThumbnailUrl(),
-                post.getContent(),
-                post.getAuthor().getNickname(),
-                post.getViewCount(),
-                post.getLikeCount(),
-                post.getCommentCount(),
-                post.getCreatedAt(),
-                recruitingPost.getStatus(),
-                recruitingPost.getCategory(),
-                recruitingPost.getStartedAt(),
-                recruitingPost.getDeadlineAt()
-        );
-    }
 }
