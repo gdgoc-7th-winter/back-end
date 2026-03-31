@@ -1,9 +1,11 @@
 package com.project.user.domain.repository;
 
 import com.project.user.domain.entity.User;
-import org.springframework.data.repository.query.Param;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
@@ -29,4 +31,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.socialAccounts WHERE EXISTS (" +
             "SELECT 1 FROM u.socialAccounts s WHERE s.provider = :provider AND s.providerId = :providerId) AND u.deletedAt IS NULL")
     Optional<User> findByProviderAndProviderId(@Param("provider") String provider, @Param("providerId") String providerId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE User u SET u.totalPoint = u.totalPoint + :delta WHERE u.id = :userId AND u.deletedAt IS NULL")
+    int addTotalPoints(@Param("userId") Long userId, @Param("delta") int delta);
 }

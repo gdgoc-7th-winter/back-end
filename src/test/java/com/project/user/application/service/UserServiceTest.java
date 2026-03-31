@@ -1,9 +1,9 @@
 package com.project.user.application.service;
 
+import com.project.contribution.application.service.ContributionCommandService;
+import com.project.contribution.application.service.ContributionFacade;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
-import com.project.global.event.impl.UserPromotionEvent;
-
 import com.project.user.application.dto.UserSession;
 import com.project.user.application.service.impl.UserServiceImpl;
 import com.project.user.domain.entity.Department;
@@ -63,6 +63,8 @@ class UserServiceTest {
     @Mock private TrackRepository trackRepository;
     @Mock private TechStackRepository techStackRepository;
     @Mock private DepartmentRepository departmentRepository;
+    @Mock private ContributionFacade contributionFacade;
+    @Mock private ContributionCommandService contributionCommandService;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -124,7 +126,7 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("프로필 초기 설정 시 권한이 승급되고 이벤트가 발행된다")
+    @DisplayName("프로필 초기 설정 시 권한이 승급되고 초기 기여 지급(Facade)이 호출된다")
     void updateProfilePromotionSuccess() {
         try (MockedStatic<RequestContextHolder> mockedContext = mockStatic(RequestContextHolder.class)) {
             // given
@@ -158,7 +160,7 @@ class UserServiceTest {
             // then
             assertThat(user.getAuthority()).isEqualTo(Authority.USER);
             assertThat(user.needsInitialSetup()).isFalse();
-            verify(eventPublisher, times(1)).publishEvent(any(UserPromotionEvent.class));
+            verify(contributionFacade, times(1)).grantOnProfileInitialSetupCompleted(userId, userId);
         }
     }
 
