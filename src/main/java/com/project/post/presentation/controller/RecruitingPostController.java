@@ -7,6 +7,7 @@ import com.project.post.application.dto.RecruitingPost.*;
 import com.project.post.application.service.*;
 import com.project.post.domain.enums.Campus;
 import com.project.post.domain.enums.RecruitingCategory;
+import com.project.post.presentation.swagger.RecruitingPostControllerDocs;
 import com.project.user.domain.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1")
 @Validated
 @RequiredArgsConstructor
-public class RecruitingPostController {
+public class RecruitingPostController implements RecruitingPostControllerDocs {
 
     private final RecruitingPostCommandService recruitingPostCommandService;
     private final RecruitingApplicationCommandService recruitingApplicationCommandService;
