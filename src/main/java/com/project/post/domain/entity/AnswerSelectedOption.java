@@ -32,6 +32,26 @@ public class AnswerSelectedOption {
 
     public AnswerSelectedOption(RecruitingApplicationAnswer recruitingApplicationAnswer,
                                 RecruitingQuestionOption questionOption) {
+        if (recruitingApplicationAnswer == null) {
+            throw new IllegalArgumentException("recruitingApplicationAnswer must not be null");
+        }
+
+        if (questionOption == null) {
+            throw new IllegalArgumentException("questionOption must not be null");
+        }
+
+        if (recruitingApplicationAnswer.getId() == null) {
+            throw new IllegalArgumentException(
+                    "recruitingApplicationAnswer must be persisted before creating AnswerSelectedOption"
+            );
+        }
+
+        if (questionOption.getId() == null) {
+            throw new IllegalArgumentException(
+                    "questionOption must be persisted before creating AnswerSelectedOption"
+            );
+        }
+
         this.id = new AnswerSelectedOptionId(
                 recruitingApplicationAnswer.getId(),
                 questionOption.getId()
