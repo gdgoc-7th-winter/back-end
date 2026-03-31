@@ -1,6 +1,7 @@
 package com.project.post.application.dto.RecruitingPost;
 
 import com.project.post.domain.enums.Campus;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -13,6 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 public class SubmitApplicationRequest {
 
+    @Valid
     @NotEmpty(message = "답변은 필수입니다.")
     private List<AnswerRequest> answers;
 
