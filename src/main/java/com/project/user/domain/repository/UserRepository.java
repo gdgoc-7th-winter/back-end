@@ -37,6 +37,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByProviderAndProviderId(@Param("provider") String provider, @Param("providerId") String providerId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("UPDATE User u SET u.totalPoint = u.totalPoint + :delta WHERE u.id = :userId AND u.deletedAt IS NULL")
+    @Query("UPDATE User u SET u.totalPoint = u.totalPoint + :delta WHERE u.id = :userId AND u.deletedAt IS NULL "
+            + "AND (u.totalPoint + :delta) >= 0")
     int addTotalPoints(@Param("userId") Long userId, @Param("delta") int delta);
 }

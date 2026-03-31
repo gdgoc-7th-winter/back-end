@@ -6,6 +6,10 @@ import com.project.post.application.dto.PostCommentRequest;
 import com.project.post.domain.exception.PostDomainException;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
+import com.project.contribution.application.dto.ActivityContext;
+import com.project.contribution.application.event.ContributionActivityEvent;
+import com.project.contribution.application.service.ContributionFacade;
+import com.project.global.event.ActivityType;
 import com.project.post.domain.entity.PostComment;
 import com.project.post.application.service.impl.PostCommentCommandServiceImpl;
 import com.project.post.domain.repository.PostCommentRepository;
@@ -17,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
@@ -24,6 +29,7 @@ import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -37,6 +43,12 @@ class PostCommentCommandServiceTest {
 
     @Mock
     private PostCommentRepository commentRepository;
+
+    @Mock
+    private ContributionFacade contributionFacade;
+
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @InjectMocks
     private PostCommentCommandServiceImpl postCommentCommandService;
@@ -59,6 +71,13 @@ class PostCommentCommandServiceTest {
         assertThat(result).isEqualTo(10L);
         verify(commentRepository).save(notNull());
         verify(postRepository).incrementCommentCount(1L);
+        verify(contributionFacade)
+                .applyActivity(
+                        argThat(
+                                (ActivityContext c) ->
+                                        c.activityType() == ActivityType.COMMENT_WRITTEN
+                                                && c.subjectUserId() == 1L
+                                                && c.referenceId() == 10L));
     }
 
     @Test
@@ -122,6 +141,13 @@ class PostCommentCommandServiceTest {
         assertThat(comment.isDeleted()).isTrue();
         assertThat(comment.getContent()).isNull();
         verify(postRepository, never()).decrementCommentCount(1L);
+        verify(applicationEventPublisher)
+                .publishEvent(
+                        argThat(
+                                (ContributionActivityEvent e) ->
+                                        e.context().activityType() == ActivityType.COMMENT_DELETED
+                                                && e.context().subjectUserId() == 1L
+                                                && e.context().referenceId() == 100L));
     }
 
     private static User buildUser(Long id, String nickname) {

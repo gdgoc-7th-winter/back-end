@@ -9,10 +9,14 @@ import com.project.post.application.service.PostCommandService;
 import com.project.post.application.service.PostTagService;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
+import com.project.contribution.application.dto.ActivityContext;
+import com.project.contribution.application.event.ContributionActivityEvent;
+import com.project.contribution.application.service.ContributionFacade;
 import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +29,8 @@ public class PostCommandServiceImpl implements PostCommandService {
     private final PostRepository postRepository;
     private final PostTagService postTagService;
     private final PostAttachmentService postAttachmentService;
+    private final ContributionFacade contributionFacade;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @Transactional
@@ -44,6 +50,8 @@ public class PostCommandServiceImpl implements PostCommandService {
         postTagService.replaceTags(savedPost, request.tagNames());
         postAttachmentService.replaceAttachments(savedPost, request.attachments());
         postRepository.flush();
+
+        contributionFacade.applyActivity(ActivityContext.postCreated(author.getId(), savedPost.getId()));
 
         return savedPost;
     }
@@ -79,7 +87,10 @@ public class PostCommandServiceImpl implements PostCommandService {
             throw new BusinessException(ErrorCode.ACCESS_DENIED, "삭제 권한이 없습니다.");
         }
 
+        Long authorId = post.getAuthor().getId();
         post.softDelete();
+        applicationEventPublisher.publishEvent(
+                new ContributionActivityEvent(ActivityContext.postDeleted(authorId, postId)));
     }
 
     @Override

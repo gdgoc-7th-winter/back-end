@@ -11,23 +11,23 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
-public class NewFacePolicy implements ContributionPolicy {
+public class LikeContributionPolicy implements ContributionPolicy {
 
     @Override
     public boolean supports(ActivityType activityType) {
-        return activityType == ActivityType.PROFILE_SETUP_COMPLETED;
+        return activityType == ActivityType.LIKE_PRESSED;
     }
 
     @Override
     public List<ContributionPointCommand> evaluate(ActivityContext context) {
-        if (context.activityType() != ActivityType.PROFILE_SETUP_COMPLETED) {
+        if (context.activityType() != ActivityType.LIKE_PRESSED) {
             return List.of();
         }
         return List.of(ContributionPointCommand.grant(
                 context.subjectUserId(),
-                ContributionScoreCodes.NEW_FACE,
+                ContributionScoreCodes.LIKE_RECEIVED,
                 context.referenceId(),
-                context.activityType(),
+                ActivityType.LIKE_PRESSED,
                 context.occurredAt()));
     }
 }

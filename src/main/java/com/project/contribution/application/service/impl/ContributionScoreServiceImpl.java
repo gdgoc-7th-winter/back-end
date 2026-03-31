@@ -21,10 +21,11 @@ public class ContributionScoreServiceImpl implements ContributionScoreService {
     @Transactional(rollbackFor = BusinessException.class)
     public ContributionScore addScore(ScoreCreateRequest request) {
         try {
-            ContributionScore score = new ContributionScore(
-                    request.scoreName(),
-                    request.point()
-            );
+            ContributionScore score = ContributionScore.builder()
+                    .code(request.scoreCode())
+                    .name(request.scoreName())
+                    .point(request.point())
+                    .build();
             return scoreRepository.save(score);
         } catch (DataIntegrityViolationException e) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "데이터 무결성 위반 에러가 발생했습니다. 다른 인스턴스와 중복되는 부분이 존재하는 지 확인하십시오.");
@@ -52,7 +53,7 @@ public class ContributionScoreServiceImpl implements ContributionScoreService {
     @Transactional(rollbackFor = BusinessException.class)
     public ContributionScore editScore(Long id, ScoreUpdateRequest request) {
         ContributionScore score = scoreRepository.findById(id)
-                        .orElseThrow(()-> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "score not exists"));
+                .orElseThrow(()-> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "score not exists"));
         score.update(
                 request.scoreName(),
                 request.point()
