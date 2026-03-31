@@ -105,8 +105,8 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
     @Override
     @Transactional(readOnly = true)
     public ApplicationSubmissionListResponse getSubmissionList(
-            Long postId,
-            User user,
+            @NonNull Long postId,
+            @NonNull User user,
             Campus campus,
             Long departmentId,
             String applicantName,
