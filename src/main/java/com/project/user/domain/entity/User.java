@@ -1,14 +1,13 @@
 package com.project.user.domain.entity;
 
 import com.project.contribution.domain.entity.UserContribution;
+import com.project.global.entity.SoftDeleteEntity;
 import com.project.user.domain.enums.Authority;
 
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Table;
-import jakarta.persistence.Id;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.ManyToOne;
@@ -24,12 +23,10 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import org.hibernate.annotations.BatchSize;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -39,13 +36,13 @@ import java.util.Set;
 @Table(name = "users")
 @BatchSize(size = 16)
 @Getter
+@SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class User {
+@AttributeOverride(name = "id", column = @Column(name = "user_id"))
+public class User extends SoftDeleteEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="user_id")
-    private Long id;
+    // 탈퇴 시 비밀번호 치환에 사용하는 평문 표식
+    public static final String WITHDRAWN_PASSWORD_PLACEHOLDER = "WITHDRAWN_ACCOUNT_NO_LOGIN";
 
     // 프로필 사진 S3 url
     @Column(name = "profile_img_url", columnDefinition = "TEXT")
@@ -54,9 +51,10 @@ public class User {
     @Column(name = "user_email", nullable = false, unique = true)
     private String email;
 
-    @Column(name = "password",nullable = false)
+    @Column(name = "password", nullable = false)
     private String password;
 
+    @Builder.Default
     @ElementCollection
     @CollectionTable(
             name = "user_social_account",
@@ -65,7 +63,7 @@ public class User {
     )
     private Set<SocialAccount> socialAccounts = new HashSet<>();
 
-    @Column(name="nickname", length = 50)
+    @Column(name = "nickname", length = 50)
     private String nickname;
 
     @Column(name = "student_id", length = 20)
@@ -75,48 +73,34 @@ public class User {
     @JoinColumn(name = "department_id")
     private Department department;
 
+    @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserTrack> userTracks = new ArrayList<>();
 
-    // 2. 기술 스택 정보 (ElementCollection 대신 UserTechStack 엔티티 리스트로 관리)
+    @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserTechStack> userTechStacks = new ArrayList<>();
 
-    // 권한 레벨 (Dummy, User, Manager, Admin)
+    @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(name="authority", nullable = false, length = 30)
+    @Column(name = "authority", nullable = false, length = 30)
     private Authority authority = Authority.DUMMY;
 
+    @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserContribution> userContributions = new ArrayList<>();
 
+    @Builder.Default
     @Column(name = "total_point", nullable = false)
     private int totalPoint = 0;
 
     // 유저 레벨 뱃지 (객체 매핑)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="level_id")
+    @JoinColumn(name = "level_id")
     private LevelBadge levelBadge;
 
-    // 회원가입 시점
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
-
-    //프로필 정보 업데이트 시각 반영
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime updatedAt;
-
-    @Column(name = "introduction", nullable = true)
+    @Column(name = "introduction")
     private String introduction;
-
-    @Builder
-    public User(String email, String password, String nickname) {
-        this.email = email;
-        this.password = password;
-        this.nickname = nickname;
-    }
 
     public boolean needsInitialSetup() {
         return this.department == null || this.getUserTracks().isEmpty() || this.getStudentId() == null;
@@ -124,6 +108,10 @@ public class User {
 
     public void grantUserAuthority() {
         this.authority = Authority.USER;
+    }
+
+    public void grantAuthority(Authority authority) {
+        this.authority = authority;
     }
 
     public void updateProfile(String nickname, String studentId, Department department,
@@ -143,7 +131,7 @@ public class User {
 
         if (tracks != null) {
             this.userTracks.clear();
-            tracks.forEach(this::addUserTrack); // addUserTrack(Track track) 메서드 호출
+            tracks.forEach(this::addUserTrack);
         }
 
         if (profileImgUrl != null){
@@ -152,7 +140,7 @@ public class User {
 
         if (techStacks != null) {
             this.userTechStacks.clear();
-            techStacks.forEach(this::addTechStack); // addTechStack(TechStack techStack) 호출
+            techStacks.forEach(this::addTechStack);
         }
 
         if (introduction != null){
@@ -207,5 +195,17 @@ public class User {
         if (!alreadyExists) {
             this.socialAccounts.add(socialAccount);
         }
+    }
+
+    public void withdraw() {
+        softDelete();
+        this.email = "deleted_" + this.getId() + "@deleted.invalid";
+        this.nickname = null;
+        this.studentId = null;
+        this.profileImgUrl = null;
+        this.introduction = null;
+        this.socialAccounts.clear();
+        this.userTracks.clear();
+        this.userTechStacks.clear();
     }
 }

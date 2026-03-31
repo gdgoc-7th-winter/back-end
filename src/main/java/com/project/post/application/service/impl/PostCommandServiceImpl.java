@@ -9,7 +9,6 @@ import com.project.post.application.service.PostCommandService;
 import com.project.post.application.service.PostTagService;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
-import com.project.post.domain.exception.PostDomainException;
 import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
@@ -38,7 +37,7 @@ public class PostCommandServiceImpl implements PostCommandService {
                 .author(author)
                 .title(request.title())
                 .content(request.content())
-                .thumbnailUrl(request.thumbnailUrl())
+                .thumbnailUrl(normalizeBlank(request.thumbnailUrl()))
                 .build();
 
         Post savedPost = postRepository.save(post);
@@ -59,11 +58,11 @@ public class PostCommandServiceImpl implements PostCommandService {
             throw new BusinessException(ErrorCode.ACCESS_DENIED, "수정 권한이 없습니다.");
         }
 
-        try {
-            post.update(request.title(), request.content(), request.thumbnailUrl());
-        } catch (PostDomainException ex) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, ex.getMessage());
-        }
+        post.update(
+                request.title(),
+                request.content(),
+                request.thumbnailUrl()
+        );
 
         postTagService.replaceTags(post, request.tagNames());
         postAttachmentService.replaceAttachments(post, request.attachments());
@@ -90,5 +89,12 @@ public class PostCommandServiceImpl implements PostCommandService {
         if (updated == 0) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다.");
         }
+    }
+
+    private String normalizeBlank(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value;
     }
 }

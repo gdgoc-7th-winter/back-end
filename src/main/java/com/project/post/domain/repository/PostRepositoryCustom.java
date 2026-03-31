@@ -16,5 +16,9 @@ public interface PostRepositoryCustom {
             @NonNull Pageable pageable,
             @NonNull PostSearchCondition condition);
 
+    Page<PostListQueryResult> findPostListAllActiveBoards(
+            @NonNull Pageable pageable,
+            @NonNull PostSearchCondition condition);
+
     Optional<PostDetailQueryResult> findPostDetail(@NonNull Long postId);
 }

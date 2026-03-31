@@ -16,6 +16,7 @@ public record LecturePostDetailQueryResult(
         String authorDepartmentName,
         String authorRepresentativeTrackName,
         String authorTierBadgeImageUrl,
+        boolean authorWithdrawn,
         String department,
         Campus campus,
         long viewCount,

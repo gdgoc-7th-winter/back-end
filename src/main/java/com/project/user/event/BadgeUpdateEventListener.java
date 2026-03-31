@@ -27,7 +27,7 @@ public class BadgeUpdateEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePointChanged(UserPointChangeEvent event) {
-        User user = userRepository.findById(event.userId())
+        User user = userRepository.findActiveById(event.userId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "사용자 없음"));
 
         LevelBadge newBadge = levelBadgeRepository.findByPointWithinRange(user.getTotalPoint())

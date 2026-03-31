@@ -20,7 +20,8 @@ public record ProfileResponse(
         Authority authority,
         List<String> techStacks,
         String introduction,
-        Set<SocialAccount> socialAccounts
+        Set<SocialAccount> socialAccounts,
+        boolean isWithdrawn
 ) {
     public static ProfileResponse from(User user) {
         return new ProfileResponse(
@@ -29,7 +30,6 @@ public record ProfileResponse(
                 user.getStudentId(),
                 user.getDepartment() != null ? user.getDepartment().getCollege() : null,
                 user.getDepartment() != null ? user.getDepartment().getName() : null,
-                // UserTrack 엔티티 리스트에서 TrackEntity의 name(String)만 추출
                 user.getUserTracks().stream()
                         .map(ut -> ut.getTrack().getName())
                         .toList(),
@@ -37,12 +37,12 @@ public record ProfileResponse(
                 user.getLevelBadge() != null ? user.getLevelBadge().getLevelName() : null,
                 user.getProfileImgUrl(),
                 user.getAuthority(),
-                // UserTechStack 엔티티 리스트에서 TechStackEntity의 name(String)만 추출
                 user.getUserTechStacks().stream()
                         .map(uts -> uts.getTechStack().getName())
                         .toList(),
                 user.getIntroduction(),
-                user.getSocialAccounts()
+                user.getSocialAccounts(),
+                user.isDeleted()
         );
     }
 }

@@ -2,7 +2,7 @@ package com.project.post.application.service.impl;
 
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
-import com.project.post.application.dto.PostAuthorResponse;
+import com.project.post.application.mapper.PostAuthorMapper;
 import com.project.post.application.dto.PostDetailResponse;
 import com.project.post.application.dto.PostListResponse;
 import com.project.post.application.dto.PostViewerResponse;
@@ -51,17 +51,44 @@ public class PostQueryServiceImpl implements PostQueryService {
         boardRepository.findByCodeAndActiveTrue(boardCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시판을 찾을 수 없습니다."));
 
-        PostListSort sortType = PostListSort.from(order);
+        Pageable bounded = clampPageSize(pageable);
+        PostSearchCondition condition = buildPostSearchCondition(keyword, tagNames, order);
+        Page<PostListQueryResult> page = postRepository.findPostList(boardCode, bounded, condition);
+        return mapQueryPageToResponses(page, viewerUserId);
+    }
+
+    @Override
+    public Page<PostListResponse> getListAllBoards(
+            @NonNull Pageable pageable,
+            String keyword,
+            List<String> tagNames,
+            String order,
+            @Nullable Long viewerUserId) {
+        Pageable bounded = clampPageSize(pageable);
+        PostSearchCondition condition = buildPostSearchCondition(keyword, tagNames, order);
+        Page<PostListQueryResult> page = postRepository.findPostListAllActiveBoards(bounded, condition);
+        return mapQueryPageToResponses(page, viewerUserId);
+    }
+
+    private static Pageable clampPageSize(Pageable pageable) {
+        if (!pageable.isPaged()) {
+            return PageRequest.of(0, PostConstants.MAX_PAGE_SIZE);
+        }
         int pageSize = Math.min(pageable.getPageSize(), PostConstants.MAX_PAGE_SIZE);
-        Pageable safePageable = PageRequest.of(pageable.getPageNumber(), pageSize);
+        return PageRequest.of(pageable.getPageNumber(), pageSize);
+    }
 
-        PostSearchCondition condition = new PostSearchCondition(
-                keyword,
-                tagNames,
-                sortType
-        );
+    private static PostSearchCondition buildPostSearchCondition(
+            String keyword,
+            List<String> tagNames,
+            String order) {
+        PostListSort sortType = PostListSort.from(order);
+        return new PostSearchCondition(keyword, tagNames, sortType);
+    }
 
-        Page<PostListQueryResult> page = postRepository.findPostList(boardCode, safePageable, condition);
+    private Page<PostListResponse> mapQueryPageToResponses(
+            Page<PostListQueryResult> page,
+            @Nullable Long viewerUserId) {
         List<Long> postIds = page.getContent().stream().map(PostListQueryResult::postId).toList();
         Map<Long, Long> authorByPostId = page.getContent().stream()
                 .collect(Collectors.toMap(PostListQueryResult::postId, PostListQueryResult::authorId));
@@ -83,13 +110,7 @@ public class PostQueryServiceImpl implements PostQueryService {
                 result.postId(),
                 result.title(),
                 result.thumbnailUrl(),
-                PostAuthorResponse.fromParts(
-                        result.authorId(),
-                        result.authorNickname(),
-                        result.authorProfileImgUrl(),
-                        result.authorDepartmentName(),
-                        result.authorRepresentativeTrackName(),
-                        result.authorTierBadgeImageUrl()),
+                PostAuthorMapper.from(result),
                 result.viewCount(),
                 result.likeCount(),
                 result.scrapCount(),
@@ -137,13 +158,7 @@ public class PostQueryServiceImpl implements PostQueryService {
                 result.title(),
                 result.content(),
                 result.thumbnailUrl(),
-                PostAuthorResponse.fromParts(
-                        result.authorId(),
-                        result.authorNickname(),
-                        result.authorProfileImgUrl(),
-                        result.authorDepartmentName(),
-                        result.authorRepresentativeTrackName(),
-                        result.authorTierBadgeImageUrl()),
+                PostAuthorMapper.from(result),
                 result.viewCount(),
                 result.likeCount(),
                 result.scrapCount(),

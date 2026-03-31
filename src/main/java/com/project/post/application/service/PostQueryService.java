@@ -17,5 +17,12 @@ public interface PostQueryService {
             String order,
             @Nullable Long viewerUserId);
 
+    Page<PostListResponse> getListAllBoards(
+            @NonNull Pageable pageable,
+            String keyword,
+            List<String> tagNames,
+            String order,
+            @Nullable Long viewerUserId);
+
     PostDetailResponse getDetail(@NonNull Long postId, @Nullable Long viewerUserId);
 }

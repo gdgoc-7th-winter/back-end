@@ -1,9 +1,9 @@
-package com.project.global.event.Impl;
+package com.project.global.event.impl;
 
 import com.project.global.event.ActivityEvent;
 import com.project.global.event.ActivityType;
 
-public record CommentActivityEvent(Long userId, Long commentId) implements ActivityEvent {
+public record UserPromotionEvent(Long userId, Long profileId) implements ActivityEvent {
     @Override
     public Long getUserId() {
         return userId;
@@ -11,11 +11,11 @@ public record CommentActivityEvent(Long userId, Long commentId) implements Activ
 
     @Override
     public Long getReferenceId() {
-        return commentId;
+        return profileId;
     }
 
     @Override
     public ActivityType getActivityType() {
-        return ActivityType.COMMENT_WRITTEN;
+        return ActivityType.PROFILE_SETUP_COMPLETED;
     }
 }

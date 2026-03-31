@@ -5,27 +5,14 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 
 public record PageResponse<T>(
-        List<T> data,
+        List<T> items,
         PageMeta meta
 ) {
-
-    public record PageMeta(
-            int page,
-            int size,
-            long totalCount,
-            int totalPages
-    ) {
-    }
 
     public static <T> PageResponse<T> of(Page<T> page) {
         return new PageResponse<>(
                 page.getContent(),
-                new PageMeta(
-                        page.getNumber(),
-                        page.getSize(),
-                        page.getTotalElements(),
-                        page.getTotalPages()
-                )
+                PageMeta.from(page)
         );
     }
 }

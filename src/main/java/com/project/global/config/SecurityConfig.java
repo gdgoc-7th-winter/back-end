@@ -46,7 +46,8 @@ public class SecurityConfig {
                                 "/actuator/health", "/actuator/health/**", "/actuator/info",
                                 "/api/health", "/api/ping", "/api/v1/auth/**",
                                 "/swagger-ui/**", "/v3/api-docs/**", "/api/v1/users/signup", "/api/v1/users/login",
-                                "/login/oauth2/code/**"
+                                "/login/oauth2/code/**",
+                                "/api/v1/dev/**"
                         )
                 )
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -63,10 +64,15 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/users/signup", "/api/v1/users/login", "/api/v1/users/logout").permitAll()
                         // OAuth2 로그인 시작 (비로그인 사용자도 접근 가능)
                         .requestMatchers(HttpMethod.GET, "/api/v1/oauth2/login/**").permitAll()
+                        // 정적 리소스 (테스트 UI)
+                        .requestMatchers(HttpMethod.GET, "/", "/index.html", "/css/**", "/js/**").permitAll()
                         // 비로그인 허용: 학과 목록 조회
                         .requestMatchers(HttpMethod.GET, "/api/v1/departments").permitAll()
-                        // 비로그인 허용: 메인 홈 게시글 목록/상세 조회
+                        // 비로그인 허용: 게시글 목록·댓글 목록 등 (게시글 본문 상세는 인증 필요)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/posts").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/boards/*/posts").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/posts/*/comments").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/posts/*/comments/*/comments").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/lectures").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/lectures/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/promotions").permitAll()

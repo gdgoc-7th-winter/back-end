@@ -2,7 +2,8 @@ package com.project.user.application.service;
 
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
-import com.project.global.event.Impl.UserPromotionEvent;
+import com.project.global.event.impl.UserPromotionEvent;
+
 import com.project.user.application.dto.UserSession;
 import com.project.user.application.service.impl.UserServiceImpl;
 import com.project.user.domain.entity.Department;
@@ -12,16 +13,12 @@ import com.project.user.domain.entity.User;
 import com.project.user.domain.enums.Authority;
 
 import com.project.user.domain.repository.DepartmentRepository;
-import com.project.user.domain.repository.LevelBadgeRepository;
 import com.project.user.domain.repository.TechStackRepository;
 import com.project.user.domain.repository.TrackRepository;
 import com.project.user.domain.repository.UserRepository;
-import com.project.user.domain.repository.EmailAuthRepository;
 
 import com.project.user.presentation.dto.request.PasswordUpdateRequest;
 import com.project.user.presentation.dto.request.ProfileUpdateRequest;
-import com.project.contribution.domain.repository.ContributionScoreRepository;
-import com.project.contribution.domain.repository.UserContributionRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -48,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -65,10 +63,6 @@ class UserServiceTest {
     @Mock private TrackRepository trackRepository;
     @Mock private TechStackRepository techStackRepository;
     @Mock private DepartmentRepository departmentRepository;
-    @Mock private EmailAuthRepository emailAuthRepository;
-    @Mock private LevelBadgeRepository levelBadgeRepository;
-    @Mock private ContributionScoreRepository contributionScoreRepository;
-    @Mock private UserContributionRepository userContributionRepository;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -95,7 +89,7 @@ class UserServiceTest {
 
             String email = "test@hufs.ac.kr";
             String password = "password123";
-            User user = new User(email, "encodedPassword", "testuser");
+            User user = User.builder().email(email).password("encodedPassword").nickname("testuser").build();
 
             given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
             given(passwordEncoder.matches(password, user.getPassword())).willReturn(true);
@@ -118,7 +112,7 @@ class UserServiceTest {
             mockedContext.when(RequestContextHolder::currentRequestAttributes)
                     .thenReturn(new ServletRequestAttributes(request));
 
-            User user = new User("test@hufs.ac.kr", "encoded", "nick");
+            User user = User.builder().email("test@hufs.ac.kr").password("encoded").nickname("nick").build();
             given(userRepository.findByEmail(anyString())).willReturn(Optional.of(user));
             given(passwordEncoder.matches(anyString(), anyString())).willReturn(false);
 
@@ -138,7 +132,7 @@ class UserServiceTest {
                     .thenReturn(new ServletRequestAttributes(request));
 
             Long userId = 1L;
-            User user = new User("test@hufs.ac.kr", "pw", "nick");
+            User user = User.builder().email("test@hufs.ac.kr").password("pw").nickname("nick").build();
             ReflectionTestUtils.setField(user, "id", userId);
 
             Department mockDept = Department.builder().college("공과대학").name("컴퓨터공학").build();
@@ -153,7 +147,7 @@ class UserServiceTest {
                     .techStackNames(List.of("Spring"))
                     .build();
 
-            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(userRepository.findActiveById(userId)).willReturn(Optional.of(user));
             given(departmentRepository.findById(1L)).willReturn(Optional.of(mockDept));
             given(trackRepository.findByNameIn(anyList())).willReturn(List.of(mockTrack));
             given(techStackRepository.findByNameIn(anyList())).willReturn(List.of(mockTech));
@@ -175,14 +169,14 @@ class UserServiceTest {
         Long userId = 1L;
         String encodedCurrent = "encoded_currentPw";
         String encodedNew = "encoded_newPw123!";
-        User user = new User("test@hufs.ac.kr", encodedCurrent, "nick");
+        User user = User.builder().email("test@hufs.ac.kr").password(encodedCurrent).nickname("nick").build();
         ReflectionTestUtils.setField(user, "id", userId);
 
         PasswordUpdateRequest passwordUpdateRequest = new PasswordUpdateRequest();
         ReflectionTestUtils.setField(passwordUpdateRequest, "oldPassword", "currentPw");
         ReflectionTestUtils.setField(passwordUpdateRequest, "newPassword", "newPw123!");
 
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(userRepository.findActiveById(userId)).willReturn(Optional.of(user));
         given(passwordEncoder.matches("currentPw", encodedCurrent)).willReturn(true);
         given(passwordEncoder.encode("newPw123!")).willReturn(encodedNew);
 
@@ -201,14 +195,14 @@ class UserServiceTest {
         // given
         Long userId = 1L;
         String encodedCurrent = "encoded_correctPw";
-        User user = new User("test@hufs.ac.kr", encodedCurrent, "nick");
+        User user = User.builder().email("test@hufs.ac.kr").password(encodedCurrent).nickname("nick").build();
         ReflectionTestUtils.setField(user, "id", userId);
 
         PasswordUpdateRequest passwordUpdateRequest = new PasswordUpdateRequest();
         ReflectionTestUtils.setField(passwordUpdateRequest, "oldPassword", "wrongPw");
         ReflectionTestUtils.setField(passwordUpdateRequest, "newPassword", "newPw123!");
 
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(userRepository.findActiveById(userId)).willReturn(Optional.of(user));
         given(passwordEncoder.matches("wrongPw", encodedCurrent)).willReturn(false);
 
         // when & then
@@ -218,34 +212,67 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("회원 탈퇴 성공 - 유저가 삭제되고 세션이 무효화된다")
-    void deleteUserSuccess() {
+    @DisplayName("회원 탈퇴 성공 - soft delete 처리되고 세션이 무효화된다")
+    void deleteUserSoftDeletesUser() {
         try (MockedStatic<RequestContextHolder> mockedContext = mockStatic(RequestContextHolder.class)) {
             // given
             mockedContext.when(RequestContextHolder::currentRequestAttributes)
                     .thenReturn(new ServletRequestAttributes(request, response));
 
             Long userId = 1L;
-            User user = new User("test@hufs.ac.kr", "pw", "nick");
+            User user = User.builder().email("test@hufs.ac.kr").password("pw").nickname("nick").build();
             ReflectionTestUtils.setField(user, "id", userId);
 
-            given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            given(userRepository.findActiveById(userId)).willReturn(Optional.of(user));
+            given(passwordEncoder.encode(eq(User.WITHDRAWN_PASSWORD_PLACEHOLDER))).willReturn("encoded-withdrawn");
 
             // when
             userService.deleteUser(userId);
 
             // then
-            verify(userRepository, times(1)).delete(user);
+            assertThat(user.isDeleted()).isTrue();
+            verify(userRepository, never()).delete(any());
             assertThat(session.isInvalid()).isTrue();
         }
     }
 
     @Test
+    @DisplayName("회원 탈퇴 성공 - 개인정보가 마스킹된다")
+    void deleteUserMasksPersonalInfo() {
+        try (MockedStatic<RequestContextHolder> mockedContext = mockStatic(RequestContextHolder.class)) {
+            // given
+            mockedContext.when(RequestContextHolder::currentRequestAttributes)
+                    .thenReturn(new ServletRequestAttributes(request, response));
+
+            Long userId = 1L;
+            User user = User.builder().email("test@hufs.ac.kr").password("encodedPassword").nickname("홍길동").build();
+            ReflectionTestUtils.setField(user, "id", userId);
+            ReflectionTestUtils.setField(user, "studentId", "202001234");
+            ReflectionTestUtils.setField(user, "profileImgUrl", "https://s3.example.com/profile.jpg");
+            ReflectionTestUtils.setField(user, "introduction", "안녕하세요");
+
+            given(userRepository.findActiveById(userId)).willReturn(Optional.of(user));
+            given(passwordEncoder.encode(eq(User.WITHDRAWN_PASSWORD_PLACEHOLDER))).willReturn("encoded-withdrawn");
+
+            // when
+            userService.deleteUser(userId);
+
+            // then
+            assertThat(user.getEmail()).isEqualTo("deleted_" + userId + "@deleted.invalid");
+            assertThat(user.getNickname()).isEqualTo(null);
+            assertThat(user.getPassword()).isEqualTo("encoded-withdrawn");
+            assertThat(user.getStudentId()).isNull();
+            assertThat(user.getProfileImgUrl()).isNull();
+            assertThat(user.getIntroduction()).isNull();
+        }
+    }
+
+    @Test
     @DisplayName("회원 탈퇴 실패 - 존재하지 않는 유저")
-    void deleteUserFailNotFound() {
+    void deleteUserFailsWhenUserNotFound() {
         // given
         Long userId = 999L;
-        given(userRepository.findById(userId)).willReturn(Optional.empty());
+        given(userRepository.findActiveById(userId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> userService.deleteUser(userId))

@@ -114,7 +114,7 @@ class PostScrapServiceTest {
     }
 
     private static User buildUser(Long id) {
-        User user = new User("user@test.com", "pw", "testuser");
+        User user = User.builder().email("user@test.com").password("pw").nickname("testuser").build();
         ReflectionTestUtils.setField(user, "id", id);
         return user;
     }

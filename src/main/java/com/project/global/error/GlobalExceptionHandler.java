@@ -1,5 +1,6 @@
 package com.project.global.error;
 
+import com.project.post.domain.exception.PostDomainException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -19,7 +20,7 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = e.getErrorCode();
         return ResponseEntity
                 .status(errorCode.getStatus().value())
-                .body(ErrorResponse.of(errorCode));
+                .body(ErrorResponses.clientError(errorCode, e.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -43,7 +44,15 @@ public class GlobalExceptionHandler {
         log.warn("IllegalArgumentException: {}", e.getMessage());
         return ResponseEntity
                 .badRequest()
-                .body(ErrorResponse.of(ErrorCode.INVALID_INPUT, e.getMessage()));
+                .body(ErrorResponses.clientError(ErrorCode.INVALID_INPUT, e.getMessage()));
+    }
+
+    @ExceptionHandler(PostDomainException.class)
+    protected ResponseEntity<ErrorResponse> handlePostDomainException(PostDomainException e) {
+        log.warn("PostDomainException: {}", e.getMessage());
+        return ResponseEntity
+                .badRequest()
+                .body(ErrorResponses.clientError(ErrorCode.INVALID_INPUT, e.getMessage()));
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
@@ -53,7 +62,9 @@ public class GlobalExceptionHandler {
         log.warn("Method not allowed: {}", e.getMessage());
         return ResponseEntity
                 .status(ErrorCode.METHOD_NOT_ALLOWED.getStatus().value())
-                .body(ErrorResponse.of(ErrorCode.METHOD_NOT_ALLOWED));
+                .body(ErrorResponses.clientError(
+                        ErrorCode.METHOD_NOT_ALLOWED,
+                        ErrorCode.METHOD_NOT_ALLOWED.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
@@ -61,6 +72,6 @@ public class GlobalExceptionHandler {
         log.error("Unhandled exception: ", e);
         return ResponseEntity
                 .internalServerError()
-                .body(ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR));
+                .body(ErrorResponses.serverError(ErrorCode.INTERNAL_SERVER_ERROR));
     }
 }

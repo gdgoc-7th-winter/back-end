@@ -1,4 +1,8 @@
 # 운영 서버
+app:
+  openapi:
+    server-url: ${OPENAPI_SERVER_URL:https://api.hufs.dev}
+
 cloud:
   aws:
     s3:

@@ -3,6 +3,7 @@ package com.project.post.application.service;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.PostCommentRequest;
+import com.project.post.domain.exception.PostDomainException;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.PostComment;
@@ -41,7 +42,7 @@ class PostCommentCommandServiceTest {
     private PostCommentCommandServiceImpl postCommentCommandService;
 
     @Test
-    @DisplayName("루트 댓글 생성 시 댓글 수가 증가한다")
+    @DisplayName("최상위 댓글 생성 시 댓글 수가 증가한다")
     void createRootCommentIncrementsCount() {
         User user = buildUser(1L, "user");
         Post post = buildPost(1L, user);
@@ -61,7 +62,7 @@ class PostCommentCommandServiceTest {
     }
 
     @Test
-    @DisplayName("부모 댓글이 1단계 이상이면 대댓글 생성이 실패한다")
+    @DisplayName("부모 댓글이 1단계 이상이면 답글 생성이 실패한다")
     void createReplyFailsWhenParentDepthTooDeep() {
         User user = buildUser(1L, "user");
         Post post = buildPost(1L, user);
@@ -80,9 +81,7 @@ class PostCommentCommandServiceTest {
         when(commentRepository.findActiveById(20L)).thenReturn(Optional.of(parent));
 
         assertThatThrownBy(() -> postCommentCommandService.create(1L, request, user))
-                .isInstanceOf(BusinessException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.INVALID_INPUT);
+                .isInstanceOf(PostDomainException.class);
 
         verify(commentRepository, never()).save(notNull());
     }
@@ -126,7 +125,7 @@ class PostCommentCommandServiceTest {
     }
 
     private static User buildUser(Long id, String nickname) {
-        User user = new User("user@test.com", "pw", "testuser1");
+        User user = User.builder().email("user@test.com").password("pw").nickname("testuser1").build();
         ReflectionTestUtils.setField(user, "id", id);
         ReflectionTestUtils.setField(user, "nickname", nickname);
         return user;

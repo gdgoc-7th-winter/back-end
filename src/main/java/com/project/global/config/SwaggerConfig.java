@@ -2,20 +2,28 @@ package com.project.global.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.servers.Server;
+import java.util.List;
 import org.springdoc.core.models.GroupedOpenApi;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
 
 @Configuration
 public class SwaggerConfig {
 
     @Bean
-    public OpenAPI openAPI() {
-        return new OpenAPI()
+    public OpenAPI openAPI(@Value("${app.openapi.server-url:}") String serverUrl) {
+        OpenAPI api = new OpenAPI()
                 .info(new Info()
                         .title("Backend API")
                         .description("한국외대 개발자 커뮤니티 백엔드 API")
                         .version("v1.0.0"));
+        if (StringUtils.hasText(serverUrl)) {
+            api.setServers(List.of(new Server().url(serverUrl.trim()).description("API")));
+        }
+        return api;
     }
 
     @Bean

@@ -2,7 +2,7 @@ package com.project.post.presentation.swagger;
 
 import com.project.global.annotation.OptionalSessionUser;
 import com.project.global.response.CommonResponse;
-import com.project.global.response.PageResponse;
+import com.project.global.response.PostPageResponse;
 import com.project.post.application.dto.LikeScrapToggleResponse;
 import com.project.post.application.dto.PostCreateRequest;
 import com.project.post.application.dto.PostCreateResponse;
@@ -30,12 +30,21 @@ public interface PostControllerDocs {
 
     @Operation(summary = "게시글 목록 조회", description = "게시판 코드로 게시글 목록을 페이징하여 조회합니다. 목록 응답에 tagNames가 포함됩니다. 로그인 시 viewer.liked / viewer.scrapped / viewer.isAuthor 에 현재 사용자 기준 상태가 포함됩니다.")
     @ApiResponse(responseCode = "200", description = "성공")
-    ResponseEntity<CommonResponse<PageResponse<PostListResponse>>> getList(
+    ResponseEntity<CommonResponse<PostPageResponse<PostListResponse>>> getList(
             @Parameter(description = "게시판 코드. GENERAL(자유/정보), PROMOTION(동아리/행사/홍보), LECTURE(강의/수업)")
             @NotBlank @NonNull String code,
             @Parameter(description = "검색 키워드 (제목/본문/태그 부분 일치)") String keyword,
             @Parameter(description = "태그 필터 (복수 가능)") List<String> tags,
-            @Parameter(description = "정렬 기준 (latest: 최신, views: 조회수, likes: 좋아요)") String order,
+            @Parameter(description = "정렬 기준 (latest: 최신, views: 조회수만, likes: 좋아요만, popular: 좋아요+조회수 합·인기)") String order,
+            @NonNull Pageable pageable,
+            @Parameter(hidden = true) @OptionalSessionUser Optional<User> optionalViewer);
+
+    @Operation(summary = "전체 게시판 게시글 목록", description = "활성 게시판(GENERAL, LECTURE, PROMOTION 등)에 속한 게시글을 게시판 구분 없이 한 목록으로 페이징 조회합니다. 정렬: latest(최신), views(조회수), likes(좋아요), popular(좋아요+조회수 합·인기). 검색·태그 필터는 게시판별 목록과 동일합니다.")
+    @ApiResponse(responseCode = "200", description = "성공")
+    ResponseEntity<CommonResponse<PostPageResponse<PostListResponse>>> getListAllBoards(
+            @Parameter(description = "검색 키워드 (제목/본문/태그 부분 일치)") String keyword,
+            @Parameter(description = "태그 필터 (복수 가능)") List<String> tags,
+            @Parameter(description = "정렬 기준 (latest: 최신, views: 조회수만, likes: 좋아요만, popular: 좋아요+조회수 합·인기)") String order,
             @NonNull Pageable pageable,
             @Parameter(hidden = true) @OptionalSessionUser Optional<User> optionalViewer);
 

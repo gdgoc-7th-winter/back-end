@@ -2,7 +2,7 @@ package com.project.post.presentation.swagger;
 
 import com.project.global.annotation.OptionalSessionUser;
 import com.project.global.response.CommonResponse;
-import com.project.global.response.PageResponse;
+import com.project.global.response.PostPageResponse;
 import com.project.post.application.dto.LecturePost.LecturePostCreateRequest;
 import com.project.post.application.dto.LecturePost.LecturePostDetailResponse;
 import com.project.post.application.dto.LecturePost.LecturePostListResponse;
@@ -36,12 +36,12 @@ public interface LecturePostControllerDocs {
                     """
     )
     @ApiResponse(responseCode = "200", description = "성공")
-    ResponseEntity<CommonResponse<PageResponse<LecturePostListResponse>>> getList(
+    ResponseEntity<CommonResponse<PostPageResponse<LecturePostListResponse>>> getList(
             @Parameter(description = "검색 키워드 (제목/본문/학과/캠퍼스/태그 부분 일치)") String keyword,
             @Parameter(description = "태그 필터 (복수 가능)") List<String> tags,
             @Parameter(description = "캠퍼스 필터 (SEOUL: 서울, GLOBAL: 글로벌)") Campus campus,
             @Parameter(description = "학과 필터 (복수 가능)") List<String> departments,
-            @Parameter(description = "정렬 기준 (latest: 최신, views: 조회수, likes: 좋아요)") String order,
+            @Parameter(description = "정렬 기준 (latest: 최신, views: 조회수만, likes: 좋아요만, popular: 좋아요+조회수 합·인기)") String order,
             @NonNull Pageable pageable,
             @Parameter(hidden = true) @OptionalSessionUser Optional<User> optionalViewer
     );

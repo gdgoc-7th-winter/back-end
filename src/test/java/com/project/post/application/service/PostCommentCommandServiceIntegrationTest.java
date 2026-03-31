@@ -1,8 +1,7 @@
 package com.project.post.application.service;
 
-import com.project.global.error.BusinessException;
-import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.PostCommentRequest;
+import com.project.post.domain.exception.PostDomainException;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.PostComment;
@@ -44,7 +43,7 @@ class PostCommentCommandServiceIntegrationTest {
     @Test
     @DisplayName("부모 댓글이 다른 게시글에 속하면 댓글 생성이 실패한다")
     void createReplyFailsWhenParentBelongsToDifferentPost() {
-        User user = new User("user@test.com", "pw", "testuser");
+        User user = User.builder().email("user@test.com").password("pw").nickname("testuser").build();
         Board board = Board.of("general-it", "자유게시판");
         Post post = buildPost(1L, board, user, "title-1");
         Post otherPost = buildPost(2L, board, user, "title-2");
@@ -63,9 +62,7 @@ class PostCommentCommandServiceIntegrationTest {
         PostCommentRequest request = new PostCommentRequest("reply", 20L);
 
         assertThatThrownBy(() -> postCommentCommandService.create(1L, request, user))
-                .isInstanceOf(BusinessException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.INVALID_INPUT);
+                .isInstanceOf(PostDomainException.class);
     }
 
     private static Post buildPost(Long id, Board board, User author, String title) {

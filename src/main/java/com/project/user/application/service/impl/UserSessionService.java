@@ -25,7 +25,7 @@ public class UserSessionService {
         if (userSession == null) {
             throw new BusinessException(ErrorCode.SESSION_EXPIRED, "로그인이 필요합니다.");
         }
-        return userRepository.findById(userSession.getUserId())
+        return userRepository.findActiveById(userSession.getUserId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "사용자를 찾을 수 없습니다."));
     }
 
@@ -40,6 +40,6 @@ public class UserSessionService {
         if (userSession == null) {
             return Optional.empty();
         }
-        return userRepository.findById(userSession.getUserId());
+        return userRepository.findActiveById(userSession.getUserId());
     }
 }

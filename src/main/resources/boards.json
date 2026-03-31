@@ -1,0 +1,5 @@
+[
+  { "code": "GENERAL", "name": "자유/정보" },
+  { "code": "PROMOTION", "name": "동아리/행사/홍보" },
+  { "code": "LECTURE", "name": "강의/수업" }
+]

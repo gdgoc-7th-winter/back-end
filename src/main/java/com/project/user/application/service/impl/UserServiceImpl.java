@@ -8,7 +8,7 @@ import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 
 import com.project.user.application.dto.UserSession;
-import com.project.global.event.Impl.UserPromotionEvent;
+import com.project.global.event.impl.UserPromotionEvent;
 import com.project.user.application.dto.request.UserRegistrationCompletedEvent;
 import com.project.user.application.dto.response.ProfileResponse;
 import com.project.user.application.service.UserService;
@@ -19,6 +19,7 @@ import com.project.user.domain.entity.LevelBadge;
 import com.project.user.domain.entity.TechStack;
 import com.project.user.domain.entity.Track;
 import com.project.user.domain.entity.SocialAccount;
+import com.project.user.domain.enums.Authority;
 
 import com.project.user.domain.repository.DepartmentRepository;
 import com.project.user.domain.repository.EmailAuthRepository;
@@ -91,7 +92,11 @@ public class UserServiceImpl implements UserService {
             String encodedPassword = passwordEncoder.encode(request.getPassword());
             String email = request.getEmail();
             String nickname = request.getNickname();
-            User user = new User(email, encodedPassword, nickname);
+            User user = User.builder()
+                    .email(email)
+                    .password(encodedPassword)
+                    .nickname(nickname)
+                    .build();
             userRepository.save(user);
             LevelBadge initialBadge = levelBadgeRepository.findByPointWithinRange(user.getTotalPoint())
                     .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
@@ -141,6 +146,8 @@ public class UserServiceImpl implements UserService {
                 .build();
 
         session.setAttribute("LOGIN_USER", userSession);
+        log.info("[Login] 로그인 성공 - userId={}, authority={}, needsProfile={}",
+                userSession.getUserId(), userSession.getAuthority(), userSession.isNeedsProfile());
     }
 
     @Override
@@ -172,8 +179,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void updateProfile(Long userId, ProfileUpdateRequest request) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findActiveById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        validateNotWithdrawn(user);
 
         if (!user.needsInitialSetup()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "이미 초기 프로필 설정이 완료된 계정입니다.");
@@ -211,8 +219,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void patchProfile(Long userId, ProfilePatchRequest request) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findActiveById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        validateNotWithdrawn(user);
 
         if (user.needsInitialSetup()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "초기 프로필 설정을 먼저 완료해주세요.");
@@ -248,6 +257,12 @@ public class UserServiceImpl implements UserService {
         );
     }
 
+    private void validateNotWithdrawn(User user) {
+        if (user.isDeleted()) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "탈퇴한 회원입니다.");
+        }
+    }
+
     private void validateAllFound(List<String> requested, List<String> found, String fieldName) {
         List<String> missing = requested.stream()
                 .filter(name -> !found.contains(name))
@@ -267,7 +282,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void updateSecurityContext(Long id) {
-        User user = userRepository.findById(id)
+        User user = userRepository.findActiveById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
         HttpServletRequest request =  ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
 
@@ -301,8 +316,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void changePassword(Long id, PasswordUpdateRequest request){
-        User user = userRepository.findById(id)
+        User user = userRepository.findActiveById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        validateNotWithdrawn(user);
 
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
             throw new BusinessException(ErrorCode.PASSWORD_MISMATCH);
@@ -314,7 +330,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public ProfileResponse getUserProfile(Long id) {
-        User user = userRepository.findById(id)
+        User user = userRepository.findActiveById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "회원 정보가 없습니다."));
         return ProfileResponse.from(user);
     }
@@ -322,8 +338,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User earnAScore(Long id, String scoreName, Long referenceId) {
-        User user = userRepository.findById(id)
+        User user = userRepository.findActiveById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "회원 정보가 없습니다."));
+        validateNotWithdrawn(user);
         ContributionScore contributionScore = contributionScoreRepository.findByName(scoreName)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
@@ -346,8 +363,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void linkSocialAccount(Long userId, String provider, String email, String providerId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findActiveById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        validateNotWithdrawn(user);
 
         boolean alreadyLinked = user.getSocialAccounts().stream()
                 .anyMatch(acc -> acc.getProvider().equals(provider));
@@ -370,11 +388,23 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public void grantAuthority(Long userId, Authority authority) {
+        User user = userRepository.findActiveById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+        validateNotWithdrawn(user);
+        user.grantAuthority(authority);
+        updateSecurityContext(userId);
+    }
+
+    @Override
+    @Transactional
     public void deleteUser(Long id) {
-        User user = userRepository.findById(id)
+        User user = userRepository.findActiveById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        userRepository.delete(user);
+        user.withdraw();
+        user.changePassword(passwordEncoder.encode(User.WITHDRAWN_PASSWORD_PLACEHOLDER));
+        log.info("[deleteUser] 회원 탈퇴 처리 완료 (soft delete) - userId={}", id);
 
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         logout(request.getSession(false));

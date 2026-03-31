@@ -1,28 +1,28 @@
 package com.project.post.presentation.controller;
 
-import com.project.post.presentation.swagger.PostCommentControllerDocs;
+import com.project.global.annotation.CurrentUser;
+import com.project.global.annotation.OptionalSessionUser;
+import com.project.global.response.CommonResponse;
 import com.project.post.application.dto.LikeScrapToggleResponse;
 import com.project.post.application.dto.PostCommentCreateResponse;
 import com.project.post.application.dto.PostCommentRequest;
-import com.project.post.application.dto.PostCommentResponse;
-import com.project.global.annotation.CurrentUser;
+import com.project.post.application.dto.PostCommentChildListResponse;
+import com.project.post.application.dto.PostCommentRootListResponse;
 import com.project.post.application.service.PostCommentCommandService;
 import com.project.post.application.service.PostCommentLikeService;
 import com.project.post.application.service.PostCommentQueryService;
+import com.project.post.domain.constants.PostConstants;
+import com.project.post.presentation.support.ViewerUserId;
+import com.project.post.presentation.swagger.PostCommentControllerDocs;
 import com.project.user.domain.entity.User;
-import com.project.global.response.CommonResponse;
-import com.project.global.response.PageResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
-import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,7 +31,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -55,11 +58,27 @@ public class PostCommentController implements PostCommentControllerDocs {
 
     @Override
     @GetMapping("/posts/{postId}/comments")
-    public ResponseEntity<CommonResponse<PageResponse<PostCommentResponse>>> getComments(
+    public ResponseEntity<CommonResponse<PostCommentRootListResponse>> getComments(
             @PathVariable @Positive @NonNull Long postId,
-            @ParameterObject @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.ASC) @NonNull Pageable pageable) {
-        Page<PostCommentResponse> comments = postCommentQueryService.getComments(postId, pageable);
-        return ResponseEntity.ok(CommonResponse.ok(PageResponse.of(comments)));
+            @RequestParam(required = false) @Nullable String cursor,
+            @RequestParam(defaultValue = "20") @Positive @Max(PostConstants.MAX_COMMENT_CURSOR_PAGE_SIZE) int size,
+            @OptionalSessionUser Optional<User> optionalViewer) {
+        PostCommentRootListResponse body = postCommentQueryService.getComments(
+                postId, cursor, size, ViewerUserId.from(optionalViewer));
+        return ResponseEntity.ok(CommonResponse.ok(body));
+    }
+
+    @Override
+    @GetMapping("/posts/{postId}/comments/{parentCommentId}/comments")
+    public ResponseEntity<CommonResponse<PostCommentChildListResponse>> getChildComments(
+            @PathVariable @Positive @NonNull Long postId,
+            @PathVariable @Positive @NonNull Long parentCommentId,
+            @RequestParam(required = false) @Nullable String cursor,
+            @RequestParam(defaultValue = "20") @Positive @Max(PostConstants.MAX_COMMENT_CURSOR_PAGE_SIZE) int size,
+            @OptionalSessionUser Optional<User> optionalViewer) {
+        PostCommentChildListResponse body = postCommentQueryService.getChildComments(
+                postId, parentCommentId, cursor, size, ViewerUserId.from(optionalViewer));
+        return ResponseEntity.ok(CommonResponse.ok(body));
     }
 
     @Override

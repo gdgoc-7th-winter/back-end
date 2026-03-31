@@ -8,12 +8,14 @@ public record PostCommentResponse(
         Long postId,
         Long userId,
         String userNickname,
+        boolean isWithdrawn,
         Long parentCommentId,
         int depth,
         String content,
         boolean isDeleted,
         long likeCount,
         Instant createdAt,
+        CommentViewerResponse viewer,
         List<PostCommentResponse> replies,
         boolean hasMoreReplies
 ) {

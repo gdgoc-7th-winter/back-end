@@ -15,6 +15,7 @@ public record PromotionPostListQueryResult(
         String authorDepartmentName,
         String authorRepresentativeTrackName,
         String authorTierBadgeImageUrl,
+        boolean authorWithdrawn,
         long viewCount,
         long likeCount,
         long scrapCount,

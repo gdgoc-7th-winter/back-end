@@ -6,7 +6,8 @@ public record PostAuthorResponse(
         String profileImageUrl,
         String departmentName,
         String representativeTrackName,
-        String tierBadgeImageUrl
+        String tierBadgeImageUrl,
+        boolean isWithdrawn
 ) {
 
     public static PostAuthorResponse fromParts(
@@ -15,14 +16,16 @@ public record PostAuthorResponse(
             String profileImageUrl,
             String departmentName,
             String representativeTrackName,
-            String tierBadgeImageUrl) {
+            String tierBadgeImageUrl,
+            boolean isWithdrawn) {
         return new PostAuthorResponse(
                 authorId,
                 nickname,
                 profileImageUrl,
                 departmentName,
                 representativeTrackName,
-                tierBadgeImageUrl
+                tierBadgeImageUrl,
+                isWithdrawn
         );
     }
 }

@@ -3,7 +3,7 @@ package com.project.post.presentation.controller;
 import com.project.global.annotation.CurrentUser;
 import com.project.global.annotation.OptionalSessionUser;
 import com.project.global.response.CommonResponse;
-import com.project.global.response.PageResponse;
+import com.project.global.response.PostPageResponse;
 import com.project.post.application.dto.PostCreateResponse;
 import com.project.post.application.dto.PromotionPost.PromotionPostCreateRequest;
 import com.project.post.application.dto.PromotionPost.PromotionPostDetailResponse;
@@ -74,13 +74,13 @@ public class PromotionPostController implements PromotionPostControllerDocs {
 
     @Override
     @GetMapping("/promotions")
-    public ResponseEntity<CommonResponse<PageResponse<PromotionPostListResponse>>> getList(
+    public ResponseEntity<CommonResponse<PostPageResponse<PromotionPostListResponse>>> getList(
             @RequestParam(required = false) PromotionCategory category,
             @ParameterObject @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) @NonNull Pageable pageable,
             @OptionalSessionUser Optional<User> optionalViewer
     ) {
         Page<PromotionPostListResponse> list = promotionPostQueryService.getList(category, pageable, ViewerUserId.from(optionalViewer));
-        return ResponseEntity.ok(CommonResponse.ok(PageResponse.of(list)));
+        return ResponseEntity.ok(CommonResponse.ok(PostPageResponse.of(list)));
     }
 
     @Override
