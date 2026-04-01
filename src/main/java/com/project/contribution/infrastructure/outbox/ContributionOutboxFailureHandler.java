@@ -29,6 +29,7 @@ public class ContributionOutboxFailureHandler {
         }
         String msg = error.getMessage() != null ? error.getMessage() : error.getClass().getSimpleName();
         row.recoverAfterProcessingFailure(msg, contributionOutboxProperties.getMaxAttempts(), Instant.now());
+        contributionOutboxJpaRepository.save(row);
         log.warn("Outbox 처리 실패 id={}, attempts={}, status={}, err={}", id, row.getAttempts(), row.getStatus(), msg);
     }
 }

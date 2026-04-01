@@ -12,7 +12,7 @@ import java.time.Instant;
 
 public interface ContributionOutboxJpaRepository extends JpaRepository<ContributionOutboxEntity, Long> {
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE ContributionOutboxEntity o SET o.status = :pending, o.lastError = :reason, o.updatedAt = :now "
             + "WHERE o.status = :processing AND o.updatedAt < :before")
     int reclaimStaleProcessing(

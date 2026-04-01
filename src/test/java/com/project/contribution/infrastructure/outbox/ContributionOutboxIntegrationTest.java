@@ -11,6 +11,8 @@ import com.project.user.domain.entity.LevelBadge;
 import com.project.user.domain.entity.User;
 import com.project.user.domain.repository.LevelBadgeRepository;
 import com.project.user.domain.repository.UserRepository;
+import com.project.contribution.worker.ContributionOutboxStaleReclaimer;
+import com.project.contribution.worker.ContributionOutboxWorker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,12 @@ class ContributionOutboxIntegrationTest {
 
     @MockitoBean
     private JavaMailSender javaMailSender;
+
+    @MockitoBean
+    private ContributionOutboxWorker contributionOutboxWorker;
+
+    @MockitoBean
+    private ContributionOutboxStaleReclaimer contributionOutboxStaleReclaimer;
 
     @Autowired
     private ContributionOutboxPort contributionOutboxPort;

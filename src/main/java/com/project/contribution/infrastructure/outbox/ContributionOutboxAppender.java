@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Locale;
 
@@ -47,7 +48,13 @@ public class ContributionOutboxAppender implements ContributionOutboxPort {
     }
 
     private static boolean isDuplicateDedupKey(DataIntegrityViolationException e) {
-        String msg = e.getMostSpecificCause().getMessage();
+        Throwable cause = e.getMostSpecificCause();
+        if (cause instanceof SQLException sqlEx) {
+            if ("23505".equals(sqlEx.getSQLState())) {
+                return true;
+            }
+        }
+        String msg = cause.getMessage();
         if (msg == null) {
             return false;
         }

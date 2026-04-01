@@ -33,7 +33,7 @@ public class LevelBadgeResolverImpl implements LevelBadgeResolver {
             return inRange.get();
         }
 
-        Optional<LevelBadge> topByMaxPoint = levelBadgeRepository.findFirstByOrderByMaximumPointDesc();
+        Optional<LevelBadge> topByMaxPoint = levelBadgeRepository.findFirstByOrderByMaximumPointDescIdDesc();
         if (topByMaxPoint.isPresent()) {
             LevelBadge top = topByMaxPoint.get();
             if (clamped > top.getMaximumPoint()) {

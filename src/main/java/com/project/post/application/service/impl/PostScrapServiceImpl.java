@@ -39,9 +39,10 @@ public class PostScrapServiceImpl implements PostScrapService {
             if (updated != 1) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다.");
             }
-            postScrapRepository.findByPostIdAndUserId(postId, user.getId())
-                    .ifPresent(scrap -> contributionOutboxPort.append(
-                            ActivityContext.scrapReceived(authorId, scrap.getId(), user.getId())));
+            PostScrap scrap = postScrapRepository.findByPostIdAndUserId(postId, user.getId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR,
+                            "스크랩 저장 후 조회에 실패했습니다. 잠시 후 다시 시도해 주세요."));
+            contributionOutboxPort.append(ActivityContext.scrapReceived(authorId, scrap.getId(), user.getId()));
         }
         long count = postRepository.findScrapCountById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
