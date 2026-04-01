@@ -191,7 +191,9 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                 department
         );
 
-        answerSelectedOptionRepository.deleteAllByRecruitingApplicationAnswerApplicationSubmissionId(submissionId);
+        int deletedSelectedOptionsCount =
+                answerSelectedOptionRepository.deleteByApplicationSubmissionId(submissionId);
+
         recruitingApplicationAnswerRepository.deleteAllByApplicationSubmissionId(submissionId);
 
         if (request.getAnswers() == null || request.getAnswers().isEmpty()) {
