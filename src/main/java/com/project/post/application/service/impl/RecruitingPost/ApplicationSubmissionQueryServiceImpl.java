@@ -121,7 +121,7 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
             String applicantName,
             String sort
     ) {
-        RecruitingPost recruitingPost = recruitingPostRepository.findById(postId)
+        RecruitingPost recruitingPost = recruitingPostRepository.findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.RESOURCE_NOT_FOUND,
                         "리크루팅 게시글을 찾을 수 없습니다."
