@@ -100,9 +100,10 @@ public interface RecruitingPostControllerDocs {
             @Parameter(hidden = true) User user
     );
 
-    @Operation(summary = "내가 쓴 모집글 목록 조회", description = "현재 로그인한 사용자가 작성한 모집글 목록을 조회합니다.")
+    @Operation(summary = "내가 쓴 모집글 목록 조회", description = "현재 로그인한 사용자가 작성한 모집글 목록을 페이징 조회합니다.")
     @ApiResponse(responseCode = "200", description = "성공")
-    CommonResponse<MyRecruitingPostListResponse> getMyRecruitingPosts(
+    CommonResponse<Page<MyRecruitingPostSummaryResponse>> getMyRecruitingPosts(
+            @Parameter(hidden = true) Pageable pageable,
             @Parameter(hidden = true) User user
     );
 

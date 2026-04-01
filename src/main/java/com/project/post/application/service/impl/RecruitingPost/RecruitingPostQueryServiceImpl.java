@@ -6,7 +6,6 @@ import com.project.post.application.dto.PostAuthorResponse;
 import com.project.post.application.dto.PostDetailResponse;
 import com.project.post.application.dto.PostListResponse;
 import com.project.post.application.dto.PostViewerResponse;
-import com.project.post.application.dto.RecruitingPost.MyRecruitingPostListResponse;
 import com.project.post.application.dto.RecruitingPost.MyRecruitingPostSummaryResponse;
 import com.project.post.application.dto.RecruitingPost.RecruitingPostDetailResponse;
 import com.project.post.application.dto.RecruitingPost.RecruitingPostListResponse;
@@ -114,29 +113,41 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
     }
 
     @Override
-    public MyRecruitingPostListResponse getMyRecruitingPosts(Long userId) {
-        return new MyRecruitingPostListResponse(
-                recruitingPostRepository
-                        .findAllByPostAuthorIdAndDeletedAtIsNullAndPostDeletedAtIsNullOrderByCreatedAtDesc(userId)
-                        .stream()
-                        .map(recruitingPost -> new MyRecruitingPostSummaryResponse(
-                                recruitingPost.getId(),
-                                recruitingPost.getPost().getTitle(),
-                                recruitingPost.getPost().getThumbnailUrl(),
-                                recruitingPost.getPost().getContent(),
-                                recruitingPost.getPost().getAuthor().getNickname(),
-                                recruitingPost.getPost().getViewCount(),
-                                recruitingPost.getPost().getLikeCount(),
-                                recruitingPost.getPost().getCommentCount(),
-                                recruitingPost.getPost().getCreatedAt(),
-                                calculateStatus(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt()),
-                                calculateStatusLabel(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt()),
-                                recruitingPost.getCategory(),
-                                recruitingPost.getStartedAt(),
-                                recruitingPost.getDeadlineAt()
-                        ))
-                        .toList()
+    public Page<MyRecruitingPostSummaryResponse> getMyRecruitingPosts(Long userId, Pageable pageable) {
+        int pageSize = Math.min(pageable.getPageSize(), PostConstants.MAX_PAGE_SIZE);
+        Pageable safePageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageSize,
+                pageable.getSort().isSorted()
+                        ? pageable.getSort()
+                        : org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Direction.DESC,
+                        "createdAt"
+                )
         );
+
+        Page<RecruitingPost> page =
+                recruitingPostRepository.findAllByPostAuthorIdAndDeletedAtIsNullAndPostDeletedAtIsNull(
+                        userId,
+                        safePageable
+                );
+
+        return page.map(recruitingPost -> new MyRecruitingPostSummaryResponse(
+                recruitingPost.getId(),
+                recruitingPost.getPost().getTitle(),
+                recruitingPost.getPost().getThumbnailUrl(),
+                recruitingPost.getPost().getContent(),
+                recruitingPost.getPost().getAuthor().getNickname(),
+                recruitingPost.getPost().getViewCount(),
+                recruitingPost.getPost().getLikeCount(),
+                recruitingPost.getPost().getCommentCount(),
+                recruitingPost.getPost().getCreatedAt(),
+                calculateStatus(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt()),
+                calculateStatusLabel(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt()),
+                recruitingPost.getCategory(),
+                recruitingPost.getStartedAt(),
+                recruitingPost.getDeadlineAt()
+        ));
     }
 
     private PostListResponse toPostListResponse(

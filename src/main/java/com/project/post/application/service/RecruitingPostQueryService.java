@@ -1,6 +1,6 @@
 package com.project.post.application.service;
 
-import com.project.post.application.dto.RecruitingPost.MyRecruitingPostListResponse;
+import com.project.post.application.dto.RecruitingPost.MyRecruitingPostSummaryResponse;
 import com.project.post.application.dto.RecruitingPost.RecruitingPostDetailResponse;
 import com.project.post.application.dto.RecruitingPost.RecruitingPostListResponse;
 import com.project.post.domain.enums.RecruitingCategory;
@@ -18,5 +18,5 @@ public interface RecruitingPostQueryService {
             @Nullable Long viewerUserId
     );
 
-    MyRecruitingPostListResponse getMyRecruitingPosts(Long userId);
+    Page<MyRecruitingPostSummaryResponse> getMyRecruitingPosts(Long userId, Pageable pageable);
 }
