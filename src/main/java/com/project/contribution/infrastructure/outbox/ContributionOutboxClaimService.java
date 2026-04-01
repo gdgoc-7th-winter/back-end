@@ -2,6 +2,8 @@ package com.project.contribution.infrastructure.outbox;
 
 import com.project.contribution.config.ContributionOutboxProperties;
 
+import jakarta.annotation.PostConstruct;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -28,6 +30,19 @@ public class ContributionOutboxClaimService {
     private final JdbcTemplate jdbcTemplate;
     private final ContributionOutboxProperties contributionOutboxProperties;
 
+    /** {@link #claimBatch()} 폴링마다 메타데이터를 조회하지 않도록 기동 시 한 번만 설정한다. */
+    private boolean postgresql;
+
+    @PostConstruct
+    void cacheDatabaseProductName() {
+        DataSource ds = Objects.requireNonNull(jdbcTemplate.getDataSource(), "jdbcTemplate.dataSource");
+        try (Connection c = ds.getConnection()) {
+            postgresql = "PostgreSQL".equalsIgnoreCase(c.getMetaData().getDatabaseProductName());
+        } catch (SQLException e) {
+            throw new IllegalStateException("DB 메타데이터 조회 실패", e);
+        }
+    }
+
     /**
      * PENDING 행을 선점하여 PROCESSING으로 바꾼다. 별도 트랜잭션으로 커밋되어 본문 TX와 분리된다.
      */
@@ -37,19 +52,10 @@ public class ContributionOutboxClaimService {
         Timestamp ts = Timestamp.from(now);
         int batchSize = contributionOutboxProperties.getBatchSize();
 
-        if (isPostgreSql()) {
+        if (postgresql) {
             return claimPostgresql(ts, batchSize);
         }
         return claimH2(ts, batchSize);
-    }
-
-    private boolean isPostgreSql() {
-        DataSource ds = Objects.requireNonNull(jdbcTemplate.getDataSource(), "jdbcTemplate.dataSource");
-        try (Connection c = ds.getConnection()) {
-            return "PostgreSQL".equalsIgnoreCase(c.getMetaData().getDatabaseProductName());
-        } catch (SQLException e) {
-            throw new IllegalStateException("DB 메타데이터 조회 실패", e);
-        }
     }
 
     private List<Long> claimPostgresql(Timestamp ts, int batchSize) {
