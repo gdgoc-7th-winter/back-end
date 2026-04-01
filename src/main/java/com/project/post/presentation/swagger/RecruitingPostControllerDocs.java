@@ -2,7 +2,19 @@ package com.project.post.presentation.swagger;
 
 import com.project.global.response.CommonResponse;
 import com.project.post.application.dto.PostCreateResponse;
-import com.project.post.application.dto.RecruitingPost.*;
+import com.project.post.application.dto.RecruitingPost.RecruitingPostCreateRequest;
+import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionCreateResponse;
+import com.project.post.application.dto.RecruitingPost.SubmitApplicationRequest;
+import com.project.post.application.dto.RecruitingPost.RecruitingPostDetailResponse;
+import com.project.post.application.dto.RecruitingPost.ApplicationFormDetailResponse;
+import com.project.post.application.dto.RecruitingPost.RecruitingPostUpdateRequest;
+import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionUpdateRequest;
+import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionDetailResponse;
+import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionSummaryResponse;
+import com.project.post.application.dto.RecruitingPost.MyRecruitingPostSummaryResponse;
+import com.project.post.application.dto.RecruitingPost.AppliedRecruitingPostSummaryResponse;
+import com.project.post.application.dto.RecruitingPost.RecruitingPostListResponse;
+
 import com.project.post.domain.enums.Campus;
 import com.project.post.domain.enums.RecruitingCategory;
 import com.project.user.domain.entity.User;

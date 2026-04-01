@@ -8,7 +8,6 @@ import com.project.post.application.dto.PostViewerResponse;
 import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionAnswerResponse;
 import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionDetailResponse;
 import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionSummaryResponse;
-import com.project.post.application.dto.RecruitingPost.AppliedRecruitingPostListResponse;
 import com.project.post.application.dto.RecruitingPost.AppliedRecruitingPostSummaryResponse;
 import com.project.post.application.service.ApplicationSubmissionQueryService;
 import com.project.post.domain.entity.ApplicationSubmission;
