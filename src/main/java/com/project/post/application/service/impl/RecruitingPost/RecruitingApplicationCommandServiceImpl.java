@@ -53,7 +53,7 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                        @NonNull SubmitApplicationRequest request,
                        @NonNull User user) {
 
-        RecruitingPost recruitingPost = recruitingPostRepository.findById(postId)
+        RecruitingPost recruitingPost = recruitingPostRepository.findByIdForUpdate(postId)
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.RESOURCE_NOT_FOUND,
                         "리크루팅 게시글을 찾을 수 없습니다."
@@ -72,12 +72,12 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
             );
         }
 
-        if (applicationSubmissionRepository.existsByRecruitingApplicationAndUserAndDeletedAtIsNull(recruitingApplication, user)) {
-            throw new BusinessException(ErrorCode.ALREADY_APPLIED);
-        }
-
         if (!recruitingPost.isOpenForApplication()) {
             throw new BusinessException(ErrorCode.APPLICATION_NOT_AVAILABLE);
+        }
+
+        if (applicationSubmissionRepository.existsByRecruitingApplicationAndUserAndDeletedAtIsNull(recruitingApplication, user)) {
+            throw new BusinessException(ErrorCode.ALREADY_APPLIED);
         }
 
         Department department = departmentRepository.findById(request.getDepartmentId())
