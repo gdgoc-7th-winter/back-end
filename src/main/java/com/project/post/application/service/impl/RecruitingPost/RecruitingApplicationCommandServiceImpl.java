@@ -157,7 +157,7 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                                  @NonNull ApplicationSubmissionUpdateRequest request,
                                  @NonNull User user) {
 
-        ApplicationSubmission submission = applicationSubmissionRepository.findById(submissionId)
+        ApplicationSubmission submission = applicationSubmissionRepository.findByIdAndDeletedAtIsNull(submissionId)
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.RESOURCE_NOT_FOUND,
                         "지원 내역을 찾을 수 없습니다."
