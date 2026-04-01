@@ -58,7 +58,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         Long linkUserId = (Long) session.getAttribute("LINK_USER_ID");
 
         if (linkUserId == null) {
-            return userRepository.findByProviderAndProviderId(registrationId, providerId)
+            return userRepository.findByProviderAndProviderId(registrationId.toUpperCase(), providerId)
                     .map(user -> {
                         log.info("연동된 유저 발견: {}. 로그인을 진행합니다.", user.getEmail());
                         oauthLogin(user);

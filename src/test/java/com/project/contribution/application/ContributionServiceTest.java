@@ -1,71 +1,110 @@
 package com.project.contribution.application;
 
+import com.project.contribution.application.dto.ActivityContext;
+import com.project.contribution.application.dto.ContributionPointCommand;
+import com.project.contribution.application.service.ContributionCommandService;
 import com.project.contribution.application.service.impl.ContributionServiceImpl;
-import com.project.contribution.domain.entity.ContributionScore;
+import com.project.contribution.domain.support.ContributionScoreCodes;
 import com.project.contribution.policy.ContributionPolicy;
 import com.project.global.event.ActivityType;
-
-import com.project.user.application.dto.EarnScoreResult;
-import com.project.user.application.service.UserService;
-import com.project.user.domain.entity.User;
-import com.project.user.event.UserPointChangeEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.times;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ContributionServiceTest {
-    @Mock private UserService userService;
-    @Mock private ApplicationEventPublisher eventPublisher;
-    @Mock private ContributionPolicy mockPolicy;
-    @Mock private ContributionServiceImpl scoreService;
+
+    @Mock
+    private ContributionCommandService contributionCommandService;
+    @Mock
+    private ContributionPolicy mockPolicy;
+
+    private ContributionServiceImpl contributionService;
 
     @BeforeEach
     void setUp() {
-        List<ContributionPolicy> policyList = List.of(mockPolicy);
-        scoreService = new ContributionServiceImpl(
-                policyList,
-                userService,
-                eventPublisher
-        );
+        contributionService = new ContributionServiceImpl(List.of(mockPolicy), contributionCommandService);
     }
 
     @Test
-    @DisplayName("조건을 만족하고 획득 기록이 없는 경우 뱃지를 부여한다")
-    void checkAndGrantBadgesSuccess() {
-        // Given
-        Long userId = 1L;
-        Long referenceId = 10L;
-        String scoreName = "Early Bird";
-        ActivityType activityType = ActivityType.POST_CREATED;
-        ContributionScore mockScore = new ContributionScore(scoreName,30);
+    @DisplayName("지원하지 않는 활동 유형이면 evaluate를 호출하지 않고 원장을 건드리지 않는다")
+    void applyActivitySkipsWhenPolicyDoesNotSupport() {
+        ActivityContext ctx = ActivityContext.postCreated(1L, 10L);
+        when(mockPolicy.supports(ActivityType.POST_CREATED)).thenReturn(false);
 
-        User mockUser = User.builder().email("test@email.com").password("password123").nickname("testuser1").build();
-        ReflectionTestUtils.setField(mockUser, "id", userId);
+        contributionService.applyActivity(ctx);
 
-        when(mockPolicy.supports(activityType)).thenReturn(true);
-        when(mockPolicy.getScore()).thenReturn(mockScore);
-        when(mockPolicy.isSatisfied(userId)).thenReturn(true);
+        verify(mockPolicy, never()).evaluate(any());
+        verifyNoInteractions(contributionCommandService);
+    }
 
+    @Test
+    @DisplayName("정책이 빈 명령 목록을 반환하면 원장을 호출하지 않는다")
+    void applyActivityNoOpsWhenCommandsEmpty() {
+        ActivityContext ctx = ActivityContext.postCreated(1L, 10L);
+        when(mockPolicy.supports(ActivityType.POST_CREATED)).thenReturn(true);
+        when(mockPolicy.evaluate(ctx)).thenReturn(List.of());
 
-        when(userService.earnAScore(userId, scoreName, referenceId)).thenReturn(new EarnScoreResult(mockUser, true));
-        scoreService.checkAndGrantScores(userId, activityType, referenceId);
+        contributionService.applyActivity(ctx);
 
-        verify(mockPolicy, times(1)).isSatisfied(userId);
-        verify(userService, times(1)).earnAScore(userId, scoreName, referenceId);
-        verify(eventPublisher, times(1)).publishEvent(any(UserPointChangeEvent.class));
+        verifyNoInteractions(contributionCommandService);
+    }
+
+    @Test
+    @DisplayName("정책이 GRANT 명령을 반환하면 grantScore를 호출한다")
+    void applyActivityExecutesGrant() {
+        ActivityContext ctx = ActivityContext.postCreated(1L, 10L);
+        ContributionPointCommand cmd = ContributionPointCommand.grant(
+                1L, ContributionScoreCodes.POST_WRITE, 10L, ActivityType.POST_CREATED, ctx.occurredAt());
+        when(mockPolicy.supports(ActivityType.POST_CREATED)).thenReturn(true);
+        when(mockPolicy.evaluate(ctx)).thenReturn(List.of(cmd));
+
+        contributionService.applyActivity(ctx);
+
+        verify(contributionCommandService).grantScore(
+                eq(1L),
+                eq(ContributionScoreCodes.POST_WRITE),
+                eq(10L),
+                eq(ActivityType.POST_CREATED),
+                eq(ctx.occurredAt()));
+        verify(contributionCommandService, never()).revokeScore(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("정책이 REVOKE 명령을 반환하면 revokeScore를 호출한다")
+    void applyActivityExecutesRevoke() {
+        ActivityContext ctx = ActivityContext.postDeleted(1L, 10L);
+        ContributionPointCommand cmd = ContributionPointCommand.revoke(
+                1L,
+                ContributionScoreCodes.POST_WRITE,
+                10L,
+                ActivityType.POST_DELETED,
+                ActivityType.POST_DELETED.name(),
+                ctx.occurredAt());
+        when(mockPolicy.supports(ActivityType.POST_DELETED)).thenReturn(true);
+        when(mockPolicy.evaluate(ctx)).thenReturn(List.of(cmd));
+
+        contributionService.applyActivity(ctx);
+
+        verify(contributionCommandService)
+                .revokeScore(
+                        eq(1L),
+                        eq(ContributionScoreCodes.POST_WRITE),
+                        eq(10L),
+                        eq(ActivityType.POST_DELETED),
+                        eq(ActivityType.POST_DELETED.name()),
+                        eq(ctx.occurredAt()));
     }
 }
