@@ -11,6 +11,10 @@ cloud:
     cloudfront:
       domain: https://cdn.test
 
+contribution:
+  outbox:
+    use-skip-locked: false
+
 cors:
   allowed-origins:
     - http://localhost:5173
@@ -29,6 +33,10 @@ management:
       enabled: false
 
 spring:
+  task:
+    scheduling:
+      enabled: false
+
   cache:
     type: none
 

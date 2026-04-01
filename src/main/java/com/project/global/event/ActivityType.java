@@ -16,8 +16,10 @@ public enum ActivityType {
     COMMENT_WRITTEN,
     /** COMMENT_WRITE — 댓글 삭제 시 회수 */
     COMMENT_DELETED,
-    /** LIKE_RECEIVED — 좋아요 1개 받음, 지급만(취소 시 회수 없음) */
+    /** LIKE_RECEIVED — 좋아요 1개 받음 (취소 시 회수 없음) */
     LIKE_PRESSED,
     /** SCRAP_RECEIVED — 스크랩 1개 받음, 지급만(취소 시 회수 없음) */
-    SCRAP_PRESSED;
+    SCRAP_PRESSED,
+    /** 관리·내부용: 코드·참조로 직접 지급 (earnAScore 등) */
+    SYSTEM_SCORE_GRANT;
 }

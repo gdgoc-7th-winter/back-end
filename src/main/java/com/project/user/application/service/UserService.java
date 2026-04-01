@@ -1,6 +1,5 @@
 package com.project.user.application.service;
 
-import com.project.user.application.dto.EarnScoreResult;
 import com.project.user.application.dto.response.ProfileResponse;
 import com.project.user.domain.enums.Authority;
 import com.project.user.presentation.dto.request.PasswordUpdateRequest;
@@ -17,7 +16,7 @@ public interface UserService {
     public void updateSecurityContext(Long id);
     public void changePassword(Long id, PasswordUpdateRequest request);
     public ProfileResponse getUserProfile(Long id);
-    EarnScoreResult earnAScore(Long id, String scoreCode, Long referenceId);
+    void earnAScore(Long id, String scoreCode, Long referenceId);
     public void linkSocialAccount(Long userId, String provider, String email, String providerId);
     public void patchProfile(Long id, ProfilePatchRequest request);
     public void deleteUser(Long id);

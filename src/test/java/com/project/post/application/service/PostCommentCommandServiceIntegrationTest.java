@@ -1,6 +1,6 @@
 package com.project.post.application.service;
 
-import com.project.contribution.application.service.ContributionFacade;
+import com.project.contribution.application.port.ContributionOutboxPort;
 import com.project.post.application.dto.PostCommentRequest;
 import com.project.post.domain.exception.PostDomainException;
 import com.project.post.domain.entity.Board;
@@ -91,8 +91,8 @@ class PostCommentCommandServiceIntegrationTest {
         }
 
         @Bean
-        ContributionFacade contributionFacade() {
-            return Mockito.mock(ContributionFacade.class);
+        ContributionOutboxPort contributionOutboxPort() {
+            return Mockito.mock(ContributionOutboxPort.class);
         }
 
         @Bean

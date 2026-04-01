@@ -7,13 +7,11 @@ import com.project.post.application.service.PostCommentCommandService;
 import com.project.post.domain.entity.Post;
 import com.project.post.domain.entity.PostComment;
 import com.project.contribution.application.dto.ActivityContext;
-import com.project.contribution.application.event.ContributionActivityEvent;
-import com.project.contribution.application.service.ContributionFacade;
+import com.project.contribution.application.port.ContributionOutboxPort;
 import com.project.post.domain.repository.PostCommentRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,8 +24,7 @@ public class PostCommentCommandServiceImpl implements PostCommentCommandService 
 
     private final PostRepository postRepository;
     private final PostCommentRepository commentRepository;
-    private final ContributionFacade contributionFacade;
-    private final ApplicationEventPublisher applicationEventPublisher;
+    private final ContributionOutboxPort contributionOutboxPort;
 
     @Override
     @Transactional
@@ -46,7 +43,7 @@ public class PostCommentCommandServiceImpl implements PostCommentCommandService 
 
         PostComment savedComment = commentRepository.save(Objects.requireNonNull(comment));
         postRepository.incrementCommentCount(postId);
-        contributionFacade.applyActivity(ActivityContext.commentWritten(user.getId(), savedComment.getId()));
+        contributionOutboxPort.append(ActivityContext.commentWritten(user.getId(), savedComment.getId()));
         return savedComment.getId();
     }
 
@@ -71,7 +68,6 @@ public class PostCommentCommandServiceImpl implements PostCommentCommandService 
         long commentAuthorId = comment.getUser().getId();
         long cid = comment.getId();
         comment.softDelete();
-        applicationEventPublisher.publishEvent(
-                new ContributionActivityEvent(ActivityContext.commentDeleted(commentAuthorId, cid)));
+        contributionOutboxPort.append(ActivityContext.commentDeleted(commentAuthorId, cid));
     }
 }
