@@ -2,18 +2,7 @@ package com.project.post.presentation.swagger;
 
 import com.project.global.response.CommonResponse;
 import com.project.post.application.dto.PostCreateResponse;
-import com.project.post.application.dto.RecruitingPost.ApplicationFormDetailResponse;
-import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionCreateResponse;
-import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionDetailResponse;
-import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionListResponse;
-import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionUpdateRequest;
-import com.project.post.application.dto.RecruitingPost.AppliedRecruitingPostListResponse;
-import com.project.post.application.dto.RecruitingPost.MyRecruitingPostListResponse;
-import com.project.post.application.dto.RecruitingPost.RecruitingPostCreateRequest;
-import com.project.post.application.dto.RecruitingPost.RecruitingPostDetailResponse;
-import com.project.post.application.dto.RecruitingPost.RecruitingPostListResponse;
-import com.project.post.application.dto.RecruitingPost.RecruitingPostUpdateRequest;
-import com.project.post.application.dto.RecruitingPost.SubmitApplicationRequest;
+import com.project.post.application.dto.RecruitingPost.*;
 import com.project.post.domain.enums.Campus;
 import com.project.post.domain.enums.RecruitingCategory;
 import com.project.user.domain.entity.User;
@@ -87,14 +76,13 @@ public interface RecruitingPostControllerDocs {
             @Parameter(hidden = true) User user
     );
 
-    @Operation(summary = "지원서 목록 조회", description = "특정 모집글에 대한 지원서 목록을 조회합니다. 모집글 작성자만 조회할 수 있습니다.")
-    @ApiResponse(responseCode = "200", description = "성공")
-    CommonResponse<ApplicationSubmissionListResponse> getApplicationSubmissionList(
-            @Parameter(description = "게시글 ID") @PathVariable Long postId,
-            @Parameter(description = "캠퍼스 필터") @RequestParam(required = false) Campus campus,
-            @Parameter(description = "학과 ID 필터") @RequestParam(required = false) Long departmentId,
-            @Parameter(description = "지원자 이름 필터") @RequestParam(required = false) String applicantName,
-            @Parameter(description = "정렬 기준 (latest, name)") @RequestParam(defaultValue = "latest") String sort,
+    CommonResponse<Page<ApplicationSubmissionSummaryResponse>> getApplicationSubmissionList(
+            @PathVariable Long postId,
+            @RequestParam(required = false) Campus campus,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) String applicantName,
+            @RequestParam(defaultValue = "latest") String sort,
+            @Parameter(hidden = true) Pageable pageable,
             @Parameter(hidden = true) User user
     );
 

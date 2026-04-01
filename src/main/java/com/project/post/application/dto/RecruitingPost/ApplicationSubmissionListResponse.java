@@ -14,7 +14,15 @@ public record ApplicationSubmissionListResponse(
         String statusLabel,
         Instant startedAt,
         Instant deadlineAt,
-        int applicantCount,
-        List<ApplicationSubmissionSummaryResponse> submissions
+
+        long totalElements,
+        int totalPages,
+        int size,
+        List<ApplicationSubmissionSummaryResponse> content,
+        int number,
+        int numberOfElements,
+        boolean first,
+        boolean last,
+        boolean empty
 ) {
 }

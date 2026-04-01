@@ -3,18 +3,7 @@ package com.project.post.presentation.controller;
 import com.project.global.annotation.CurrentUser;
 import com.project.global.response.CommonResponse;
 import com.project.post.application.dto.PostCreateResponse;
-import com.project.post.application.dto.RecruitingPost.RecruitingPostCreateRequest;
-import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionCreateResponse;
-import com.project.post.application.dto.RecruitingPost.SubmitApplicationRequest;
-import com.project.post.application.dto.RecruitingPost.RecruitingPostDetailResponse;
-import com.project.post.application.dto.RecruitingPost.ApplicationFormDetailResponse;
-import com.project.post.application.dto.RecruitingPost.RecruitingPostUpdateRequest;
-import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionUpdateRequest;
-import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionDetailResponse;
-import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionListResponse;
-import com.project.post.application.dto.RecruitingPost.MyRecruitingPostListResponse;
-import com.project.post.application.dto.RecruitingPost.AppliedRecruitingPostListResponse;
-import com.project.post.application.dto.RecruitingPost.RecruitingPostListResponse;
+import com.project.post.application.dto.RecruitingPost.*;
 
 import com.project.post.application.service.RecruitingPostCommandService;
 import com.project.post.application.service.RecruitingApplicationCommandService;
@@ -128,12 +117,13 @@ public class RecruitingPostController implements RecruitingPostControllerDocs {
     }
 
     @GetMapping("/recruitings/{postId}/applications")
-    public CommonResponse<ApplicationSubmissionListResponse> getApplicationSubmissionList(
+    public CommonResponse<Page<ApplicationSubmissionSummaryResponse>> getApplicationSubmissionList(
             @PathVariable Long postId,
             @RequestParam(required = false) Campus campus,
             @RequestParam(required = false) Long departmentId,
             @RequestParam(required = false) String applicantName,
             @RequestParam(defaultValue = "latest") String sort,
+            Pageable pageable,
             @CurrentUser User user
     ) {
         return CommonResponse.ok(
@@ -143,7 +133,8 @@ public class RecruitingPostController implements RecruitingPostControllerDocs {
                         campus,
                         departmentId,
                         applicantName,
-                        sort
+                        sort,
+                        pageable
                 )
         );
     }

@@ -7,7 +7,6 @@ import com.project.post.application.dto.PostListResponse;
 import com.project.post.application.dto.PostViewerResponse;
 import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionAnswerResponse;
 import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionDetailResponse;
-import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionListResponse;
 import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionSummaryResponse;
 import com.project.post.application.dto.RecruitingPost.AppliedRecruitingPostListResponse;
 import com.project.post.application.dto.RecruitingPost.AppliedRecruitingPostSummaryResponse;
@@ -27,11 +26,15 @@ import com.project.post.domain.repository.dto.AppliedRecruitingPostListQueryResu
 import com.project.post.domain.specification.ApplicationSubmissionSpecification;
 import com.project.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.data.domain.Sort;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -44,6 +47,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmissionQueryService {
+
+    private static final int MAX_PAGE_SIZE = 100;
 
     private final ApplicationSubmissionRepository applicationSubmissionRepository;
     private final RecruitingApplicationAnswerRepository recruitingApplicationAnswerRepository;
@@ -112,14 +117,14 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public ApplicationSubmissionListResponse getSubmissionList(
+    public Page<ApplicationSubmissionSummaryResponse> getSubmissionList(
             @NonNull Long postId,
             @NonNull User user,
             Campus campus,
             Long departmentId,
             String applicantName,
-            String sort
+            String sort,
+            Pageable pageable
     ) {
         RecruitingPost recruitingPost = recruitingPostRepository.findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() -> new BusinessException(
@@ -140,7 +145,13 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
                         "지원폼을 찾을 수 없습니다."
                 ));
 
-        Sort sortCondition = getSortCondition(sort);
+        int safeSize = Math.min(pageable.getPageSize(), MAX_PAGE_SIZE);
+
+        Pageable safePageable = PageRequest.of(
+                pageable.getPageNumber(),
+                safeSize,
+                getSortCondition(sort)
+        );
 
         Specification<ApplicationSubmission> spec =
                 ApplicationSubmissionSpecification.hasRecruitingApplication(recruitingApplication)
@@ -149,32 +160,10 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
                         .and(ApplicationSubmissionSpecification.hasDepartmentId(departmentId))
                         .and(ApplicationSubmissionSpecification.applicantNameContains(applicantName));
 
-        List<ApplicationSubmission> submissionEntities =
-                applicationSubmissionRepository.findAll(spec, sortCondition);
+        Page<ApplicationSubmission> submissionPage =
+                applicationSubmissionRepository.findAll(spec, safePageable);
 
-        List<ApplicationSubmissionSummaryResponse> submissions = submissionEntities.stream()
-                .map(ApplicationSubmissionSummaryResponse::from)
-                .toList();
-
-        RecruitingStatus status = calculateStatus(
-                recruitingPost.getStartedAt(),
-                recruitingPost.getDeadlineAt()
-        );
-
-        return new ApplicationSubmissionListResponse(
-                recruitingPost.getId(),
-                recruitingPost.getPost().getTitle(),
-                recruitingPost.getCategory(),
-                status,
-                calculateStatusLabel(
-                        recruitingPost.getStartedAt(),
-                        recruitingPost.getDeadlineAt()
-                ),
-                recruitingPost.getStartedAt(),
-                recruitingPost.getDeadlineAt(),
-                submissions.size(),
-                submissions
-        );
+        return submissionPage.map(ApplicationSubmissionSummaryResponse::from);
     }
 
     @Override
@@ -212,7 +201,7 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
                                     result.likeCount(),
                                     result.scrapCount(),
                                     result.commentCount(),
-                                    PostViewerResponse.guest(), // 여기 단순화
+                                    PostViewerResponse.guest(),
                                     List.of(),
                                     result.createdAt()
                             )
