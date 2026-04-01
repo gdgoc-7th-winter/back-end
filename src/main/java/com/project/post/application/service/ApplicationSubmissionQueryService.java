@@ -1,7 +1,7 @@
 package com.project.post.application.service;
 
 import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionSummaryResponse;
-import com.project.post.application.dto.RecruitingPost.AppliedRecruitingPostListResponse;
+import com.project.post.application.dto.RecruitingPost.AppliedRecruitingPostSummaryResponse;
 import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionDetailResponse;
 import com.project.post.domain.enums.Campus;
 import com.project.user.domain.entity.User;
@@ -15,14 +15,17 @@ public interface ApplicationSubmissionQueryService {
                                                   @NonNull User user);
 
     Page<ApplicationSubmissionSummaryResponse> getSubmissionList(
-            Long postId,
-            User user,
+            @NonNull Long postId,
+            @NonNull User user,
             Campus campus,
             Long departmentId,
             String applicantName,
             String sort,
-            Pageable pageable
+            @NonNull Pageable pageable
     );
 
-    AppliedRecruitingPostListResponse getAppliedRecruitings(@NonNull User user);
+    Page<AppliedRecruitingPostSummaryResponse> getAppliedRecruitings(
+            @NonNull User user,
+            @NonNull Pageable pageable
+    );
 }

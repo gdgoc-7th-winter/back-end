@@ -167,49 +167,55 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
     }
 
     @Override
-    public AppliedRecruitingPostListResponse getAppliedRecruitings(@NonNull User user) {
+    public Page<AppliedRecruitingPostSummaryResponse> getAppliedRecruitings(
+            @NonNull User user,
+            @NonNull Pageable pageable
+    ) {
+        int safeSize = Math.min(pageable.getPageSize(), MAX_PAGE_SIZE);
 
-        List<AppliedRecruitingPostListQueryResult> results =
-                applicationSubmissionRepository.findAppliedRecruitingPostListByUserId(user.getId());
+        Pageable safePageable = PageRequest.of(
+                pageable.getPageNumber(),
+                safeSize,
+                Sort.by(Sort.Direction.DESC, "submittedAt")
+        );
 
-        List<AppliedRecruitingPostSummaryResponse> recruitings = results.stream()
-                .map(result -> {
-                    RecruitingStatus status = calculateStatus(result.startedAt(), result.deadlineAt());
+        Page<AppliedRecruitingPostListQueryResult> results =
+                applicationSubmissionRepository.findAppliedRecruitingPostListByUserId(user.getId(), safePageable);
 
-                    return new AppliedRecruitingPostSummaryResponse(
-                            result.submissionId(),
-                            result.category(),
-                            status,
-                            calculateStatusLabel(result.startedAt(), result.deadlineAt()),
-                            result.startedAt(),
-                            result.deadlineAt(),
-                            result.submittedAt(),
-                            new PostListResponse(
-                                    result.postId(),
-                                    result.title(),
-                                    result.thumbnailUrl(),
-                                    PostAuthorResponse.fromParts(
-                                            result.authorId(),
-                                            result.authorNickname(),
-                                            result.authorProfileImgUrl(),
-                                            result.authorDepartmentName(),
-                                            result.authorRepresentativeTrackName(),
-                                            result.authorLevelImageUrl(),
-                                            result.authorIsWithdrawn()
-                                    ),
-                                    result.viewCount(),
-                                    result.likeCount(),
-                                    result.scrapCount(),
-                                    result.commentCount(),
-                                    PostViewerResponse.guest(),
-                                    List.of(),
-                                    result.createdAt()
-                            )
-                    );
-                })
-                .toList();
+        return results.map(result -> {
+            RecruitingStatus status = calculateStatus(result.startedAt(), result.deadlineAt());
 
-        return new AppliedRecruitingPostListResponse(recruitings);
+            return new AppliedRecruitingPostSummaryResponse(
+                    result.submissionId(),
+                    result.category(),
+                    status,
+                    calculateStatusLabel(result.startedAt(), result.deadlineAt()),
+                    result.startedAt(),
+                    result.deadlineAt(),
+                    result.submittedAt(),
+                    new PostListResponse(
+                            result.postId(),
+                            result.title(),
+                            result.thumbnailUrl(),
+                            PostAuthorResponse.fromParts(
+                                    result.authorId(),
+                                    result.authorNickname(),
+                                    result.authorProfileImgUrl(),
+                                    result.authorDepartmentName(),
+                                    result.authorRepresentativeTrackName(),
+                                    result.authorLevelImageUrl(),
+                                    result.authorIsWithdrawn()
+                            ),
+                            result.viewCount(),
+                            result.likeCount(),
+                            result.scrapCount(),
+                            result.commentCount(),
+                            PostViewerResponse.guest(),
+                            List.of(),
+                            result.createdAt()
+                    )
+            );
+        });
     }
 
     private RecruitingStatus calculateStatus(Instant startedAt, Instant deadlineAt) {

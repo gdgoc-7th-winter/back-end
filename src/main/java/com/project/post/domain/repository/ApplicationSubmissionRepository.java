@@ -4,6 +4,8 @@ import com.project.post.domain.entity.ApplicationSubmission;
 import com.project.post.domain.entity.RecruitingApplication;
 import com.project.post.domain.repository.dto.AppliedRecruitingPostListQueryResult;
 import com.project.user.domain.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -33,7 +35,7 @@ public interface ApplicationSubmissionRepository
 
     Optional<ApplicationSubmission> findByIdAndDeletedAtIsNull(Long id);
 
-    @Query("""
+    @Query(value = """
         select new com.project.post.domain.repository.dto.AppliedRecruitingPostListQueryResult(
             s.id,
             rp.category,
@@ -66,9 +68,20 @@ public interface ApplicationSubmissionRepository
         where s.user.id = :userId
           and s.deletedAt is null
           and p.deletedAt is null
-        order by s.submittedAt desc
-    """)
-    List<AppliedRecruitingPostListQueryResult> findAppliedRecruitingPostListByUserId(
-            @Param("userId") Long userId
+        """,
+            countQuery = """
+        select count(s)
+        from ApplicationSubmission s
+        join s.recruitingApplication ra
+        join ra.recruitingPost rp
+        join rp.post p
+        where s.user.id = :userId
+          and s.deletedAt is null
+          and p.deletedAt is null
+        """
+    )
+    Page<AppliedRecruitingPostListQueryResult> findAppliedRecruitingPostListByUserId(
+            @Param("userId") Long userId,
+            Pageable pageable
     );
 }

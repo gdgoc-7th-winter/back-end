@@ -167,11 +167,12 @@ public class RecruitingPostController implements RecruitingPostControllerDocs {
     }
 
     @GetMapping("/recruitings/applied")
-    public CommonResponse<AppliedRecruitingPostListResponse> getAppliedRecruitings(
+    public CommonResponse<Page<AppliedRecruitingPostSummaryResponse>> getAppliedRecruitings(
+            Pageable pageable,
             @CurrentUser User user
     ) {
         return CommonResponse.ok(
-                applicationSubmissionQueryService.getAppliedRecruitings(user)
+                applicationSubmissionQueryService.getAppliedRecruitings(user, pageable)
         );
     }
 
