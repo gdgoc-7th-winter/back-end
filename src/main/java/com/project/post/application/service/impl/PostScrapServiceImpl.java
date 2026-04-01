@@ -1,7 +1,7 @@
 package com.project.post.application.service.impl;
 
 import com.project.contribution.application.dto.ActivityContext;
-import com.project.contribution.application.service.ContributionFacade;
+import com.project.contribution.application.port.ContributionOutboxPort;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.LikeScrapToggleResponse;
@@ -24,7 +24,7 @@ public class PostScrapServiceImpl implements PostScrapService {
 
     private final PostRepository postRepository;
     private final PostScrapRepository postScrapRepository;
-    private final ContributionFacade contributionFacade;
+    private final ContributionOutboxPort contributionOutboxPort;
 
     @Override
     @Transactional
@@ -40,7 +40,7 @@ public class PostScrapServiceImpl implements PostScrapService {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다.");
             }
             postScrapRepository.findByPostIdAndUserId(postId, user.getId())
-                    .ifPresent(scrap -> contributionFacade.applyActivity(
+                    .ifPresent(scrap -> contributionOutboxPort.append(
                             ActivityContext.scrapReceived(authorId, scrap.getId(), user.getId())));
         }
         long count = postRepository.findScrapCountById(postId)

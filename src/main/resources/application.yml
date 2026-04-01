@@ -42,6 +42,15 @@ spring:
     redis:
       namespace: "{hufsdev:session}"
 
+contribution:
+  outbox:
+    poll-interval-ms: 500
+    batch-size: 50
+    max-attempts: 8
+    stale-processing-minutes: 5
+    reclaim-interval-ms: 60000
+    use-skip-locked: true
+
 springdoc:
   swagger-ui:
     path: /swagger-ui

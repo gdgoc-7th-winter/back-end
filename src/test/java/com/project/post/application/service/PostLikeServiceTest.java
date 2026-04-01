@@ -3,7 +3,7 @@ package com.project.post.application.service;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.contribution.application.dto.ActivityContext;
-import com.project.contribution.application.service.ContributionFacade;
+import com.project.contribution.application.port.ContributionOutboxPort;
 import com.project.global.event.ActivityType;
 import com.project.post.application.dto.LikeScrapToggleResponse;
 import com.project.post.application.service.impl.PostLikeServiceImpl;
@@ -42,7 +42,7 @@ class PostLikeServiceTest {
     private PostLikeRepository postLikeRepository;
 
     @Mock
-    private ContributionFacade contributionFacade;
+    private ContributionOutboxPort contributionOutboxPort;
 
     @InjectMocks
     private PostLikeServiceImpl postLikeService;
@@ -80,8 +80,8 @@ class PostLikeServiceTest {
         assertThat(result.liked()).isTrue();
         assertThat(result.count()).isEqualTo(1);
         verify(postRepository).incrementLikeCount(1L);
-        verify(contributionFacade)
-                .applyActivity(
+        verify(contributionOutboxPort)
+                .append(
                         argThat(
                                 (ActivityContext c) ->
                                         c.activityType() == ActivityType.LIKE_PRESSED
@@ -104,7 +104,7 @@ class PostLikeServiceTest {
         assertThat(result.liked()).isTrue();
         assertThat(result.count()).isEqualTo(1);
         verify(postRepository, never()).incrementLikeCount(1L);
-        verify(contributionFacade, never()).applyActivity(any());
+        verify(contributionOutboxPort, never()).append(any());
     }
 
     @Test
@@ -126,7 +126,7 @@ class PostLikeServiceTest {
         assertThat(result.liked()).isFalse();
         assertThat(result.count()).isEqualTo(0);
         verify(postRepository).decrementLikeCount(1L);
-        verify(contributionFacade, never()).applyActivity(any());
+        verify(contributionOutboxPort, never()).append(any());
     }
 
     @Test
@@ -144,7 +144,7 @@ class PostLikeServiceTest {
         assertThat(result.liked()).isFalse();
         assertThat(result.count()).isEqualTo(0);
         verify(postRepository, never()).decrementLikeCount(1L);
-        verify(contributionFacade, never()).applyActivity(any());
+        verify(contributionOutboxPort, never()).append(any());
     }
 
     private static User buildUser(Long id) {

@@ -1,11 +1,10 @@
 package com.project.user.application.service.impl;
 
-import com.project.contribution.application.service.ContributionCommandService;
-import com.project.contribution.application.service.ContributionFacade;
+import com.project.contribution.application.dto.ActivityContext;
+import com.project.contribution.application.port.ContributionOutboxPort;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 
-import com.project.user.application.dto.EarnScoreResult;
 import com.project.user.application.dto.UserSession;
 import com.project.user.application.dto.request.UserRegistrationCompletedEvent;
 import com.project.user.application.dto.response.ProfileResponse;
@@ -53,6 +52,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.time.Instant;
 import java.util.List;
 
 @Slf4j
@@ -68,8 +68,7 @@ public class UserServiceImpl implements UserService {
     private final TrackRepository trackRepository;
     private final DepartmentRepository departmentRepository;
 
-    private final ContributionCommandService contributionCommandService;
-    private final ContributionFacade contributionFacade;
+    private final ContributionOutboxPort contributionOutboxPort;
 
     // 회원가입
     @Override
@@ -207,8 +206,7 @@ public class UserServiceImpl implements UserService {
         );
 
         if (!user.needsInitialSetup()) {
-            // 기여 지급이 같은 TX에서 실패할 수 있으므로, 성공한 뒤에만 권한·세션 갱신
-            contributionFacade.grantOnProfileInitialSetupCompleted(user.getId(), user.getId());
+            contributionOutboxPort.append(ActivityContext.profileCompleted(user.getId(), user.getId()));
             user.grantUserAuthority();
             updateSecurityContext(user.getId());
         }
@@ -335,8 +333,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public EarnScoreResult earnAScore(Long id, String scoreCode, Long referenceId) {
-        return contributionCommandService.grantScore(id, scoreCode, referenceId);
+    public void earnAScore(Long id, String scoreCode, Long referenceId) {
+        contributionOutboxPort.append(ActivityContext.systemScoreGrant(id, scoreCode, referenceId, Instant.now()));
     }
 
     @Override
