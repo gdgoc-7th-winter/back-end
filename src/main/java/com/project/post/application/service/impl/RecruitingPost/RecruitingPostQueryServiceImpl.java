@@ -18,6 +18,7 @@ import com.project.post.domain.entity.RecruitingPost;
 import com.project.post.domain.enums.RecruitingCategory;
 import com.project.post.domain.enums.RecruitingStatus;
 import com.project.post.domain.repository.RecruitingPostRepository;
+import com.project.post.domain.repository.dto.MyRecruitingPostQueryResult;
 import com.project.post.domain.repository.dto.RecruitingPostListQueryResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -126,27 +127,24 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
                 )
         );
 
-        Page<RecruitingPost> page =
-                recruitingPostRepository.findAllByPostAuthorIdAndDeletedAtIsNullAndPostDeletedAtIsNull(
-                        userId,
-                        safePageable
-                );
+        Page<MyRecruitingPostQueryResult> page =
+                recruitingPostRepository.findMyRecruitingPostList(userId, safePageable);
 
-        return page.map(recruitingPost -> new MyRecruitingPostSummaryResponse(
-                recruitingPost.getId(),
-                recruitingPost.getPost().getTitle(),
-                recruitingPost.getPost().getThumbnailUrl(),
-                recruitingPost.getPost().getContent(),
-                recruitingPost.getPost().getAuthor().getNickname(),
-                recruitingPost.getPost().getViewCount(),
-                recruitingPost.getPost().getLikeCount(),
-                recruitingPost.getPost().getCommentCount(),
-                recruitingPost.getPost().getCreatedAt(),
-                calculateStatus(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt()),
-                calculateStatusLabel(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt()),
-                recruitingPost.getCategory(),
-                recruitingPost.getStartedAt(),
-                recruitingPost.getDeadlineAt()
+        return page.map(result -> new MyRecruitingPostSummaryResponse(
+                result.recruitingPostId(),
+                result.title(),
+                result.thumbnailUrl(),
+                result.content(),
+                result.authorNickname(),
+                result.viewCount(),
+                result.likeCount(),
+                result.commentCount(),
+                result.createdAt(),
+                calculateStatus(result.startedAt(), result.deadlineAt()),
+                calculateStatusLabel(result.startedAt(), result.deadlineAt()),
+                result.category(),
+                result.startedAt(),
+                result.deadlineAt()
         ));
     }
 
