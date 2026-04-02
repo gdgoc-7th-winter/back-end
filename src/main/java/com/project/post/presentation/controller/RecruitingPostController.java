@@ -22,6 +22,7 @@ import com.project.post.application.service.RecruitingPostQueryService;
 import com.project.post.application.service.ApplicationFormQueryService;
 import com.project.post.application.service.ApplicationSubmissionQueryService;
 
+import com.project.post.domain.enums.ApplicationSubmissionSortType;
 import com.project.post.domain.enums.Campus;
 import com.project.post.domain.enums.RecruitingCategory;
 import com.project.post.presentation.swagger.RecruitingPostControllerDocs;
@@ -133,7 +134,7 @@ public class RecruitingPostController implements RecruitingPostControllerDocs {
             @RequestParam(required = false) Campus campus,
             @RequestParam(required = false) Long departmentId,
             @RequestParam(required = false) String applicantName,
-            @RequestParam(defaultValue = "latest") String sort,
+            @RequestParam(defaultValue = "LATEST") ApplicationSubmissionSortType sort,
             Pageable pageable,
             @CurrentUser User user
     ) {

@@ -15,6 +15,7 @@ import com.project.post.application.dto.RecruitingPost.MyRecruitingPostSummaryRe
 import com.project.post.application.dto.RecruitingPost.AppliedRecruitingPostSummaryResponse;
 import com.project.post.application.dto.RecruitingPost.RecruitingPostListResponse;
 
+import com.project.post.domain.enums.ApplicationSubmissionSortType;
 import com.project.post.domain.enums.Campus;
 import com.project.post.domain.enums.RecruitingCategory;
 import com.project.user.domain.entity.User;
@@ -93,7 +94,7 @@ public interface RecruitingPostControllerDocs {
             @RequestParam(required = false) Campus campus,
             @RequestParam(required = false) Long departmentId,
             @RequestParam(required = false) String applicantName,
-            @RequestParam(defaultValue = "latest") String sort,
+            @RequestParam(defaultValue = "LATEST") ApplicationSubmissionSortType sort,
             @Parameter(hidden = true) Pageable pageable,
             @Parameter(hidden = true) User user
     );

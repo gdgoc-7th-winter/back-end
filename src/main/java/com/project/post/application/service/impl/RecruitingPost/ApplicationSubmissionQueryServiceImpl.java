@@ -14,6 +14,7 @@ import com.project.post.domain.entity.ApplicationSubmission;
 import com.project.post.domain.entity.RecruitingApplication;
 import com.project.post.domain.entity.RecruitingApplicationAnswer;
 import com.project.post.domain.entity.RecruitingPost;
+import com.project.post.domain.enums.ApplicationSubmissionSortType;
 import com.project.post.domain.enums.Campus;
 import com.project.post.domain.enums.RecruitingStatus;
 import com.project.post.domain.repository.AnswerSelectedOptionRepository;
@@ -25,6 +26,7 @@ import com.project.post.domain.repository.dto.AppliedRecruitingPostListQueryResu
 import com.project.post.domain.specification.ApplicationSubmissionSpecification;
 import com.project.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.actuate.autoconfigure.wavefront.WavefrontProperties;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -122,7 +124,7 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
             Campus campus,
             Long departmentId,
             String applicantName,
-            String sort,
+            ApplicationSubmissionSortType sort,
             Pageable pageable
     ) {
         RecruitingPost recruitingPost = recruitingPostRepository.findByIdAndDeletedAtIsNull(postId)
@@ -258,16 +260,12 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
         return "D-" + days;
     }
 
-    private Sort getSortCondition(String sort) {
-        if (sort == null || sort.isBlank() || "latest".equals(sort)) {
-            return Sort.by(Sort.Direction.DESC, "submittedAt");
-        }
-
-        if ("name".equals(sort)) {
+    private Sort getSortCondition(ApplicationSubmissionSortType sort) {
+        if (sort == ApplicationSubmissionSortType.NAME) {
             return Sort.by(Sort.Direction.ASC, "applicantName")
                     .and(Sort.by(Sort.Direction.DESC, "submittedAt"));
         }
 
-        throw new BusinessException(ErrorCode.INVALID_INPUT, "지원하지 않는 정렬 방식입니다.");
+        return Sort.by(Sort.Direction.DESC, "submittedAt");
     }
 }

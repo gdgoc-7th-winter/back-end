@@ -3,6 +3,7 @@ package com.project.post.application.service;
 import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionSummaryResponse;
 import com.project.post.application.dto.RecruitingPost.AppliedRecruitingPostSummaryResponse;
 import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionDetailResponse;
+import com.project.post.domain.enums.ApplicationSubmissionSortType;
 import com.project.post.domain.enums.Campus;
 import com.project.user.domain.entity.User;
 import org.springframework.data.domain.Page;
@@ -20,7 +21,7 @@ public interface ApplicationSubmissionQueryService {
             Campus campus,
             Long departmentId,
             String applicantName,
-            String sort,
+            ApplicationSubmissionSortType sort,
             @NonNull Pageable pageable
     );
 
