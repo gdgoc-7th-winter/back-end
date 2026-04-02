@@ -56,11 +56,13 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
 
         PostDetailResponse postDetail = postQueryService.getDetail(postId, userId);
 
+        Instant now = Instant.now();
+
         return new RecruitingPostDetailResponse(
                 recruitingPost.getCategory(),
                 recruitingPost.getApplicationType(),
-                calculateStatus(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt()),
-                calculateStatusLabel(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt()), // ⭐ 추가
+                calculateStatus(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt(), now),
+                calculateStatusLabel(recruitingPost.getStartedAt(), recruitingPost.getDeadlineAt(), now),
                 recruitingPost.getStartedAt(),
                 recruitingPost.getDeadlineAt(),
                 postDetail
@@ -94,14 +96,16 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         Map<Long, PostViewerResponse> viewerByPostId =
                 postViewerStateService.resolveForPosts(viewerUserId, postIds, authorByPostId);
 
+        Instant now = Instant.now();
+
         return page.map(result -> {
-            RecruitingStatus status = calculateStatus(result.startedAt(), result.deadlineAt());
+            RecruitingStatus status = calculateStatus(result.startedAt(), result.deadlineAt(), now);
 
             return new RecruitingPostListResponse(
                     result.category(),
                     result.applicationType(),
                     status,
-                    calculateStatusLabel(result.startedAt(), result.deadlineAt()),
+                    calculateStatusLabel(result.startedAt(), result.deadlineAt(), now),
                     result.startedAt(),
                     result.deadlineAt(),
                     toPostListResponse(
@@ -130,6 +134,8 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         Page<MyRecruitingPostQueryResult> page =
                 recruitingPostRepository.findMyRecruitingPostList(userId, safePageable);
 
+        Instant now = Instant.now();
+
         return page.map(result -> new MyRecruitingPostSummaryResponse(
                 result.recruitingPostId(),
                 result.title(),
@@ -140,8 +146,8 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
                 result.likeCount(),
                 result.commentCount(),
                 result.createdAt(),
-                calculateStatus(result.startedAt(), result.deadlineAt()),
-                calculateStatusLabel(result.startedAt(), result.deadlineAt()),
+                calculateStatus(result.startedAt(), result.deadlineAt(), now),
+                calculateStatusLabel(result.startedAt(), result.deadlineAt(), now),
                 result.category(),
                 result.startedAt(),
                 result.deadlineAt()
@@ -176,9 +182,11 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         );
     }
 
-    private RecruitingStatus calculateStatus(Instant startedAt, Instant deadlineAt) {
-        Instant now = Instant.now();
-
+    private RecruitingStatus calculateStatus(
+            Instant startedAt,
+            Instant deadlineAt,
+            Instant now
+    ) {
         if (startedAt != null && now.isBefore(startedAt)) {
             return RecruitingStatus.UPCOMING;
         }
@@ -190,9 +198,11 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         return RecruitingStatus.OPEN;
     }
 
-    private String calculateStatusLabel(Instant startedAt, Instant deadlineAt) {
-        Instant now = Instant.now();
-
+    private String calculateStatusLabel(
+            Instant startedAt,
+            Instant deadlineAt,
+            Instant now
+    ) {
         if (startedAt != null && now.isBefore(startedAt)) {
             return "모집 예정";
         }
