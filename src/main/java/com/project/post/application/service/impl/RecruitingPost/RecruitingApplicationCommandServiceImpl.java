@@ -30,9 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -108,44 +107,57 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
             return savedSubmission.getId();
         }
 
-        for (AnswerRequest answerRequest : request.getAnswers()) {
-            RecruitingQuestion question = recruitingQuestionRepository.findById(answerRequest.getQuestionId())
-                    .orElseThrow(() -> new BusinessException(
-                            ErrorCode.RESOURCE_NOT_FOUND,
-                            "질문을 찾을 수 없습니다."
-                    ));
+        Map<Long, RecruitingQuestion> questionMap = getQuestionMap(
+                recruitingApplication,
+                request.getAnswers()
+        );
 
-            if (!question.getRecruitingApplication().getId().equals(recruitingApplication.getId())) {
-                throw new BusinessException(ErrorCode.INVALID_QUESTION);
+        Map<Long, RecruitingQuestionOption> optionMap = getOptionMap(request.getAnswers());
+
+        List<RecruitingApplicationAnswer> answersToSave = new ArrayList<>();
+        List<AnswerSelectedOption> selectedOptionsToSave = new ArrayList<>();
+
+        for (AnswerRequest answerRequest : request.getAnswers()) {
+            RecruitingQuestion question = questionMap.get(answerRequest.getQuestionId());
+            if (question == null) {
+                throw new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND,
+                        "질문을 찾을 수 없습니다."
+                );
             }
 
-            RecruitingApplicationAnswer savedAnswer = RecruitingApplicationAnswer.builder()
+            RecruitingApplicationAnswer answer = RecruitingApplicationAnswer.builder()
                     .applicationSubmission(savedSubmission)
                     .question(question)
                     .answer(answerRequest.getAnswer())
                     .build();
 
-            recruitingApplicationAnswerRepository.save(savedAnswer);
+            RecruitingApplicationAnswer savedAnswer = recruitingApplicationAnswerRepository.save(answer);
+            answersToSave.add(savedAnswer);
 
             if (answerRequest.getSelectedOptionIds() == null || answerRequest.getSelectedOptionIds().isEmpty()) {
                 continue;
             }
 
             for (Long optionId : answerRequest.getSelectedOptionIds()) {
-                RecruitingQuestionOption option = recruitingQuestionOptionRepository.findById(optionId)
-                        .orElseThrow(() -> new BusinessException(
-                                ErrorCode.RESOURCE_NOT_FOUND,
-                                "선택지를 찾을 수 없습니다."
-                        ));
+                RecruitingQuestionOption option = optionMap.get(optionId);
+                if (option == null) {
+                    throw new BusinessException(
+                            ErrorCode.RESOURCE_NOT_FOUND,
+                            "선택지를 찾을 수 없습니다."
+                    );
+                }
 
                 if (!option.getQuestion().getId().equals(question.getId())) {
                     throw new BusinessException(ErrorCode.INVALID_OPTION);
                 }
 
-                answerSelectedOptionRepository.save(
-                        new AnswerSelectedOption(savedAnswer, option)
-                );
+                selectedOptionsToSave.add(new AnswerSelectedOption(savedAnswer, option));
             }
+        }
+
+        if (!selectedOptionsToSave.isEmpty()) {
+            answerSelectedOptionRepository.saveAll(selectedOptionsToSave);
         }
 
         return savedSubmission.getId();
@@ -200,44 +212,55 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
             return;
         }
 
-        for (AnswerRequest answerRequest : request.getAnswers()) {
-            RecruitingQuestion question = recruitingQuestionRepository.findById(answerRequest.getQuestionId())
-                    .orElseThrow(() -> new BusinessException(
-                            ErrorCode.RESOURCE_NOT_FOUND,
-                            "질문을 찾을 수 없습니다."
-                    ));
+        Map<Long, RecruitingQuestion> questionMap = getQuestionMap(
+                recruitingApplication,
+                request.getAnswers()
+        );
 
-            if (!question.getRecruitingApplication().getId().equals(recruitingApplication.getId())) {
-                throw new BusinessException(ErrorCode.INVALID_QUESTION);
+        Map<Long, RecruitingQuestionOption> optionMap = getOptionMap(request.getAnswers());
+
+        List<AnswerSelectedOption> selectedOptionsToSave = new ArrayList<>();
+
+        for (AnswerRequest answerRequest : request.getAnswers()) {
+            RecruitingQuestion question = questionMap.get(answerRequest.getQuestionId());
+            if (question == null) {
+                throw new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND,
+                        "질문을 찾을 수 없습니다."
+                );
             }
 
-            RecruitingApplicationAnswer savedAnswer = RecruitingApplicationAnswer.builder()
+            RecruitingApplicationAnswer answer = RecruitingApplicationAnswer.builder()
                     .applicationSubmission(submission)
                     .question(question)
                     .answer(answerRequest.getAnswer())
                     .build();
 
-            recruitingApplicationAnswerRepository.save(savedAnswer);
+            RecruitingApplicationAnswer savedAnswer = recruitingApplicationAnswerRepository.save(answer);
 
             if (answerRequest.getSelectedOptionIds() == null || answerRequest.getSelectedOptionIds().isEmpty()) {
                 continue;
             }
 
             for (Long optionId : answerRequest.getSelectedOptionIds()) {
-                RecruitingQuestionOption option = recruitingQuestionOptionRepository.findById(optionId)
-                        .orElseThrow(() -> new BusinessException(
-                                ErrorCode.RESOURCE_NOT_FOUND,
-                                "선택지를 찾을 수 없습니다."
-                        ));
+                RecruitingQuestionOption option = optionMap.get(optionId);
+                if (option == null) {
+                    throw new BusinessException(
+                            ErrorCode.RESOURCE_NOT_FOUND,
+                            "선택지를 찾을 수 없습니다."
+                    );
+                }
 
                 if (!option.getQuestion().getId().equals(question.getId())) {
                     throw new BusinessException(ErrorCode.INVALID_OPTION);
                 }
 
-                answerSelectedOptionRepository.save(
-                        new AnswerSelectedOption(savedAnswer, option)
-                );
+                selectedOptionsToSave.add(new AnswerSelectedOption(savedAnswer, option));
             }
+        }
+
+        if (!selectedOptionsToSave.isEmpty()) {
+            answerSelectedOptionRepository.saveAll(selectedOptionsToSave);
         }
     }
 
@@ -305,5 +328,69 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                 throw new BusinessException(ErrorCode.MISSING_REQUIRED_ANSWER);
             }
         }
+    }
+
+    private Map<Long, RecruitingQuestion> getQuestionMap(
+            RecruitingApplication recruitingApplication,
+            List<AnswerRequest> answerRequests
+    ) {
+        Set<Long> questionIds = answerRequests.stream()
+                .map(AnswerRequest::getQuestionId)
+                .collect(Collectors.toSet());
+
+        if (questionIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<RecruitingQuestion> questions = recruitingQuestionRepository.findAllById(questionIds);
+
+        Map<Long, RecruitingQuestion> questionMap = questions.stream()
+                .collect(Collectors.toMap(RecruitingQuestion::getId, question -> question));
+
+        for (Long questionId : questionIds) {
+            RecruitingQuestion question = questionMap.get(questionId);
+
+            if (question == null) {
+                throw new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND,
+                        "질문을 찾을 수 없습니다."
+                );
+            }
+
+            if (!question.getRecruitingApplication().getId().equals(recruitingApplication.getId())) {
+                throw new BusinessException(ErrorCode.INVALID_QUESTION);
+            }
+        }
+
+        return questionMap;
+    }
+
+    private Map<Long, RecruitingQuestionOption> getOptionMap(List<AnswerRequest> answerRequests) {
+        Set<Long> optionIds = answerRequests.stream()
+                .flatMap(answerRequest -> {
+                    List<Long> selectedOptionIds = answerRequest.getSelectedOptionIds();
+                    return selectedOptionIds == null ? java.util.stream.Stream.empty() : selectedOptionIds.stream();
+                })
+                .collect(Collectors.toSet());
+
+        if (optionIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<RecruitingQuestionOption> options = recruitingQuestionOptionRepository.findAllById(optionIds);
+
+        Map<Long, RecruitingQuestionOption> optionMap = options.stream()
+                .collect(Collectors.toMap(RecruitingQuestionOption::getId, option -> option));
+
+        for (Long optionId : optionIds) {
+            if (!optionMap.containsKey(optionId)) {
+                throw new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND,
+                        "선택지를 찾을 수 없습니다."
+                );
+            }
+        }
+
+        return optionMap;
     }
 }
