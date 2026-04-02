@@ -227,6 +227,238 @@ class RecruitingApplicationCommandServiceImplTest {
             assertBusinessError(ex, ErrorCode.MISSING_REQUIRED_ANSWER);
             verify(applicationSubmissionRepository, never()).save(any());
         }
+
+        @Test
+        @DisplayName("submit: 질문에 속하지 않는 선택지를 선택하면 INVALID_OPTION 예외가 발생한다")
+        void submitInvalidOptionThrowsException() {
+            Long postId = 1L;
+            Long departmentId = 100L;
+            Long questionId = 1000L;
+            Long anotherQuestionId = 1001L;
+            Long optionId = 2000L;
+
+            RecruitingPost recruitingPost = mock(RecruitingPost.class);
+            RecruitingApplication recruitingApplication = mock(RecruitingApplication.class);
+            RecruitingQuestion question = mock(RecruitingQuestion.class);
+            RecruitingQuestion anotherQuestion = mock(RecruitingQuestion.class);
+            RecruitingQuestionOption option = mock(RecruitingQuestionOption.class);
+            Department department = mock(Department.class);
+            User user = mock(User.class);
+
+            SubmitApplicationRequest request = mock(SubmitApplicationRequest.class);
+            AnswerRequest answerRequest = mock(AnswerRequest.class);
+
+            ApplicationSubmission savedSubmission = mock(ApplicationSubmission.class);
+            RecruitingApplicationAnswer savedAnswer = mock(RecruitingApplicationAnswer.class);
+
+            given(recruitingPostRepository.findByIdForUpdate(postId))
+                    .willReturn(Optional.of(recruitingPost));
+            given(recruitingApplicationRepository.findByRecruitingPostForUpdate(recruitingPost))
+                    .willReturn(Optional.of(recruitingApplication));
+
+            given(recruitingPost.getDeletedAt()).willReturn(null);
+            given(recruitingPost.isOpenForApplication()).willReturn(true);
+            given(applicationSubmissionRepository.existsByRecruitingApplicationAndUserAndDeletedAtIsNull(recruitingApplication, user))
+                    .willReturn(false);
+
+            given(request.getDepartmentId()).willReturn(departmentId);
+            given(request.getApplicantName()).willReturn("홍길동");
+            given(request.getCampus()).willReturn(null);
+            given(request.getAnswers()).willReturn(List.of(answerRequest));
+
+            given(departmentRepository.findById(departmentId))
+                    .willReturn(Optional.of(department));
+
+            given(recruitingApplication.getId()).willReturn(999L);
+            given(recruitingQuestionRepository.findAllByRecruitingApplicationIdOrderBySortOrderAsc(999L))
+                    .willReturn(List.of(question));
+
+            given(question.getId()).willReturn(questionId);
+            given(question.isRequired()).willReturn(true);
+            given(question.getRecruitingApplication()).willReturn(recruitingApplication);
+
+            given(answerRequest.getQuestionId()).willReturn(questionId);
+            given(answerRequest.getAnswer()).willReturn("답변");
+            given(answerRequest.getSelectedOptionIds()).willReturn(List.of(optionId));
+
+            given(recruitingQuestionRepository.findAllById(anySet()))
+                    .willReturn(List.of(question));
+
+            given(option.getId()).willReturn(optionId);
+            given(option.getQuestion()).willReturn(anotherQuestion);
+            given(anotherQuestion.getId()).willReturn(anotherQuestionId);
+
+            given(recruitingQuestionOptionRepository.findAllById(anySet()))
+                    .willReturn(List.of(option));
+
+            given(applicationSubmissionRepository.save(any(ApplicationSubmission.class)))
+                    .willReturn(savedSubmission);
+            given(recruitingApplicationAnswerRepository.save(any(RecruitingApplicationAnswer.class)))
+                    .willReturn(savedAnswer);
+
+            BusinessException ex = assertThrows(
+                    BusinessException.class,
+                    () -> service.submit(postId, request, user)
+            );
+
+            assertBusinessError(ex, ErrorCode.INVALID_OPTION);
+            verify(answerSelectedOptionRepository, never()).saveAll(anyList());
+        }
+
+        @Test
+        @DisplayName("submit: 존재하지 않는 질문이면 RESOURCE_NOT_FOUND 예외가 발생한다")
+        void submitMissingQuestionThrowsException() {
+            Long postId = 1L;
+            Long departmentId = 100L;
+            Long questionId = 1000L;
+
+            RecruitingPost recruitingPost = mock(RecruitingPost.class);
+            RecruitingApplication recruitingApplication = mock(RecruitingApplication.class);
+            RecruitingQuestion requiredQuestion = mock(RecruitingQuestion.class);
+            Department department = mock(Department.class);
+            User user = mock(User.class);
+
+            SubmitApplicationRequest request = mock(SubmitApplicationRequest.class);
+            AnswerRequest answerRequest = mock(AnswerRequest.class);
+
+            given(recruitingPostRepository.findByIdForUpdate(postId))
+                    .willReturn(Optional.of(recruitingPost));
+            given(recruitingApplicationRepository.findByRecruitingPostForUpdate(recruitingPost))
+                    .willReturn(Optional.of(recruitingApplication));
+
+            given(recruitingPost.getDeletedAt()).willReturn(null);
+            given(recruitingPost.isOpenForApplication()).willReturn(true);
+            given(applicationSubmissionRepository.existsByRecruitingApplicationAndUserAndDeletedAtIsNull(recruitingApplication, user))
+                    .willReturn(false);
+
+            given(request.getDepartmentId()).willReturn(departmentId);
+            given(request.getApplicantName()).willReturn("홍길동");
+            given(request.getCampus()).willReturn(null);
+            given(request.getAnswers()).willReturn(List.of(answerRequest));
+
+            given(departmentRepository.findById(departmentId))
+                    .willReturn(Optional.of(department));
+
+            given(recruitingApplication.getId()).willReturn(999L);
+            given(recruitingQuestionRepository.findAllByRecruitingApplicationIdOrderBySortOrderAsc(999L))
+                    .willReturn(List.of(requiredQuestion));
+
+            given(requiredQuestion.getId()).willReturn(questionId);
+            given(requiredQuestion.isRequired()).willReturn(true);
+
+            given(answerRequest.getQuestionId()).willReturn(questionId);
+            given(answerRequest.getAnswer()).willReturn("답변");
+            given(answerRequest.getSelectedOptionIds()).willReturn(List.of());
+
+            given(applicationSubmissionRepository.save(any(ApplicationSubmission.class)))
+                    .willReturn(mock(ApplicationSubmission.class));
+
+            given(recruitingQuestionRepository.findAllById(anySet()))
+                    .willReturn(List.of());
+
+            BusinessException ex = assertThrows(
+                    BusinessException.class,
+                    () -> service.submit(postId, request, user)
+            );
+
+            assertBusinessError(ex, ErrorCode.RESOURCE_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("submit: 존재하지 않는 선택지이면 RESOURCE_NOT_FOUND 예외가 발생한다")
+        void submitMissingOptionThrowsException() {
+            Long postId = 1L;
+            Long departmentId = 100L;
+            Long questionId = 1000L;
+            Long optionId = 2000L;
+
+            RecruitingPost recruitingPost = mock(RecruitingPost.class);
+            RecruitingApplication recruitingApplication = mock(RecruitingApplication.class);
+            RecruitingQuestion question = mock(RecruitingQuestion.class);
+            Department department = mock(Department.class);
+            User user = mock(User.class);
+
+            SubmitApplicationRequest request = mock(SubmitApplicationRequest.class);
+            AnswerRequest answerRequest = mock(AnswerRequest.class);
+
+            ApplicationSubmission savedSubmission = mock(ApplicationSubmission.class);
+            RecruitingApplicationAnswer savedAnswer = mock(RecruitingApplicationAnswer.class);
+
+            given(recruitingPostRepository.findByIdForUpdate(postId))
+                    .willReturn(Optional.of(recruitingPost));
+            given(recruitingApplicationRepository.findByRecruitingPostForUpdate(recruitingPost))
+                    .willReturn(Optional.of(recruitingApplication));
+
+            given(recruitingPost.getDeletedAt()).willReturn(null);
+            given(recruitingPost.isOpenForApplication()).willReturn(true);
+            given(applicationSubmissionRepository.existsByRecruitingApplicationAndUserAndDeletedAtIsNull(recruitingApplication, user))
+                    .willReturn(false);
+
+            given(request.getDepartmentId()).willReturn(departmentId);
+            given(request.getApplicantName()).willReturn("홍길동");
+            given(request.getCampus()).willReturn(null);
+            given(request.getAnswers()).willReturn(List.of(answerRequest));
+
+            given(departmentRepository.findById(departmentId))
+                    .willReturn(Optional.of(department));
+
+            given(recruitingApplication.getId()).willReturn(999L);
+            given(recruitingQuestionRepository.findAllByRecruitingApplicationIdOrderBySortOrderAsc(999L))
+                    .willReturn(List.of(question));
+
+            given(question.getId()).willReturn(questionId);
+            given(question.isRequired()).willReturn(true);
+            given(question.getRecruitingApplication()).willReturn(recruitingApplication);
+
+            given(answerRequest.getQuestionId()).willReturn(questionId);
+            given(answerRequest.getAnswer()).willReturn("답변");
+            given(answerRequest.getSelectedOptionIds()).willReturn(List.of(optionId));
+
+            given(recruitingQuestionRepository.findAllById(anySet()))
+                    .willReturn(List.of(question));
+
+            given(recruitingQuestionOptionRepository.findAllById(anySet()))
+                    .willReturn(List.of());
+
+            given(applicationSubmissionRepository.save(any(ApplicationSubmission.class)))
+                    .willReturn(savedSubmission);
+            given(recruitingApplicationAnswerRepository.save(any(RecruitingApplicationAnswer.class)))
+                    .willReturn(savedAnswer);
+
+            BusinessException ex = assertThrows(
+                    BusinessException.class,
+                    () -> service.submit(postId, request, user)
+            );
+
+            assertBusinessError(ex, ErrorCode.RESOURCE_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("submit: 모집 마감 후에는 APPLICATION_NOT_AVAILABLE 예외가 발생한다")
+        void submitClosedPostThrowsException() {
+            Long postId = 1L;
+
+            RecruitingPost recruitingPost = mock(RecruitingPost.class);
+            RecruitingApplication recruitingApplication = mock(RecruitingApplication.class);
+            SubmitApplicationRequest request = mock(SubmitApplicationRequest.class);
+            User user = mock(User.class);
+
+            given(recruitingPostRepository.findByIdForUpdate(postId))
+                    .willReturn(Optional.of(recruitingPost));
+            given(recruitingApplicationRepository.findByRecruitingPostForUpdate(recruitingPost))
+                    .willReturn(Optional.of(recruitingApplication));
+
+            given(recruitingPost.getDeletedAt()).willReturn(null);
+            given(recruitingPost.isOpenForApplication()).willReturn(false);
+
+            BusinessException ex = assertThrows(
+                    BusinessException.class,
+                    () -> service.submit(postId, request, user)
+            );
+
+            assertBusinessError(ex, ErrorCode.APPLICATION_NOT_AVAILABLE);
+            verify(applicationSubmissionRepository, never()).save(any());
+        }
     }
 
     @Nested
@@ -329,6 +561,41 @@ class RecruitingApplicationCommandServiceImplTest {
             assertBusinessError(ex, ErrorCode.ACCESS_DENIED);
             verify(recruitingApplicationAnswerRepository, never()).deleteAllByApplicationSubmissionId(anyLong());
         }
+
+        @Test
+        @DisplayName("updateSubmission: 모집 마감 후에는 SUBMISSION_UPDATE_NOT_ALLOWED 예외가 발생한다")
+        void updateSubmissionClosedPostThrowsException() {
+            Long submissionId = 1L;
+            Long userId = 10L;
+
+            ApplicationSubmission submission = mock(ApplicationSubmission.class);
+            User owner = mock(User.class);
+            User user = mock(User.class);
+            RecruitingApplication recruitingApplication = mock(RecruitingApplication.class);
+            RecruitingPost recruitingPost = mock(RecruitingPost.class);
+            ApplicationSubmissionUpdateRequest request = mock(ApplicationSubmissionUpdateRequest.class);
+
+            given(applicationSubmissionRepository.findByIdAndDeletedAtIsNull(submissionId))
+                    .willReturn(Optional.of(submission));
+
+            given(submission.getUser()).willReturn(owner);
+            given(owner.getId()).willReturn(userId);
+            given(user.getId()).willReturn(userId);
+
+            given(submission.getRecruitingApplication()).willReturn(recruitingApplication);
+            given(recruitingApplication.getRecruitingPost()).willReturn(recruitingPost);
+
+            given(recruitingPost.getDeletedAt()).willReturn(null);
+            given(recruitingPost.isOpenForApplication()).willReturn(false);
+
+            BusinessException ex = assertThrows(
+                    BusinessException.class,
+                    () -> service.updateSubmission(submissionId, request, user)
+            );
+
+            assertBusinessError(ex, ErrorCode.SUBMISSION_UPDATE_NOT_ALLOWED);
+            verify(recruitingApplicationAnswerRepository, never()).deleteAllByApplicationSubmissionId(anyLong());
+        }
     }
 
     @Nested
@@ -383,6 +650,38 @@ class RecruitingApplicationCommandServiceImplTest {
             );
 
             assertBusinessError(ex, ErrorCode.ACCESS_DENIED);
+            verify(submission, never()).softDelete();
+        }
+
+        @Test
+        @DisplayName("cancelSubmission: 모집 마감 후에는 SUBMISSION_CANCEL_NOT_ALLOWED 예외가 발생한다")
+        void cancelSubmissionClosedPostThrowsException() {
+            Long submissionId = 1L;
+            Long userId = 10L;
+
+            ApplicationSubmission submission = mock(ApplicationSubmission.class);
+            User owner = mock(User.class);
+            User user = mock(User.class);
+            RecruitingApplication recruitingApplication = mock(RecruitingApplication.class);
+            RecruitingPost recruitingPost = mock(RecruitingPost.class);
+
+            given(applicationSubmissionRepository.findByIdAndDeletedAtIsNull(submissionId))
+                    .willReturn(Optional.of(submission));
+            given(submission.getUser()).willReturn(owner);
+            given(owner.getId()).willReturn(userId);
+            given(user.getId()).willReturn(userId);
+
+            given(submission.getRecruitingApplication()).willReturn(recruitingApplication);
+            given(recruitingApplication.getRecruitingPost()).willReturn(recruitingPost);
+            given(recruitingPost.getDeletedAt()).willReturn(null);
+            given(recruitingPost.isOpenForApplication()).willReturn(false);
+
+            BusinessException ex = assertThrows(
+                    BusinessException.class,
+                    () -> service.cancelSubmission(submissionId, user)
+            );
+
+            assertBusinessError(ex, ErrorCode.SUBMISSION_CANCEL_NOT_ALLOWED);
             verify(submission, never()).softDelete();
         }
     }
