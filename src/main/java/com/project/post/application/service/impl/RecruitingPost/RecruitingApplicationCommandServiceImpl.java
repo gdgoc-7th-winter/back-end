@@ -286,6 +286,10 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
 
         RecruitingPost recruitingPost = submission.getRecruitingApplication().getRecruitingPost();
 
+        if (recruitingPost.getDeletedAt() != null) {
+            throw new BusinessException(ErrorCode.SUBMISSION_CANCEL_NOT_ALLOWED);
+        }
+
         if (!recruitingPost.isOpenForApplication()) {
             throw new BusinessException(ErrorCode.SUBMISSION_CANCEL_NOT_ALLOWED);
         }
