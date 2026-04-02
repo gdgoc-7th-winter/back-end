@@ -14,4 +14,7 @@ public interface LevelBadgeRepository extends JpaRepository<LevelBadge, Long> {
 
     @Query("SELECT lb FROM LevelBadge lb WHERE :point BETWEEN lb.minimumPoint AND lb.maximumPoint")
     Optional<LevelBadge> findByPointWithinRange(@Param("point") Integer point);
+
+    /** maximum_point 기준 최상위 티어(상한 구간 초과 시 매핑용). 동률 시 id가 큰 행을 택해 결정. */
+    Optional<LevelBadge> findFirstByOrderByMaximumPointDescIdDesc();
 }

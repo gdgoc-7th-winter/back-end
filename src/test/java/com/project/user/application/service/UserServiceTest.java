@@ -1,7 +1,8 @@
 package com.project.user.application.service;
 
-import com.project.contribution.application.service.ContributionCommandService;
-import com.project.contribution.application.service.ContributionFacade;
+import com.project.contribution.application.dto.ActivityContext;
+import com.project.contribution.application.port.ContributionOutboxPort;
+import com.project.global.event.ActivityType;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.user.application.dto.UserSession;
@@ -43,6 +44,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -63,8 +65,7 @@ class UserServiceTest {
     @Mock private TrackRepository trackRepository;
     @Mock private TechStackRepository techStackRepository;
     @Mock private DepartmentRepository departmentRepository;
-    @Mock private ContributionFacade contributionFacade;
-    @Mock private ContributionCommandService contributionCommandService;
+    @Mock private ContributionOutboxPort contributionOutboxPort;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -126,7 +127,7 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("프로필 초기 설정 시 권한이 승급되고 초기 기여 지급(Facade)이 호출된다")
+    @DisplayName("프로필 초기 설정 시 권한이 승급되고 기여 Outbox 적재가 호출된다")
     void updateProfilePromotionSuccess() {
         try (MockedStatic<RequestContextHolder> mockedContext = mockStatic(RequestContextHolder.class)) {
             // given
@@ -160,7 +161,10 @@ class UserServiceTest {
             // then
             assertThat(user.getAuthority()).isEqualTo(Authority.USER);
             assertThat(user.needsInitialSetup()).isFalse();
-            verify(contributionFacade, times(1)).grantOnProfileInitialSetupCompleted(userId, userId);
+            verify(contributionOutboxPort, times(1)).append(argThat((ActivityContext c) ->
+                    c.activityType() == ActivityType.PROFILE_SETUP_COMPLETED
+                            && c.subjectUserId() == userId
+                            && c.referenceId() == userId));
         }
     }
 

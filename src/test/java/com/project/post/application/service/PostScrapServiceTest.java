@@ -1,7 +1,7 @@
 package com.project.post.application.service;
 
 import com.project.contribution.application.dto.ActivityContext;
-import com.project.contribution.application.service.ContributionFacade;
+import com.project.contribution.application.port.ContributionOutboxPort;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.global.event.ActivityType;
@@ -42,7 +42,7 @@ class PostScrapServiceTest {
     private PostScrapRepository postScrapRepository;
 
     @Mock
-    private ContributionFacade contributionFacade;
+    private ContributionOutboxPort contributionOutboxPort;
 
     @InjectMocks
     private PostScrapServiceImpl postScrapService;
@@ -80,8 +80,8 @@ class PostScrapServiceTest {
         assertThat(result.liked()).isTrue();
         assertThat(result.count()).isEqualTo(1);
         verify(postRepository).incrementScrapCount(1L);
-        verify(contributionFacade)
-                .applyActivity(
+        verify(contributionOutboxPort)
+                .append(
                         argThat(
                                 (ActivityContext c) ->
                                         c.activityType() == ActivityType.SCRAP_PRESSED
@@ -104,7 +104,7 @@ class PostScrapServiceTest {
         assertThat(result.liked()).isTrue();
         assertThat(result.count()).isEqualTo(1);
         verify(postRepository, never()).incrementScrapCount(1L);
-        verify(contributionFacade, never()).applyActivity(any());
+        verify(contributionOutboxPort, never()).append(any());
     }
 
     @Test
@@ -126,7 +126,7 @@ class PostScrapServiceTest {
         assertThat(result.liked()).isFalse();
         assertThat(result.count()).isEqualTo(0);
         verify(postRepository).decrementScrapCount(1L);
-        verify(contributionFacade, never()).applyActivity(any());
+        verify(contributionOutboxPort, never()).append(any());
     }
 
     @Test
@@ -144,7 +144,7 @@ class PostScrapServiceTest {
         assertThat(result.liked()).isFalse();
         assertThat(result.count()).isEqualTo(0);
         verify(postRepository, never()).decrementScrapCount(1L);
-        verify(contributionFacade, never()).applyActivity(any());
+        verify(contributionOutboxPort, never()).append(any());
     }
 
     private static User buildUser(Long id) {

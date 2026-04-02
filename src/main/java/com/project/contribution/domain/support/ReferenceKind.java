@@ -5,5 +5,7 @@ public enum ReferenceKind {
     POST,
     COMMENT,
     LIKE,
-    SCRAP
+    SCRAP,
+    /** 내부 직접 지급 참조 */
+    SYSTEM
 }

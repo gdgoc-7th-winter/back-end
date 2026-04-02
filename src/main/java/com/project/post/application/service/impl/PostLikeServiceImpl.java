@@ -1,7 +1,7 @@
 package com.project.post.application.service.impl;
 
 import com.project.contribution.application.dto.ActivityContext;
-import com.project.contribution.application.service.ContributionFacade;
+import com.project.contribution.application.port.ContributionOutboxPort;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.post.application.dto.LikeScrapToggleResponse;
@@ -24,7 +24,7 @@ public class PostLikeServiceImpl implements PostLikeService {
 
     private final PostRepository postRepository;
     private final PostLikeRepository postLikeRepository;
-    private final ContributionFacade contributionFacade;
+    private final ContributionOutboxPort contributionOutboxPort;
 
     @Override
     @Transactional
@@ -39,9 +39,10 @@ public class PostLikeServiceImpl implements PostLikeService {
             if (updated != 1) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다.");
             }
-            postLikeRepository.findByPostIdAndUserId(postId, user.getId())
-                    .ifPresent(like -> contributionFacade.applyActivity(
-                            ActivityContext.likeReceived(authorId, like.getId(), user.getId())));
+            PostLike like = postLikeRepository.findByPostIdAndUserId(postId, user.getId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR,
+                            "좋아요 저장 후 조회에 실패했습니다. 잠시 후 다시 시도해 주세요."));
+            contributionOutboxPort.append(ActivityContext.likeReceived(authorId, like.getId(), user.getId()));
         }
         long count = postRepository.findLikeCountById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
@@ -51,7 +52,7 @@ public class PostLikeServiceImpl implements PostLikeService {
     @Override
     @Transactional
     public LikeScrapToggleResponse unlike(@NonNull Long postId, @NonNull User user) {
-        Post post = postRepository.findActiveById(postId)
+        postRepository.findActiveById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
 
         Optional<PostLike> likeOpt = postLikeRepository.findByPostIdAndUserId(postId, user.getId());
@@ -67,6 +68,7 @@ public class PostLikeServiceImpl implements PostLikeService {
             if (updated != 1) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다.");
             }
+            // 좋아요: 스크랩과 같이 지급만 하며, 취소 시 작성자 점수는 회수하지 않는다.
         }
         long count = postRepository.findLikeCountById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "게시글을 찾을 수 없습니다."));
