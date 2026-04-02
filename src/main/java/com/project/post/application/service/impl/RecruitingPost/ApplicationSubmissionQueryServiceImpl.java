@@ -26,7 +26,6 @@ import com.project.post.domain.repository.dto.AppliedRecruitingPostListQueryResu
 import com.project.post.domain.specification.ApplicationSubmissionSpecification;
 import com.project.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.actuate.autoconfigure.wavefront.WavefrontProperties;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

@@ -24,13 +24,19 @@ import com.project.user.domain.entity.Department;
 import com.project.user.domain.entity.User;
 import com.project.user.domain.repository.DepartmentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -52,113 +58,22 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                        @NonNull SubmitApplicationRequest request,
                        @NonNull User user) {
 
-        RecruitingPost recruitingPost = recruitingPostRepository.findByIdForUpdate(postId)
-                .orElseThrow(() -> new BusinessException(
-                        ErrorCode.RESOURCE_NOT_FOUND,
-                        "리크루팅 게시글을 찾을 수 없습니다."
-                ));
+        RecruitingPost recruitingPost = getRecruitingPostForSubmit(postId);
+        RecruitingApplication recruitingApplication = getRecruitingApplicationForSubmit(recruitingPost);
 
-        RecruitingApplication recruitingApplication = recruitingApplicationRepository.findByRecruitingPostForUpdate(recruitingPost)
-                .orElseThrow(() -> new BusinessException(
-                        ErrorCode.RESOURCE_NOT_FOUND,
-                        "지원폼을 찾을 수 없습니다."
-                ));
+        validateSubmitAvailable(recruitingPost, recruitingApplication, user);
 
-        if (recruitingPost.getDeletedAt() != null) {
-            throw new BusinessException(
-                    ErrorCode.RESOURCE_NOT_FOUND,
-                    "삭제된 모집글입니다."
-            );
-        }
-
-        if (!recruitingPost.isOpenForApplication()) {
-            throw new BusinessException(ErrorCode.APPLICATION_NOT_AVAILABLE);
-        }
-
-        if (applicationSubmissionRepository.existsByRecruitingApplicationAndUserAndDeletedAtIsNull(recruitingApplication, user)) {
-            throw new BusinessException(ErrorCode.ALREADY_APPLIED);
-        }
-
-        Department department = departmentRepository.findById(request.getDepartmentId())
-                .orElseThrow(() -> new BusinessException(
-                        ErrorCode.RESOURCE_NOT_FOUND,
-                        "존재하지 않는 학과입니다."
-                ));
-
+        Department department = getDepartment(request.getDepartmentId());
         validateRequiredAnswers(recruitingApplication, request.getAnswers());
 
-        ApplicationSubmission submission = ApplicationSubmission.builder()
-                .recruitingApplication(recruitingApplication)
-                .user(user)
-                .submittedAt(Instant.now())
-                .applicantName(request.getApplicantName())
-                .campus(request.getCampus())
-                .department(department)
-                .build();
-
-        ApplicationSubmission savedSubmission;
-        try {
-            savedSubmission = applicationSubmissionRepository.save(submission);
-        } catch (DataIntegrityViolationException e) {
-            throw new BusinessException(ErrorCode.ALREADY_APPLIED);
-        }
-
-        if (request.getAnswers() == null || request.getAnswers().isEmpty()) {
-            return savedSubmission.getId();
-        }
-
-        Map<Long, RecruitingQuestion> questionMap = getQuestionMap(
+        ApplicationSubmission savedSubmission = createAndSaveSubmission(
                 recruitingApplication,
-                request.getAnswers()
+                request,
+                user,
+                department
         );
 
-        Map<Long, RecruitingQuestionOption> optionMap = getOptionMap(request.getAnswers());
-
-        List<RecruitingApplicationAnswer> answersToSave = new ArrayList<>();
-        List<AnswerSelectedOption> selectedOptionsToSave = new ArrayList<>();
-
-        for (AnswerRequest answerRequest : request.getAnswers()) {
-            RecruitingQuestion question = questionMap.get(answerRequest.getQuestionId());
-            if (question == null) {
-                throw new BusinessException(
-                        ErrorCode.RESOURCE_NOT_FOUND,
-                        "질문을 찾을 수 없습니다."
-                );
-            }
-
-            RecruitingApplicationAnswer answer = RecruitingApplicationAnswer.builder()
-                    .applicationSubmission(savedSubmission)
-                    .question(question)
-                    .answer(answerRequest.getAnswer())
-                    .build();
-
-            RecruitingApplicationAnswer savedAnswer = recruitingApplicationAnswerRepository.save(answer);
-            answersToSave.add(savedAnswer);
-
-            if (answerRequest.getSelectedOptionIds() == null || answerRequest.getSelectedOptionIds().isEmpty()) {
-                continue;
-            }
-
-            for (Long optionId : answerRequest.getSelectedOptionIds()) {
-                RecruitingQuestionOption option = optionMap.get(optionId);
-                if (option == null) {
-                    throw new BusinessException(
-                            ErrorCode.RESOURCE_NOT_FOUND,
-                            "선택지를 찾을 수 없습니다."
-                    );
-                }
-
-                if (!option.getQuestion().getId().equals(question.getId())) {
-                    throw new BusinessException(ErrorCode.INVALID_OPTION);
-                }
-
-                selectedOptionsToSave.add(new AnswerSelectedOption(savedAnswer, option));
-            }
-        }
-
-        if (!selectedOptionsToSave.isEmpty()) {
-            answerSelectedOptionRepository.saveAll(selectedOptionsToSave);
-        }
+        saveAnswers(savedSubmission, recruitingApplication, request.getAnswers());
 
         return savedSubmission.getId();
     }
@@ -175,30 +90,14 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                         "지원 내역을 찾을 수 없습니다."
                 ));
 
-        if (!submission.getUser().getId().equals(user.getId())) {
-            throw new BusinessException(
-                    ErrorCode.ACCESS_DENIED,
-                    "본인이 작성한 지원서만 수정할 수 있습니다."
-            );
-        }
+        validateSubmissionOwner(submission, user);
 
         RecruitingApplication recruitingApplication = submission.getRecruitingApplication();
         RecruitingPost recruitingPost = recruitingApplication.getRecruitingPost();
 
-        if (recruitingPost.getDeletedAt() != null) {
-            throw new BusinessException(ErrorCode.SUBMISSION_UPDATE_NOT_ALLOWED);
-        }
+        validateSubmissionUpdateAvailable(recruitingPost);
 
-        if (!recruitingPost.isOpenForApplication()) {
-            throw new BusinessException(ErrorCode.SUBMISSION_UPDATE_NOT_ALLOWED);
-        }
-
-        Department department = departmentRepository.findById(request.getDepartmentId())
-                .orElseThrow(() -> new BusinessException(
-                        ErrorCode.RESOURCE_NOT_FOUND,
-                        "존재하지 않는 학과입니다."
-                ));
-
+        Department department = getDepartment(request.getDepartmentId());
         validateRequiredAnswers(recruitingApplication, request.getAnswers());
 
         submission.updateApplicantInfo(
@@ -207,65 +106,8 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                 department
         );
 
-        int deletedSelectedOptionsCount =
-                answerSelectedOptionRepository.deleteByApplicationSubmissionId(submissionId);
-
-        recruitingApplicationAnswerRepository.deleteAllByApplicationSubmissionId(submissionId);
-
-        if (request.getAnswers() == null || request.getAnswers().isEmpty()) {
-            return;
-        }
-
-        Map<Long, RecruitingQuestion> questionMap = getQuestionMap(
-                recruitingApplication,
-                request.getAnswers()
-        );
-
-        Map<Long, RecruitingQuestionOption> optionMap = getOptionMap(request.getAnswers());
-
-        List<AnswerSelectedOption> selectedOptionsToSave = new ArrayList<>();
-
-        for (AnswerRequest answerRequest : request.getAnswers()) {
-            RecruitingQuestion question = questionMap.get(answerRequest.getQuestionId());
-            if (question == null) {
-                throw new BusinessException(
-                        ErrorCode.RESOURCE_NOT_FOUND,
-                        "질문을 찾을 수 없습니다."
-                );
-            }
-
-            RecruitingApplicationAnswer answer = RecruitingApplicationAnswer.builder()
-                    .applicationSubmission(submission)
-                    .question(question)
-                    .answer(answerRequest.getAnswer())
-                    .build();
-
-            RecruitingApplicationAnswer savedAnswer = recruitingApplicationAnswerRepository.save(answer);
-
-            if (answerRequest.getSelectedOptionIds() == null || answerRequest.getSelectedOptionIds().isEmpty()) {
-                continue;
-            }
-
-            for (Long optionId : answerRequest.getSelectedOptionIds()) {
-                RecruitingQuestionOption option = optionMap.get(optionId);
-                if (option == null) {
-                    throw new BusinessException(
-                            ErrorCode.RESOURCE_NOT_FOUND,
-                            "선택지를 찾을 수 없습니다."
-                    );
-                }
-
-                if (!option.getQuestion().getId().equals(question.getId())) {
-                    throw new BusinessException(ErrorCode.INVALID_OPTION);
-                }
-
-                selectedOptionsToSave.add(new AnswerSelectedOption(savedAnswer, option));
-            }
-        }
-
-        if (!selectedOptionsToSave.isEmpty()) {
-            answerSelectedOptionRepository.saveAll(selectedOptionsToSave);
-        }
+        clearExistingAnswers(submissionId);
+        saveAnswers(submission, recruitingApplication, request.getAnswers());
     }
 
     @Override
@@ -277,12 +119,7 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
                         "지원 내역을 찾을 수 없습니다."
                 ));
 
-        if (!submission.getUser().getId().equals(user.getId())) {
-            throw new BusinessException(
-                    ErrorCode.ACCESS_DENIED,
-                    "본인이 작성한 지원서만 취소할 수 있습니다."
-            );
-        }
+        validateSubmissionOwner(submission, user);
 
         RecruitingPost recruitingPost = submission.getRecruitingApplication().getRecruitingPost();
 
@@ -295,6 +132,178 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
         }
 
         submission.softDelete();
+    }
+
+    private RecruitingPost getRecruitingPostForSubmit(Long postId) {
+        return recruitingPostRepository.findByIdForUpdate(postId)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND,
+                        "리크루팅 게시글을 찾을 수 없습니다."
+                ));
+    }
+
+    private RecruitingApplication getRecruitingApplicationForSubmit(RecruitingPost recruitingPost) {
+        return recruitingApplicationRepository.findByRecruitingPostForUpdate(recruitingPost)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND,
+                        "지원폼을 찾을 수 없습니다."
+                ));
+    }
+
+    private void validateSubmitAvailable(RecruitingPost recruitingPost,
+                                         RecruitingApplication recruitingApplication,
+                                         User user) {
+        if (recruitingPost.getDeletedAt() != null) {
+            throw new BusinessException(
+                    ErrorCode.RESOURCE_NOT_FOUND,
+                    "삭제된 모집글입니다."
+            );
+        }
+
+        if (!recruitingPost.isOpenForApplication()) {
+            throw new BusinessException(ErrorCode.APPLICATION_NOT_AVAILABLE);
+        }
+
+        if (applicationSubmissionRepository.existsByRecruitingApplicationAndUserAndDeletedAtIsNull(
+                recruitingApplication,
+                user
+        )) {
+            throw new BusinessException(ErrorCode.ALREADY_APPLIED);
+        }
+    }
+
+    private void validateSubmissionOwner(ApplicationSubmission submission, User user) {
+        if (!submission.getUser().getId().equals(user.getId())) {
+            throw new BusinessException(
+                    ErrorCode.ACCESS_DENIED,
+                    "본인이 작성한 지원서만 수정할 수 있습니다."
+            );
+        }
+    }
+
+    private void validateSubmissionUpdateAvailable(RecruitingPost recruitingPost) {
+        if (recruitingPost.getDeletedAt() != null) {
+            throw new BusinessException(ErrorCode.SUBMISSION_UPDATE_NOT_ALLOWED);
+        }
+
+        if (!recruitingPost.isOpenForApplication()) {
+            throw new BusinessException(ErrorCode.SUBMISSION_UPDATE_NOT_ALLOWED);
+        }
+    }
+
+    private Department getDepartment(Long departmentId) {
+        return departmentRepository.findById(departmentId)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND,
+                        "존재하지 않는 학과입니다."
+                ));
+    }
+
+    private ApplicationSubmission createAndSaveSubmission(RecruitingApplication recruitingApplication,
+                                                          SubmitApplicationRequest request,
+                                                          User user,
+                                                          Department department) {
+        ApplicationSubmission submission = ApplicationSubmission.builder()
+                .recruitingApplication(recruitingApplication)
+                .user(user)
+                .submittedAt(Instant.now())
+                .applicantName(request.getApplicantName())
+                .campus(request.getCampus())
+                .department(department)
+                .build();
+
+        try {
+            return applicationSubmissionRepository.save(submission);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorCode.ALREADY_APPLIED);
+        }
+    }
+
+    private void clearExistingAnswers(Long submissionId) {
+        answerSelectedOptionRepository.deleteByApplicationSubmissionId(submissionId);
+        recruitingApplicationAnswerRepository.deleteAllByApplicationSubmissionId(submissionId);
+    }
+
+    private void saveAnswers(ApplicationSubmission submission,
+                             RecruitingApplication recruitingApplication,
+                             List<AnswerRequest> answerRequests) {
+        if (answerRequests == null || answerRequests.isEmpty()) {
+            return;
+        }
+
+        Map<Long, RecruitingQuestion> questionMap = getQuestionMap(recruitingApplication, answerRequests);
+        Map<Long, RecruitingQuestionOption> optionMap = getOptionMap(answerRequests);
+
+        List<AnswerSelectedOption> selectedOptionsToSave = new ArrayList<>();
+
+        for (AnswerRequest answerRequest : answerRequests) {
+            RecruitingQuestion question = getValidatedQuestion(questionMap, answerRequest.getQuestionId());
+            RecruitingApplicationAnswer savedAnswer = saveApplicationAnswer(submission, question, answerRequest);
+
+            appendSelectedOptions(
+                    selectedOptionsToSave,
+                    savedAnswer,
+                    question,
+                    answerRequest,
+                    optionMap
+            );
+        }
+
+        if (!selectedOptionsToSave.isEmpty()) {
+            answerSelectedOptionRepository.saveAll(selectedOptionsToSave);
+        }
+    }
+
+    private RecruitingQuestion getValidatedQuestion(Map<Long, RecruitingQuestion> questionMap, Long questionId) {
+        RecruitingQuestion question = questionMap.get(questionId);
+
+        if (question == null) {
+            throw new BusinessException(
+                    ErrorCode.RESOURCE_NOT_FOUND,
+                    "질문을 찾을 수 없습니다."
+            );
+        }
+
+        return question;
+    }
+
+    private RecruitingApplicationAnswer saveApplicationAnswer(ApplicationSubmission submission,
+                                                              RecruitingQuestion question,
+                                                              AnswerRequest answerRequest) {
+        RecruitingApplicationAnswer answer = RecruitingApplicationAnswer.builder()
+                .applicationSubmission(submission)
+                .question(question)
+                .answer(answerRequest.getAnswer())
+                .build();
+
+        return recruitingApplicationAnswerRepository.save(answer);
+    }
+
+    private void appendSelectedOptions(List<AnswerSelectedOption> selectedOptionsToSave,
+                                       RecruitingApplicationAnswer savedAnswer,
+                                       RecruitingQuestion question,
+                                       AnswerRequest answerRequest,
+                                       Map<Long, RecruitingQuestionOption> optionMap) {
+        if (answerRequest.getSelectedOptionIds() == null || answerRequest.getSelectedOptionIds().isEmpty()) {
+            return;
+        }
+
+        for (Long optionId : answerRequest.getSelectedOptionIds()) {
+            RecruitingQuestionOption option = optionMap.get(optionId);
+
+            if (option == null) {
+                throw new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND,
+                        "선택지를 찾을 수 없습니다."
+                );
+            }
+
+            if (!option.getQuestion().getId().equals(question.getId())) {
+                throw new BusinessException(ErrorCode.INVALID_OPTION);
+            }
+
+            selectedOptionsToSave.add(new AnswerSelectedOption(savedAnswer, option));
+        }
     }
 
     private void validateRequiredAnswers(RecruitingApplication recruitingApplication,
@@ -329,9 +338,6 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
             boolean hasSelectedOptions =
                     answerRequest.getSelectedOptionIds() != null && !answerRequest.getSelectedOptionIds().isEmpty();
 
-            // 주관식 필수인데 텍스트 없음
-            // 객관식 필수인데 선택지 없음
-            // 둘 다 비어 있으면 무조건 실패
             if (!hasTextAnswer && !hasSelectedOptions) {
                 throw new BusinessException(ErrorCode.MISSING_REQUIRED_ANSWER);
             }
@@ -353,7 +359,7 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
         List<RecruitingQuestion> questions = recruitingQuestionRepository.findAllById(questionIds);
 
         Map<Long, RecruitingQuestion> questionMap = questions.stream()
-                .collect(Collectors.toMap(RecruitingQuestion::getId, question -> question));
+                .collect(Collectors.toMap(RecruitingQuestion::getId, question -> question, (a, b) -> a, LinkedHashMap::new));
 
         for (Long questionId : questionIds) {
             RecruitingQuestion question = questionMap.get(questionId);
@@ -388,7 +394,12 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
         List<RecruitingQuestionOption> options = recruitingQuestionOptionRepository.findAllById(optionIds);
 
         Map<Long, RecruitingQuestionOption> optionMap = options.stream()
-                .collect(Collectors.toMap(RecruitingQuestionOption::getId, option -> option));
+                .collect(Collectors.toMap(
+                        RecruitingQuestionOption::getId,
+                        option -> option,
+                        (a, b) -> a,
+                        LinkedHashMap::new
+                ));
 
         for (Long optionId : optionIds) {
             if (!optionMap.containsKey(optionId)) {
