@@ -11,11 +11,11 @@ import java.util.List;
 
 public interface AnswerSelectedOptionRepository extends JpaRepository<AnswerSelectedOption, AnswerSelectedOptionId> {
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("""
-            delete from AnswerSelectedOption a
-            where a.recruitingApplicationAnswer.applicationSubmission.id = :applicationSubmissionId
-            """)
+        delete from AnswerSelectedOption a
+        where a.recruitingApplicationAnswer.applicationSubmission.id = :applicationSubmissionId
+        """)
     int deleteByApplicationSubmissionId(@Param("applicationSubmissionId") Long applicationSubmissionId);
 
     List<AnswerSelectedOption> findAllByRecruitingApplicationAnswerId(Long recruitingApplicationAnswerId);
