@@ -100,13 +100,16 @@ public class RecruitingApplicationCommandServiceImpl implements RecruitingApplic
         Department department = getDepartment(request.getDepartmentId());
         validateRequiredAnswers(recruitingApplication, request.getAnswers());
 
+        clearExistingAnswers(submissionId);
+
         submission.updateApplicantInfo(
                 request.getApplicantName(),
                 request.getCampus(),
                 department
         );
 
-        clearExistingAnswers(submissionId);
+        applicationSubmissionRepository.save(submission);
+
         saveAnswers(submission, recruitingApplication, request.getAnswers());
     }
 
