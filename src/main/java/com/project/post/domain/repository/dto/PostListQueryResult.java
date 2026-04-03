@@ -5,6 +5,7 @@ import java.time.Instant;
 public record PostListQueryResult(
         Long postId,
         String title,
+        String contentPreview,
         String thumbnailUrl,
         Long authorId,
         String authorNickname,

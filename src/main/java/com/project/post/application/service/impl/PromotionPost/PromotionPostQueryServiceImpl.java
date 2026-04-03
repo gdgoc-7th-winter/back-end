@@ -12,6 +12,7 @@ import com.project.post.application.service.PostQueryService;
 import com.project.post.application.service.PostTagQueryService;
 import com.project.post.application.service.PostViewerStateService;
 import com.project.post.application.service.PromotionPostQueryService;
+import com.project.post.application.util.PostContentUtils;
 import com.project.post.domain.constants.PostConstants;
 import com.project.post.domain.entity.PromotionPost;
 import com.project.post.domain.enums.PromotionCategory;
@@ -90,6 +91,7 @@ public class PromotionPostQueryServiceImpl implements PromotionPostQueryService 
         return new PostListResponse(
                 result.postId(),
                 result.title(),
+                PostContentUtils.withEllipsis(result.contentPreview()),
                 result.thumbnailUrl(),
                 PostAuthorMapper.from(result),
                 result.viewCount(),

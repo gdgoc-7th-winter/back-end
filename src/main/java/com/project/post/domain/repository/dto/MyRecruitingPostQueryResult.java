@@ -7,8 +7,8 @@ import java.time.Instant;
 public record MyRecruitingPostQueryResult(
         Long recruitingPostId,
         String title,
+        String contentPreview,
         String thumbnailUrl,
-        String content,
         String authorNickname,
         Long viewCount,
         Long likeCount,

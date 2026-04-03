@@ -13,6 +13,7 @@ import com.project.post.application.service.PostQueryService;
 import com.project.post.application.service.PostTagQueryService;
 import com.project.post.application.service.PostViewerStateService;
 import com.project.post.application.service.RecruitingPostQueryService;
+import com.project.post.application.util.PostContentUtils;
 import com.project.post.domain.constants.PostConstants;
 import com.project.post.domain.entity.RecruitingPost;
 import com.project.post.domain.enums.RecruitingCategory;
@@ -139,8 +140,8 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         return page.map(result -> new MyRecruitingPostSummaryResponse(
                 result.recruitingPostId(),
                 result.title(),
+                PostContentUtils.withEllipsis(result.contentPreview()),
                 result.thumbnailUrl(),
-                result.content(),
                 result.authorNickname(),
                 result.viewCount(),
                 result.likeCount(),
@@ -162,6 +163,7 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         return new PostListResponse(
                 result.postId(),
                 result.title(),
+                PostContentUtils.withEllipsis(result.contentPreview()),
                 result.thumbnailUrl(),
                 PostAuthorResponse.fromParts(
                         result.authorId(),
