@@ -11,7 +11,7 @@ public class PostContentUtils {
             return "";
         }
 
-        if (preview.length() > CONTENT_PREVIEW_LENGTH) {
+        if (preview.length() <= CONTENT_PREVIEW_LENGTH) {
             return preview;
         }
 
