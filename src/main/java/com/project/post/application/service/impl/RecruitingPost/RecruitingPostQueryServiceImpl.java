@@ -140,7 +140,7 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         return page.map(result -> new MyRecruitingPostSummaryResponse(
                 result.recruitingPostId(),
                 result.title(),
-                result.contentPreview(),
+                PostContentUtils.withEllipsis(result.contentPreview()),
                 result.thumbnailUrl(),
                 result.authorNickname(),
                 result.viewCount(),
@@ -163,7 +163,7 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         return new PostListResponse(
                 result.postId(),
                 result.title(),
-                result.contentPreview(),
+                PostContentUtils.withEllipsis(result.contentPreview()),
                 result.thumbnailUrl(),
                 PostAuthorResponse.fromParts(
                         result.authorId(),

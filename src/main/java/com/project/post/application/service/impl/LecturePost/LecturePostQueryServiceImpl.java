@@ -91,7 +91,7 @@ public class LecturePostQueryServiceImpl implements LecturePostQueryService {
         return new LecturePostListResponse(
                 result.postId(),
                 result.title(),
-                result.contentPreview(),
+                PostContentUtils.withEllipsis(result.contentPreview()),
                 result.thumbnailUrl(),
                 PostAuthorMapper.from(result),
                 result.department(),

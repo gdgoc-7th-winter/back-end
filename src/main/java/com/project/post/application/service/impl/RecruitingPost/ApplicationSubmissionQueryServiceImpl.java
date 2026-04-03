@@ -197,7 +197,7 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
                     new PostListResponse(
                             result.postId(),
                             result.title(),
-                            result.contentPreview(),
+                            PostContentUtils.withEllipsis(result.contentPreview()),
                             result.thumbnailUrl(),
                             PostAuthorResponse.fromParts(
                                     result.authorId(),

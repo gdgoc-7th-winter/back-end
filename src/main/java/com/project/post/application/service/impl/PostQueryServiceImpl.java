@@ -110,7 +110,7 @@ public class PostQueryServiceImpl implements PostQueryService {
         return new PostListResponse(
                 result.postId(),
                 result.title(),
-                result.contentPreview(),
+                PostContentUtils.withEllipsis(result.contentPreview()),
                 result.thumbnailUrl(),
                 PostAuthorMapper.from(result),
                 result.viewCount(),
