@@ -137,7 +137,7 @@ class PostQueryServiceTest {
         when(boardRepository.findByCodeAndActiveTrue("GENERAL")).thenReturn(Optional.of(Board.of("GENERAL", "자유/정보 게시판")));
 
         Page<PostListQueryResult> queryPage = new PageImpl<>(Objects.requireNonNull(List.of(
-                new PostListQueryResult(1L, "t", "thumb", 1L, "nick", null, null, null, null, false, 0, 0, 0, 0, Instant.now())
+                new PostListQueryResult(1L, "t", "본문", "thumb", 1L, "nick", null, null, null, null, false, 0, 0, 0, 0, Instant.now())
         )));
         PostSearchCondition condition = new PostSearchCondition(null, null, PostListSort.LATEST);
         Pageable pageable = PageRequest.of(0, 10);
@@ -158,7 +158,7 @@ class PostQueryServiceTest {
     @DisplayName("전체 게시판 목록은 게시판 검증 없이 활성 게시판 전체 레포지토리를 호출한다")
     void getListAllBoardsCallsRepositoryWithoutBoardLookup() {
         Page<PostListQueryResult> queryPage = new PageImpl<>(Objects.requireNonNull(List.of(
-                new PostListQueryResult(1L, "t", "thumb", 1L, "nick", null, null, null, null, false, 0, 0, 0, 0, Instant.now())
+                new PostListQueryResult(1L, "t", "본문","thumb", 1L, "nick", null, null, null, null, false, 0, 0, 0, 0, Instant.now())
         )));
         PostSearchCondition condition = new PostSearchCondition(null, null, PostListSort.LATEST);
         Pageable pageable = PageRequest.of(0, 10);
@@ -196,7 +196,7 @@ class PostQueryServiceTest {
 
             // withdraw() 이후 DB/프로젝션에 가깝게: nickname null, authorWithdrawn true
             PostListQueryResult result = new PostListQueryResult(
-                    1L, "title", null,
+                    1L, "title", "본문",null,
                     WITHDRAWN_AUTHOR_ID, null, null, null, null, null,
                     true,
                     0, 0, 0, 0, Instant.now()
@@ -231,7 +231,7 @@ class PostQueryServiceTest {
                     .thenReturn(Optional.of(Board.of("GENERAL", "자유/정보 게시판")));
 
             PostListQueryResult result = new PostListQueryResult(
-                    1L, "title", null,
+                    1L, "title", "본문", null,
                     WITHDRAWN_AUTHOR_ID, null, null, null, null, null,
                     true,
                     0, 0, 0, 0, Instant.now()

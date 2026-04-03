@@ -55,7 +55,7 @@ class LecturePostQueryServiceTest {
     void getListReturnsPaginatedResults() {
         Pageable pageable = PageRequest.of(0, 20);
         LecturePostListQueryResult result = new LecturePostListQueryResult(
-                1L, "알고리즘 과제", null,
+                1L, "알고리즘 과제", "본문입니다", null,
                 1L, "테스터", null, "영어통번역학과", "백엔드", null,
                 false,
                 "컴퓨터공학과", Campus.SEOUL,
