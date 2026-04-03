@@ -139,8 +139,8 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         return page.map(result -> new MyRecruitingPostSummaryResponse(
                 result.recruitingPostId(),
                 result.title(),
+                makePreview(result.content()),
                 result.thumbnailUrl(),
-                result.content(),
                 result.authorNickname(),
                 result.viewCount(),
                 result.likeCount(),
