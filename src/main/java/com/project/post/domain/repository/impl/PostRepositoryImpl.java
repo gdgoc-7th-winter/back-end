@@ -21,6 +21,7 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.ConstructorExpression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -65,11 +66,17 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         QUser user = QUser.user;
         QDepartment department = QDepartment.department;
         QLevelBadge levelBadge = QLevelBadge.levelBadge;
+
+        Expression<String> contentPreview = Expressions.stringTemplate(
+                "SUBSTRING({0}, 1, 100)",
+                post.content
+        );
+
         return Projections.constructor(
                 PostListQueryResult.class,
                 post.id,
                 post.title,
-                post.content,
+                contentPreview,
                 post.thumbnailUrl,
                 user.id,
                 user.nickname,
