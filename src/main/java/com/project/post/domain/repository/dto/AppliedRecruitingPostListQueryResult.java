@@ -14,7 +14,7 @@ public record AppliedRecruitingPostListQueryResult(
 
         Long postId,
         String title,
-        String content,
+        String contentPreview,
         String thumbnailUrl,
 
         Long authorId,

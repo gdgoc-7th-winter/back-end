@@ -11,7 +11,9 @@ import com.project.user.domain.entity.QLevelBadge;
 import com.project.user.domain.entity.QUser;
 import com.project.user.domain.repository.querydsl.UserRepresentativeTrackExpressions;
 import com.project.user.domain.repository.querydsl.UserWithdrawnExpressions;
+import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -41,6 +43,12 @@ public class ApplicationSubmissionRepositoryImpl implements ApplicationSubmissio
         QDepartment department = QDepartment.department;
         QLevelBadge levelBadge = QLevelBadge.levelBadge;
 
+        Expression<String> contentPreview = Expressions.stringTemplate(
+                "substring({0}, 1, {1})",
+                post.content,
+                100
+        );
+
         List<AppliedRecruitingPostListQueryResult> content = queryFactory
                 .select(Projections.constructor(
                         AppliedRecruitingPostListQueryResult.class,
@@ -53,7 +61,7 @@ public class ApplicationSubmissionRepositoryImpl implements ApplicationSubmissio
 
                         post.id,
                         post.title,
-                        post.content,
+                        contentPreview,
                         post.thumbnailUrl,
 
                         author.id,
