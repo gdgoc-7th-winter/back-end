@@ -53,6 +53,7 @@ public class ApplicationSubmissionRepositoryImpl implements ApplicationSubmissio
 
                         post.id,
                         post.title,
+                        post.content,
                         post.thumbnailUrl,
 
                         author.id,
