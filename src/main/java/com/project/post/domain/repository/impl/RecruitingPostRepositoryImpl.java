@@ -61,6 +61,7 @@ public class RecruitingPostRepositoryImpl implements RecruitingPostRepositoryCus
 
                 post.id,
                 post.title,
+                post.content,
                 post.thumbnailUrl,
 
                 user.id,

@@ -55,6 +55,7 @@ public class PromotionPostRepositoryImpl implements PromotionPostRepositoryCusto
                 promotionPost.category,
                 post.id,
                 post.title,
+                post.content,
                 post.thumbnailUrl,
                 user.id,
                 user.nickname,

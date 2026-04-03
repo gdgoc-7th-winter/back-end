@@ -61,6 +61,7 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
                 LecturePostListQueryResult.class,
                 post.id,
                 post.title,
+                post.content,
                 post.thumbnailUrl,
                 user.id,
                 user.nickname,
