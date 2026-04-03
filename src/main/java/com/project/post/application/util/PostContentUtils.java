@@ -11,8 +11,10 @@ public class PostContentUtils {
             return "";
         }
 
-        return preview.length() == CONTENT_PREVIEW_LENGTH
-                ? preview + "..."
-                : preview;
+        if (preview.length() > CONTENT_PREVIEW_LENGTH) {
+            return preview;
+        }
+
+        return preview.substring(0, CONTENT_PREVIEW_LENGTH) + "...";
     }
 }

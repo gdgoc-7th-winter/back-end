@@ -44,7 +44,7 @@ public class ApplicationSubmissionRepositoryImpl implements ApplicationSubmissio
         QLevelBadge levelBadge = QLevelBadge.levelBadge;
 
         Expression<String> contentPreview = Expressions.stringTemplate(
-                "substring({0}, 1, {1})",
+                "substring({0}, 1, 101)",
                 post.content,
                 100
         );

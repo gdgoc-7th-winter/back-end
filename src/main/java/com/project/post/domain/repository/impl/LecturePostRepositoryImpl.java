@@ -57,7 +57,7 @@ public class LecturePostRepositoryImpl implements LecturePostRepositoryCustom {
         QLevelBadge levelBadge = QLevelBadge.levelBadge;
 
         Expression<String> contentPreview = Expressions.stringTemplate(
-                "SUBSTRING({0}, 1, 100)",
+                "SUBSTRING({0}, 1, 101)",
                 post.content
         );
 

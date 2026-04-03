@@ -46,7 +46,7 @@ public class PromotionPostRepositoryImpl implements PromotionPostRepositoryCusto
         QLevelBadge levelBadge = QLevelBadge.levelBadge;
 
         Expression<String> contentPreview = Expressions.stringTemplate(
-                "SUBSTRING({0}, 1, 100)",
+                "SUBSTRING({0}, 1, 101)",
                 post.content
         );
 
