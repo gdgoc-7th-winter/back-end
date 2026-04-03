@@ -9,6 +9,7 @@ import com.project.post.application.dto.PostViewerResponse;
 import com.project.post.application.service.PostQueryService;
 import com.project.post.application.service.PostTagQueryService;
 import com.project.post.application.service.PostViewerStateService;
+import com.project.post.application.util.PostContentUtils;
 import com.project.post.domain.constants.PostConstants;
 import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
@@ -109,7 +110,7 @@ public class PostQueryServiceImpl implements PostQueryService {
         return new PostListResponse(
                 result.postId(),
                 result.title(),
-                makePreview(result.content()),
+                PostContentUtils.makePreview(result.content()),
                 result.thumbnailUrl(),
                 PostAuthorMapper.from(result),
                 result.viewCount(),
@@ -170,14 +171,5 @@ public class PostQueryServiceImpl implements PostQueryService {
                 tagList,
                 attachmentList
         );
-    }
-
-    private String makePreview(String content) {
-        if (content == null || content.isBlank()) {
-            return "";
-        }
-        return content.length() <= 100
-                ? content
-                : content.substring(0, 100) + "...";
     }
 }

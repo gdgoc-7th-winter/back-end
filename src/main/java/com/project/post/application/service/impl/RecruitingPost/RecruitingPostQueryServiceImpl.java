@@ -13,6 +13,7 @@ import com.project.post.application.service.PostQueryService;
 import com.project.post.application.service.PostTagQueryService;
 import com.project.post.application.service.PostViewerStateService;
 import com.project.post.application.service.RecruitingPostQueryService;
+import com.project.post.application.util.PostContentUtils;
 import com.project.post.domain.constants.PostConstants;
 import com.project.post.domain.entity.RecruitingPost;
 import com.project.post.domain.enums.RecruitingCategory;
@@ -139,7 +140,7 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         return page.map(result -> new MyRecruitingPostSummaryResponse(
                 result.recruitingPostId(),
                 result.title(),
-                makePreview(result.content()),
+                PostContentUtils.makePreview(result.content()),
                 result.thumbnailUrl(),
                 result.authorNickname(),
                 result.viewCount(),
@@ -162,7 +163,7 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         return new PostListResponse(
                 result.postId(),
                 result.title(),
-                makePreview(result.content()),
+                PostContentUtils.makePreview(result.content()),
                 result.thumbnailUrl(),
                 PostAuthorResponse.fromParts(
                         result.authorId(),
@@ -226,14 +227,5 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         }
 
         return "D-" + days;
-    }
-
-    private String makePreview(String content) {
-        if (content == null || content.isBlank()) {
-            return "";
-        }
-        return content.length() <= 100
-                ? content
-                : content.substring(0, 100) + "...";
     }
 }
