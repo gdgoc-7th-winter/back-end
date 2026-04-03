@@ -6,6 +6,7 @@ import java.util.List;
 public record PostListResponse(
         Long postId,
         String title,
+        String contentPreview,
         String thumbnailUrl,
         PostAuthorResponse author,
         long viewCount,

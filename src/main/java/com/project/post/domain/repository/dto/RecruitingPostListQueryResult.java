@@ -13,6 +13,7 @@ public record RecruitingPostListQueryResult(
 
         Long postId,
         String title,
+        String content,
         String thumbnailUrl,
 
         Long authorId,

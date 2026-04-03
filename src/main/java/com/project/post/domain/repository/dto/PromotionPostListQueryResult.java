@@ -8,6 +8,7 @@ public record PromotionPostListQueryResult(
         PromotionCategory category,
         Long postId,
         String title,
+        String content,
         String thumbnailUrl,
         Long authorId,
         String authorNickname,

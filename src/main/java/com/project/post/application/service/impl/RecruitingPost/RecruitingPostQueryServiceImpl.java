@@ -162,6 +162,7 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         return new PostListResponse(
                 result.postId(),
                 result.title(),
+                makePreview(result.content()),
                 result.thumbnailUrl(),
                 PostAuthorResponse.fromParts(
                         result.authorId(),
@@ -225,5 +226,14 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
         }
 
         return "D-" + days;
+    }
+
+    private String makePreview(String content) {
+        if (content == null || content.isBlank()) {
+            return "";
+        }
+        return content.length() <= 100
+                ? content
+                : content.substring(0, 100) + "...";
     }
 }

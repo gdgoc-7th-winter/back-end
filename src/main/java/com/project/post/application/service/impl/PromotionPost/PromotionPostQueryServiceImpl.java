@@ -90,6 +90,7 @@ public class PromotionPostQueryServiceImpl implements PromotionPostQueryService 
         return new PostListResponse(
                 result.postId(),
                 result.title(),
+                makePreview(result.content()),
                 result.thumbnailUrl(),
                 PostAuthorMapper.from(result),
                 result.viewCount(),
@@ -100,5 +101,14 @@ public class PromotionPostQueryServiceImpl implements PromotionPostQueryService 
                 tagNames,
                 result.createdAt()
         );
+    }
+
+    private String makePreview(String content) {
+        if (content == null || content.isBlank()) {
+            return "";
+        }
+        return content.length() <= 100
+                ? content
+                : content.substring(0, 100) + "...";
     }
 }

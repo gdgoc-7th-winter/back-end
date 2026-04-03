@@ -109,6 +109,7 @@ public class PostQueryServiceImpl implements PostQueryService {
         return new PostListResponse(
                 result.postId(),
                 result.title(),
+                makePreview(result.content()),
                 result.thumbnailUrl(),
                 PostAuthorMapper.from(result),
                 result.viewCount(),
@@ -169,5 +170,14 @@ public class PostQueryServiceImpl implements PostQueryService {
                 tagList,
                 attachmentList
         );
+    }
+
+    private String makePreview(String content) {
+        if (content == null || content.isBlank()) {
+            return "";
+        }
+        return content.length() <= 100
+                ? content
+                : content.substring(0, 100) + "...";
     }
 }

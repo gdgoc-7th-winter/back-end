@@ -196,6 +196,7 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
                     new PostListResponse(
                             result.postId(),
                             result.title(),
+                            makePreview(result.content()),
                             result.thumbnailUrl(),
                             PostAuthorResponse.fromParts(
                                     result.authorId(),
@@ -266,5 +267,14 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
         }
 
         return Sort.by(Sort.Direction.DESC, "submittedAt");
+    }
+
+    private String makePreview(String content) {
+        if (content == null || content.isBlank()) {
+            return "";
+        }
+        return content.length() <= 100
+                ? content
+                : content.substring(0, 100) + "...";
     }
 }

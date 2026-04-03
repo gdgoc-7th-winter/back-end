@@ -69,6 +69,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 PostListQueryResult.class,
                 post.id,
                 post.title,
+                post.content,
                 post.thumbnailUrl,
                 user.id,
                 user.nickname,
