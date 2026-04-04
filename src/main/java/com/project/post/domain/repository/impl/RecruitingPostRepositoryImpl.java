@@ -195,12 +195,17 @@ public class RecruitingPostRepositoryImpl implements RecruitingPostRepositoryCus
             }
         }
 
+        Expression<String> contentPreview = Expressions.stringTemplate(
+                "SUBSTRING({0}, 1, 101)",
+                post.content
+        );
+
         var projection = Projections.constructor(
                 MyRecruitingPostQueryResult.class,
                 recruitingPost.id,
                 post.title,
+                contentPreview,
                 post.thumbnailUrl,
-                post.content,
                 user.nickname,
                 post.viewCount,
                 post.likeCount,
