@@ -167,7 +167,7 @@ public class RecruitingPostRepositoryImpl implements RecruitingPostRepositoryCus
         QUser user = QUser.user;
 
         BooleanBuilder where = new BooleanBuilder();
-        where.and(user.id.eq(authorId));
+        where.and(post.author.id.eq(authorId));
         where.and(recruitingPost.deletedAt.isNull());
         where.and(post.deletedAt.isNull());
 
@@ -234,7 +234,6 @@ public class RecruitingPostRepositoryImpl implements RecruitingPostRepositoryCus
                             .select(recruitingPost.id.count())
                             .from(recruitingPost)
                             .join(recruitingPost.post, post)
-                            .join(post.author, user)
                             .where(where)
                             .fetchOne();
                     return total == null ? 0L : total;
