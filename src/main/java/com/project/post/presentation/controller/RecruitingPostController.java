@@ -25,6 +25,7 @@ import com.project.post.application.service.ApplicationSubmissionQueryService;
 import com.project.post.domain.enums.ApplicationSubmissionSortType;
 import com.project.post.domain.enums.Campus;
 import com.project.post.domain.enums.RecruitingCategory;
+import com.project.post.domain.enums.RecruitingStatus;
 import com.project.post.presentation.swagger.RecruitingPostControllerDocs;
 import com.project.user.domain.entity.User;
 import jakarta.validation.Valid;
@@ -171,11 +172,18 @@ public class RecruitingPostController implements RecruitingPostControllerDocs {
 
     @GetMapping("/recruitings/me")
     public CommonResponse<Page<MyRecruitingPostSummaryResponse>> getMyRecruitingPosts(
+            @RequestParam(required = false) RecruitingCategory category,
+            @RequestParam(required = false) RecruitingStatus status,
             Pageable pageable,
             @CurrentUser User user
     ) {
         return CommonResponse.ok(
-                recruitingPostQueryService.getMyRecruitingPosts(user.getId(), pageable)
+                recruitingPostQueryService.getMyRecruitingPosts(
+                        user.getId(),
+                        category,
+                        status,
+                        pageable
+                )
         );
     }
 

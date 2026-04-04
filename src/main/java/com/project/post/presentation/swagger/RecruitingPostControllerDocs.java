@@ -18,6 +18,7 @@ import com.project.post.application.dto.RecruitingPost.RecruitingPostListRespons
 import com.project.post.domain.enums.ApplicationSubmissionSortType;
 import com.project.post.domain.enums.Campus;
 import com.project.post.domain.enums.RecruitingCategory;
+import com.project.post.domain.enums.RecruitingStatus;
 import com.project.user.domain.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -116,6 +117,8 @@ public interface RecruitingPostControllerDocs {
     @Operation(summary = "내가 쓴 모집글 목록 조회", description = "현재 로그인한 사용자가 작성한 모집글 목록을 페이징 조회합니다.")
     @ApiResponse(responseCode = "200", description = "성공")
     CommonResponse<Page<MyRecruitingPostSummaryResponse>> getMyRecruitingPosts(
+            @Parameter(description = "카테고리 필터") @RequestParam(required = false) RecruitingCategory category,
+            @Parameter(description = "상태 필터 (UPCOMING: 모집 예정, OPEN: 모집중, CLOSED: 모집 마감)") @RequestParam(required = false) RecruitingStatus status,
             @Parameter(hidden = true) Pageable pageable,
             @Parameter(hidden = true) User user
     );
