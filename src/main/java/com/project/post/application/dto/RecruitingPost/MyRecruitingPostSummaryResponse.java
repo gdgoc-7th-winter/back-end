@@ -8,8 +8,8 @@ import java.time.Instant;
 public record MyRecruitingPostSummaryResponse(
         Long postId,
         String title,
+        String contentPreview,
         String thumbnailUrl,
-        String content,
         String authorNickname,
         Long viewCount,
         Long likeCount,

@@ -10,6 +10,7 @@ import com.project.post.application.dto.LecturePost.LecturePostListResponse;
 import com.project.post.application.service.LecturePostQueryService;
 import com.project.post.application.service.PostTagQueryService;
 import com.project.post.application.service.PostViewerStateService;
+import com.project.post.application.util.PostContentUtils;
 import com.project.post.domain.constants.PostConstants;
 import com.project.post.domain.enums.Campus;
 import com.project.post.domain.enums.PostListSort;
@@ -90,6 +91,7 @@ public class LecturePostQueryServiceImpl implements LecturePostQueryService {
         return new LecturePostListResponse(
                 result.postId(),
                 result.title(),
+                PostContentUtils.withEllipsis(result.contentPreview()),
                 result.thumbnailUrl(),
                 PostAuthorMapper.from(result),
                 result.department(),

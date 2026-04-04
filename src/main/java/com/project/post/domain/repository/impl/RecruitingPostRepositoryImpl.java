@@ -13,8 +13,10 @@ import com.project.user.domain.entity.QUser;
 import com.project.user.domain.repository.querydsl.UserRepresentativeTrackExpressions;
 import com.project.user.domain.repository.querydsl.UserWithdrawnExpressions;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -49,6 +51,11 @@ public class RecruitingPostRepositoryImpl implements RecruitingPostRepositoryCus
         QDepartment department = QDepartment.department;
         QLevelBadge levelBadge = QLevelBadge.levelBadge;
 
+        Expression<String> contentPreview = Expressions.stringTemplate(
+                "SUBSTRING({0}, 1, 101)",
+                post.content
+        );
+
         BooleanBuilder where = new BooleanBuilder();
         where.and(recruitingPost.deletedAt.isNull());
         where.and(post.deletedAt.isNull());
@@ -66,6 +73,7 @@ public class RecruitingPostRepositoryImpl implements RecruitingPostRepositoryCus
 
                 post.id,
                 post.title,
+                contentPreview,
                 post.thumbnailUrl,
 
                 user.id,

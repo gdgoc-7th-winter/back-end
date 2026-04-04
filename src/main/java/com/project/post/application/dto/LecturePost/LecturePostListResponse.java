@@ -10,6 +10,7 @@ import java.util.List;
 public record LecturePostListResponse(
         Long postId,
         String title,
+        String contentPreview,
         String thumbnailUrl,
         PostAuthorResponse author,
         String department,

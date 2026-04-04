@@ -10,6 +10,7 @@ import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionDeta
 import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionSummaryResponse;
 import com.project.post.application.dto.RecruitingPost.AppliedRecruitingPostSummaryResponse;
 import com.project.post.application.service.ApplicationSubmissionQueryService;
+import com.project.post.application.util.PostContentUtils;
 import com.project.post.domain.entity.ApplicationSubmission;
 import com.project.post.domain.entity.RecruitingApplication;
 import com.project.post.domain.entity.RecruitingApplicationAnswer;
@@ -196,6 +197,7 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
                     new PostListResponse(
                             result.postId(),
                             result.title(),
+                            PostContentUtils.withEllipsis(result.contentPreview()),
                             result.thumbnailUrl(),
                             PostAuthorResponse.fromParts(
                                     result.authorId(),

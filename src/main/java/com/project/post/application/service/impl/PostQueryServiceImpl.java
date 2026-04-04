@@ -9,6 +9,7 @@ import com.project.post.application.dto.PostViewerResponse;
 import com.project.post.application.service.PostQueryService;
 import com.project.post.application.service.PostTagQueryService;
 import com.project.post.application.service.PostViewerStateService;
+import com.project.post.application.util.PostContentUtils;
 import com.project.post.domain.constants.PostConstants;
 import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.dto.PostDetailQueryResult;
@@ -109,6 +110,7 @@ public class PostQueryServiceImpl implements PostQueryService {
         return new PostListResponse(
                 result.postId(),
                 result.title(),
+                PostContentUtils.withEllipsis(result.contentPreview()),
                 result.thumbnailUrl(),
                 PostAuthorMapper.from(result),
                 result.viewCount(),
