@@ -182,6 +182,8 @@ public class RecruitingPostRepositoryImpl implements RecruitingPostRepositoryCus
                                 .and(recruitingPost.startedAt.gt(now))
                 );
                 case CLOSED -> where.and(
+                        recruitingPost.startedAt.isNull().or(recruitingPost.startedAt.loe(now))
+                ).and(
                         recruitingPost.deadlineAt.isNotNull()
                                 .and(recruitingPost.deadlineAt.lt(now))
                 );
