@@ -3,7 +3,9 @@ package com.project.post.domain.repository.impl;
 import com.project.post.domain.entity.QPost;
 import com.project.post.domain.entity.QRecruitingPost;
 import com.project.post.domain.enums.RecruitingCategory;
+import com.project.post.domain.enums.RecruitingStatus;
 import com.project.post.domain.repository.RecruitingPostRepositoryCustom;
+import com.project.post.domain.repository.dto.MyRecruitingPostQueryResult;
 import com.project.post.domain.repository.dto.RecruitingPostListQueryResult;
 import com.project.user.domain.entity.QDepartment;
 import com.project.user.domain.entity.QLevelBadge;
@@ -25,6 +27,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -149,5 +152,94 @@ public class RecruitingPostRepositoryImpl implements RecruitingPostRepositoryCus
 
         specifiers.add(post.id.desc());
         return specifiers.toArray(OrderSpecifier[]::new);
+    }
+
+    @Override
+    public Page<MyRecruitingPostQueryResult> findMyRecruitingPostList(
+            Long authorId,
+            @Nullable RecruitingCategory category,
+            @Nullable RecruitingStatus status,
+            Instant now,
+            Pageable pageable
+    ) {
+        QRecruitingPost recruitingPost = QRecruitingPost.recruitingPost;
+        QPost post = QPost.post;
+        QUser user = QUser.user;
+
+        BooleanBuilder where = new BooleanBuilder();
+        where.and(post.author.id.eq(authorId));
+        where.and(recruitingPost.deletedAt.isNull());
+        where.and(post.deletedAt.isNull());
+
+        if (category != null) {
+            where.and(recruitingPost.category.eq(category));
+        }
+
+        if (status != null) {
+            switch (status) {
+                case UPCOMING -> where.and(
+                        recruitingPost.startedAt.isNotNull()
+                                .and(recruitingPost.startedAt.gt(now))
+                );
+                case CLOSED -> where.and(
+                        recruitingPost.startedAt.isNull().or(recruitingPost.startedAt.loe(now))
+                ).and(
+                        recruitingPost.deadlineAt.isNotNull()
+                                .and(recruitingPost.deadlineAt.lt(now))
+                );
+                case OPEN -> where.and(
+                        recruitingPost.startedAt.isNull().or(recruitingPost.startedAt.loe(now))
+                ).and(
+                        recruitingPost.deadlineAt.isNull().or(recruitingPost.deadlineAt.goe(now))
+                );
+                default -> throw new IllegalArgumentException("Invalid RecruitingStatus: " + status);
+            }
+        }
+
+        Expression<String> contentPreview = Expressions.stringTemplate(
+                "SUBSTRING({0}, 1, 101)",
+                post.content
+        );
+
+        var projection = Projections.constructor(
+                MyRecruitingPostQueryResult.class,
+                recruitingPost.id,
+                post.title,
+                contentPreview,
+                post.thumbnailUrl,
+                user.nickname,
+                post.viewCount,
+                post.likeCount,
+                post.commentCount,
+                post.createdAt,
+                recruitingPost.category,
+                recruitingPost.startedAt,
+                recruitingPost.deadlineAt
+        );
+
+        List<MyRecruitingPostQueryResult> content = queryFactory
+                .select(projection)
+                .from(recruitingPost)
+                .join(recruitingPost.post, post)
+                .join(post.author, user)
+                .where(where)
+                .orderBy(toOrderSpecifiers(pageable, post))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        return PageableExecutionUtils.getPage(
+                Objects.requireNonNull(content),
+                pageable,
+                () -> {
+                    Long total = queryFactory
+                            .select(recruitingPost.id.count())
+                            .from(recruitingPost)
+                            .join(recruitingPost.post, post)
+                            .where(where)
+                            .fetchOne();
+                    return total == null ? 0L : total;
+                }
+        );
     }
 }

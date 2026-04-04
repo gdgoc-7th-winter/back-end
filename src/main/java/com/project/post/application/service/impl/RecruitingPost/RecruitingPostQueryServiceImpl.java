@@ -119,7 +119,12 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
     }
 
     @Override
-    public Page<MyRecruitingPostSummaryResponse> getMyRecruitingPosts(Long userId, Pageable pageable) {
+    public Page<MyRecruitingPostSummaryResponse> getMyRecruitingPosts(
+            Long userId,
+            @Nullable RecruitingCategory category,
+            @Nullable RecruitingStatus status,
+            Pageable pageable
+    ) {
         int pageSize = Math.min(pageable.getPageSize(), PostConstants.MAX_PAGE_SIZE);
         Pageable safePageable = PageRequest.of(
                 pageable.getPageNumber(),
@@ -132,10 +137,16 @@ public class RecruitingPostQueryServiceImpl implements RecruitingPostQueryServic
                 )
         );
 
-        Page<MyRecruitingPostQueryResult> page =
-                recruitingPostRepository.findMyRecruitingPostList(userId, safePageable);
-
         Instant now = Instant.now();
+
+        Page<MyRecruitingPostQueryResult> page =
+                recruitingPostRepository.findMyRecruitingPostList(
+                        userId,
+                        category,
+                        status,
+                        now,
+                        safePageable
+                );
 
         return page.map(result -> new MyRecruitingPostSummaryResponse(
                 result.recruitingPostId(),
