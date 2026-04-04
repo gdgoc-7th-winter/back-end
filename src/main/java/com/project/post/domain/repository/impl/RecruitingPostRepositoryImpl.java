@@ -32,8 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static com.project.post.domain.enums.RecruitingStatus.*;
-
 @Repository
 @RequiredArgsConstructor
 public class RecruitingPostRepositoryImpl implements RecruitingPostRepositoryCustom {
@@ -192,6 +190,7 @@ public class RecruitingPostRepositoryImpl implements RecruitingPostRepositoryCus
                 ).and(
                         recruitingPost.deadlineAt.isNull().or(recruitingPost.deadlineAt.goe(now))
                 );
+                default -> throw new IllegalArgumentException("Invalid RecruitingStatus: " + status);
             }
         }
 
