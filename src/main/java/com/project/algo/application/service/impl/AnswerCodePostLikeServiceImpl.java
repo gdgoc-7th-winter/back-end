@@ -10,7 +10,6 @@ import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,20 +28,17 @@ public class AnswerCodePostLikeServiceImpl implements AnswerCodePostLikeService 
             throw new BusinessException(ErrorCode.ACCESS_DENIED, "풀이를 먼저 제출해주세요.");
         }
 
-        AnswerCodePost answer = answerCodePostRepository.findById(answerId)
+        // 배타락으로 동시 토글 직렬화
+        AnswerCodePost answer = answerCodePostRepository.findByIdWithLock(answerId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "풀이를 찾을 수 없습니다."));
 
-        int deleted = answerCodePostLikeRepository.deleteByAnswerCodePostIdAndUserId(answerId, user.getId());
-        if (deleted > 0) {
+        if (answerCodePostLikeRepository.existsByAnswerCodePostIdAndUserId(answerId, user.getId())) {
+            answerCodePostLikeRepository.deleteByAnswerCodePostIdAndUserId(answerId, user.getId());
             answerCodePostRepository.decrementLikeCount(answerId);
             return new AlgoLikeToggleResponse(false, Math.max(answer.getLikeCount() - 1, 0));
         }
 
-        try {
-            answerCodePostLikeRepository.saveAndFlush(AnswerCodePostLike.of(answer, user));
-        } catch (DataIntegrityViolationException e) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "이미 좋아요를 누른 풀이입니다.");
-        }
+        answerCodePostLikeRepository.save(AnswerCodePostLike.of(answer, user));
         answerCodePostRepository.incrementLikeCount(answerId);
         return new AlgoLikeToggleResponse(true, answer.getLikeCount() + 1);
     }

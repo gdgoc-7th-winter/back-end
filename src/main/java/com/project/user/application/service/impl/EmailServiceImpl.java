@@ -88,8 +88,6 @@ public class EmailServiceImpl implements com.project.user.application.service.Em
         }
 
         if (!savedCode.equals(authCode)) {
-            // 인증번호가 틀린 경우 재발급 제한도 즉시 해제하여 새 코드를 바로 요청할 수 있게 함
-            emailAuthRepository.deleteSendLimit(email);
             throw new BusinessException(ErrorCode.INVALID_AUTH_CODE); // 번호 틀림
         }
         // 회원가입 권한 세션 저장

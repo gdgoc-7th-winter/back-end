@@ -1,10 +1,12 @@
 package com.project.algo.domain.repository;
 
 import com.project.algo.domain.entity.AnswerCodePost;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -25,12 +27,17 @@ public interface AnswerCodePostRepository extends JpaRepository<AnswerCodePost, 
 
     boolean existsByDailyChallengeIdAndAuthorId(Long challengeId, Long authorId);
 
+    /** 좋아요 토글 전용 — 동시성 제어를 위해 배타락 획득 */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT a FROM AnswerCodePost a WHERE a.id = :id")
+    Optional<AnswerCodePost> findByIdWithLock(@Param("id") Long id);
+
     /**
      * MVP 선정용 — 특정 날짜(KST)에 제출된 모든 풀이를 좋아요 내림차순, 동점 시 먼저 제출한 순으로 상위 N개 반환.
      * challenge 구분 없이 전체 범위에서 선정한다.
      * @SQLRestriction 으로 소프트 삭제된 풀이는 자동 제외.
      */
-    @Query("SELECT a FROM AnswerCodePost a JOIN FETCH a.author JOIN FETCH a.dailyChallenge WHERE a.createdAt >= :start AND a.createdAt < :end")
+    @Query("SELECT a FROM AnswerCodePost a JOIN FETCH a.author JOIN FETCH a.dailyChallenge WHERE a.createdAt >= :start AND a.createdAt < :end ORDER BY a.likeCount DESC, a.createdAt ASC")
     List<AnswerCodePost> findTop3ForMvp(@Param("start") Instant start, @Param("end") Instant end, Pageable pageable);
 
     @Modifying

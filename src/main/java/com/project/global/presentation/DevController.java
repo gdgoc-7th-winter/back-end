@@ -8,6 +8,7 @@ import com.project.user.application.service.UserService;
 import com.project.user.domain.enums.Authority;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,8 +16,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 개발/테스트 전용 컨트롤러 — 프로덕션 배포 시 제거 또는 비활성화 필요
+ * 개발/테스트 전용 컨트롤러 — prod 프로파일에서는 Bean 등록 자체가 비활성화됨
  */
+@Profile("!prod")
 @RestController
 @RequestMapping("/api/v1/dev")
 @RequiredArgsConstructor

@@ -61,6 +61,7 @@ class ContributionCommandServiceIntegrationTest {
     void setUp() {
         userContributionRepository.deleteAll();
         userRepository.deleteAll();
+        userRepository.flush();
 
         dummyTier = levelBadgeRepository.findByPointWithinRange(0).orElseThrow();
         goldTier = levelBadgeRepository.findByPointWithinRange(700).orElseThrow();

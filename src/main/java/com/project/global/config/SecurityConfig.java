@@ -46,13 +46,14 @@ public class SecurityConfig {
                                 "/actuator/health", "/actuator/health/**", "/actuator/info",
                                 "/api/health", "/api/ping", "/api/v1/auth/**",
                                 "/swagger-ui/**", "/v3/api-docs/**", "/api/v1/users/signup", "/api/v1/users/login",
-                                "/login/oauth2/code/**",
-                                "/api/v1/dev/**"
+                                "/login/oauth2/code/**"
                         )
                 )
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
+                        // 개발/테스트 전용 — ADMIN 전용으로 제한 (prod에서는 @Profile("!prod")로 Bean 자체가 없음)
+                        .requestMatchers("/api/v1/dev/**").hasRole("ADMIN")
                         // 사용자/개발자 확인용
                         .requestMatchers("/api/health", "/api/ping").permitAll()
                         // ALB 헬스 체크

@@ -106,7 +106,10 @@ public class UserServiceImpl implements UserService {
             user.initializeLevelBadge(initialBadge);
             eventPublisher.publishEvent(new UserRegistrationCompletedEvent(request.getEmail()));
         } catch (DataIntegrityViolationException e) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "회원가입 실행 중 오류가 발생했습니다. 다시 시도해주세요");
+            String message = e.getMessage() != null && e.getMessage().contains("uk_users_nickname")
+                    ? "이미 사용 중인 닉네임입니다."
+                    : "회원가입 실행 중 오류가 발생했습니다. 다시 시도해주세요.";
+            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS, message);
         }
     }
 

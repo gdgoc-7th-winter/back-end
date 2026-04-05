@@ -33,7 +33,10 @@ import java.util.List;
 import java.util.Set;
 
 @Entity
-@Table(name = "users")
+@Table(
+        name = "users",
+        uniqueConstraints = @UniqueConstraint(name = "uk_users_nickname", columnNames = {"nickname"})
+)
 @BatchSize(size = 16)
 @Getter
 @SuperBuilder

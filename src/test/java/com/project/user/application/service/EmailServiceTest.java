@@ -18,7 +18,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.when;
@@ -78,15 +77,15 @@ class EmailServiceTest {
     }
 
     @Test
-    @DisplayName("인증번호 불일치 시 재발급 제한(LIMIT 키)이 즉시 삭제된다")
-    void wrongCodeDeletesSendLimit() {
+    @DisplayName("인증번호 불일치 시 재발급 제한(LIMIT 키)이 유지된다")
+    void wrongCodeKeepsSendLimit() {
         emailService.sendAuthEmail(testEmail);
         assertThat(redisTemplate.hasKey("LIMIT:" + testEmail)).isTrue();
 
         assertThatThrownBy(() -> emailService.verifyCode(testEmail, "000000"))
                 .isInstanceOf(BusinessException.class);
 
-        assertThat(redisTemplate.hasKey("LIMIT:" + testEmail)).isFalse();
+        assertThat(redisTemplate.hasKey("LIMIT:" + testEmail)).isTrue();
     }
 
     @Test
@@ -101,15 +100,17 @@ class EmailServiceTest {
     }
 
     @Test
-    @DisplayName("인증번호 불일치 후 즉시 새 인증번호를 발급받을 수 있다")
-    void wrongCodeAllowsImmediateResend() {
+    @DisplayName("인증번호 불일치 후 재발급 제한이 만료되기 전에는 새 코드를 요청할 수 없다")
+    void wrongCodeBlocksImmediateResend() {
         emailService.sendAuthEmail(testEmail);
 
         assertThatThrownBy(() -> emailService.verifyCode(testEmail, "000000"))
                 .isInstanceOf(BusinessException.class);
 
-        // LIMIT 키가 없으므로 TOO_MANY_REQUESTS 없이 즉시 재발급 가능해야 함
-        assertThatCode(() -> emailService.sendAuthEmail(testEmail))
-                .doesNotThrowAnyException();
+        // LIMIT 키가 살아있으므로 즉시 재발급 시 TOO_MANY_REQUESTS 발생해야 함
+        assertThatThrownBy(() -> emailService.sendAuthEmail(testEmail))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
+                        .isEqualTo(ErrorCode.TOO_MANY_REQUESTS));
     }
 }
