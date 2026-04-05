@@ -30,7 +30,6 @@ WebConfig implements WebMvcConfigurer {
     public void addInterceptors(@NonNull InterceptorRegistry registry) {
         registry.addInterceptor(onboardingInterceptor)
                 .addPathPatterns("/api/**")
-
                 .excludePathPatterns(
                         "/api/health",
                         "/api/v1/auth/**",
@@ -40,6 +39,7 @@ WebConfig implements WebMvcConfigurer {
                         "/api/v1/oauth2/login/**",
                         "/api/v1/departments"
                 );
+
     }
 
     @Override

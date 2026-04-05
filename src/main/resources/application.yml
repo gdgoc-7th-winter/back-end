@@ -56,3 +56,7 @@ springdoc:
     path: /swagger-ui
   api-docs:
     path: /v3/api-docs
+
+piston:
+  api:
+    timeout-seconds: 15

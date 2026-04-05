@@ -84,6 +84,11 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS);
         }
 
+        // 닉네임 중복 체크
+        if (userRepository.existsByNickname(request.getNickname())) {
+            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS, "이미 사용 중인 닉네임입니다.");
+        }
+
         // 비밀번호 암호화 및 엔티티 생성
         try {
             String encodedPassword = passwordEncoder.encode(request.getPassword());
@@ -101,7 +106,10 @@ public class UserServiceImpl implements UserService {
             user.initializeLevelBadge(initialBadge);
             eventPublisher.publishEvent(new UserRegistrationCompletedEvent(request.getEmail()));
         } catch (DataIntegrityViolationException e) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "회원가입 실행 중 오류가 발생했습니다. 다시 시도해주세요");
+            String message = e.getMessage() != null && e.getMessage().contains("uk_users_nickname")
+                    ? "이미 사용 중인 닉네임입니다."
+                    : "회원가입 실행 중 오류가 발생했습니다. 다시 시도해주세요.";
+            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS, message);
         }
     }
 
@@ -195,6 +203,12 @@ public class UserServiceImpl implements UserService {
             validateAllFound(request.getTechStackNames(), techStackMasters.stream().map(TechStack::getName).toList(), "기술 스택");
         }
 
+        // 닉네임 중복 체크 (자기 자신 제외)
+        if (request.getNickname() != null
+                && userRepository.existsByNicknameExcludingUser(request.getNickname(), userId)) {
+            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS, "이미 사용 중인 닉네임입니다.");
+        }
+
         user.updateProfile(
                 request.getNickname(),
                 request.getStudentId(),
@@ -240,6 +254,12 @@ public class UserServiceImpl implements UserService {
         if (request.getTechStackNames() != null) {
             techStackMasters = techStackRepository.findByNameIn(request.getTechStackNames());
             validateAllFound(request.getTechStackNames(), techStackMasters.stream().map(TechStack::getName).toList(), "기술 스택");
+        }
+
+        // 닉네임 중복 체크 (자기 자신 제외)
+        if (request.getNickname() != null
+                && userRepository.existsByNicknameExcludingUser(request.getNickname(), userId)) {
+            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS, "이미 사용 중인 닉네임입니다.");
         }
 
         user.updateProfile(

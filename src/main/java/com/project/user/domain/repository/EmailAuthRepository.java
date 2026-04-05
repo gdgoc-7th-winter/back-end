@@ -9,4 +9,5 @@ public interface EmailAuthRepository {
     void deleteRegisterSession(String email);
     boolean hasRecentRequest(String email);
     void saveSendLimit(String email, long limitSeconds);
+    void deleteSendLimit(String email);
 }

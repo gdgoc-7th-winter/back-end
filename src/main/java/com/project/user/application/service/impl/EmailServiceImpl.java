@@ -3,6 +3,7 @@ package com.project.user.application.service.impl;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.user.domain.repository.EmailAuthRepository;
+import com.project.user.domain.repository.UserRepository;
 import com.project.user.domain.repository.impl.RedisEmailAuthRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,16 +17,19 @@ import java.security.SecureRandom;
 public class EmailServiceImpl implements com.project.user.application.service.EmailService {
     private final JavaMailSender mailSender;
     private final EmailAuthRepository emailAuthRepository;
+    private final UserRepository userRepository;
     private final long authCodeTtl;
     private final long limitSeconds;
 
     public EmailServiceImpl(
             JavaMailSender mailSender,
             RedisEmailAuthRepository emailAuthRepository,
+            UserRepository userRepository,
             @Value("${spring.data.redis.ttl.auth-code-minutes:5}") long authCodeTtl,
             @Value("${spring.data.redis.ttl.limit-seconds:60}") long limitSeconds) {
         this.mailSender = mailSender;
         this.emailAuthRepository = emailAuthRepository;
+        this.userRepository = userRepository;
         this.authCodeTtl = authCodeTtl;
         this.limitSeconds = limitSeconds;
     }
@@ -45,6 +49,11 @@ public class EmailServiceImpl implements com.project.user.application.service.Em
     @Override
     public void sendAuthEmail(String email) {
         validateHufsEmail(email);
+
+        // 이미 가입된 이메일 예외처리
+        if (userRepository.existsByEmail(email)) {
+            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS, "이미 가입된 이메일 주소입니다.");
+        }
 
         // 중복요청 예외처리
         if (emailAuthRepository.hasRecentRequest(email)) {

@@ -54,6 +54,11 @@ public class RedisEmailAuthRepository implements EmailAuthRepository {
         );
     }
 
+    @Override
+    public void deleteSendLimit(String email) {
+        redisTemplate.delete("LIMIT:" + email);
+    }
+
     // 회원가입 권한 세션 (30분) 정보 Redis DB 저장 로직
     @Override
     public void setRegisterSession(String email) {

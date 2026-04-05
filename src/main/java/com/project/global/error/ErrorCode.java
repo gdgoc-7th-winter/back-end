@@ -33,6 +33,8 @@ public enum ErrorCode {
     FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "F004", "파일 크기가 제한을 초과했습니다."),
     UNSUPPORTED_UPLOAD_TYPE(HttpStatus.BAD_REQUEST, "F005", "지원하지 않는 업로드 타입입니다."),
 
+    // Code Execution
+    CODE_EXECUTION_ERROR(HttpStatus.BAD_GATEWAY, "CE001", "코드 실행 중 오류가 발생했습니다."),
     //Recruiting
     DEADLINE_PASSED(HttpStatus.BAD_REQUEST, "R001", "모집이 마감되었습니다."),
     ALREADY_APPLIED(HttpStatus.BAD_REQUEST, "R002", "이미 지원한 모집글입니다."),

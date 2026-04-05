@@ -24,4 +24,8 @@ public interface DailyMVPRepository extends JpaRepository<DailyMVP, Long> {
     /** MVP 선정 재실행 시 기존 데이터 삭제 (멱등성 보장) */
     @Modifying
     void deleteByDailyChallengeIdAndAwardedAt(Long challengeId, LocalDate awardedAt);
+
+    /** 날짜 단위 전체 삭제 — challenge 무관 MVP 선정 재실행 시 사용 */
+    @Modifying
+    void deleteByAwardedAt(LocalDate awardedAt);
 }

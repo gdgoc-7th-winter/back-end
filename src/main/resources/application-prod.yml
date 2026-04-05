@@ -1,7 +1,7 @@
 # 운영 서버
-app:
-  openapi:
-    server-url: ${OPENAPI_SERVER_URL:https://api.hufs.dev}
+piston:
+  api:
+    url: ${PISTON_API_URL}
 
 cloud:
   aws:

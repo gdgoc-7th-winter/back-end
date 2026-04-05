@@ -2,6 +2,7 @@ package com.project.global.error;
 
 import com.project.post.domain.exception.PostDomainException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -37,6 +38,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .badRequest()
                 .body(ErrorResponse.validationError(ErrorCode.INVALID_INPUT.getCode(), message, errors));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    protected ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException e) {
+        log.warn("DataIntegrityViolationException: {}", e.getMessage());
+        String message = e.getMessage() != null && e.getMessage().contains("uk_users_nickname")
+                ? "이미 사용 중인 닉네임입니다."
+                : "이미 존재하는 데이터입니다.";
+        return ResponseEntity
+                .status(ErrorCode.DUPLICATED_ADDRESS.getStatus().value())
+                .body(ErrorResponses.clientError(ErrorCode.DUPLICATED_ADDRESS, message));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
