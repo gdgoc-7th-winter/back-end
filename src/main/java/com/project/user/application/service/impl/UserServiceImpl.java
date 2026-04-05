@@ -87,6 +87,11 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS);
         }
 
+        // 닉네임 중복 체크
+        if (userRepository.existsByNickname(request.getNickname())) {
+            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS, "이미 사용 중인 닉네임입니다.");
+        }
+
         // 비밀번호 암호화 및 엔티티 생성
         try {
             String encodedPassword = passwordEncoder.encode(request.getPassword());
@@ -198,6 +203,12 @@ public class UserServiceImpl implements UserService {
             validateAllFound(request.getTechStackNames(), techStackMasters.stream().map(TechStack::getName).toList(), "기술 스택");
         }
 
+        // 닉네임 중복 체크 (자기 자신 제외)
+        if (request.getNickname() != null
+                && userRepository.existsByNicknameExcludingUser(request.getNickname(), userId)) {
+            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS, "이미 사용 중인 닉네임입니다.");
+        }
+
         user.updateProfile(
                 request.getNickname(),
                 request.getStudentId(),
@@ -244,6 +255,12 @@ public class UserServiceImpl implements UserService {
         if (request.getTechStackNames() != null) {
             techStackMasters = techStackRepository.findByNameIn(request.getTechStackNames());
             validateAllFound(request.getTechStackNames(), techStackMasters.stream().map(TechStack::getName).toList(), "기술 스택");
+        }
+
+        // 닉네임 중복 체크 (자기 자신 제외)
+        if (request.getNickname() != null
+                && userRepository.existsByNicknameExcludingUser(request.getNickname(), userId)) {
+            throw new BusinessException(ErrorCode.DUPLICATED_ADDRESS, "이미 사용 중인 닉네임입니다.");
         }
 
         user.updateProfile(
