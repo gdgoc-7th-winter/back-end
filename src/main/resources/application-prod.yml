@@ -51,6 +51,10 @@ management:
     mail:
       enabled: false
 
+csrf:
+  cookie:
+    domain: .hufs.dev
+
 spring:
   data:
     redis:
