@@ -29,12 +29,6 @@ public class AnswerCommentCommandServiceImpl implements AnswerCommentCommandServ
         AnswerCodePost answerCodePost = answerCodePostRepository.findById(answerId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "풀이를 찾을 수 없습니다."));
 
-        // 코멘트 작성자도 해당 문제에 풀이를 제출해야 함
-        Long challengeId = answerCodePost.getDailyChallenge().getId();
-        if (!answerCodePostRepository.existsByDailyChallengeIdAndAuthorId(challengeId, author.getId())) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED, "풀이를 먼저 제출해야 코멘트를 작성할 수 있습니다.");
-        }
-
         AnswerComment comment = AnswerComment.builder()
                 .answerCodePost(answerCodePost)
                 .author(author)

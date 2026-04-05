@@ -76,22 +76,8 @@ class AnswerCodePostQueryServiceImplTest {
     // ── getList ──────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("풀이를 제출하지 않은 경우 목록 조회 시 ACCESS_DENIED를 던진다")
-    void getListThrowsWhenNotSubmitted() {
-        when(answerCodePostRepository.existsByDailyChallengeIdAndAuthorId(10L, 1L)).thenReturn(false);
-
-        assertThatThrownBy(() -> answerCodePostQueryService.getList(10L, viewer, PageRequest.of(0, 10)))
-                .isInstanceOf(BusinessException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.ACCESS_DENIED);
-
-        verify(answerCodePostRepository, never()).findByDailyChallengeId(any(), any());
-    }
-
-    @Test
-    @DisplayName("풀이를 제출한 경우 목록을 반환한다")
-    void getListReturnsPageWhenSubmitted() {
-        when(answerCodePostRepository.existsByDailyChallengeIdAndAuthorId(10L, 1L)).thenReturn(true);
+    @DisplayName("풀이 목록을 페이지로 반환한다")
+    void getListReturnsPage() {
         PageRequest pageable = PageRequest.of(0, 10);
         when(answerCodePostRepository.findByDailyChallengeId(eq(10L), eq(pageable)))
                 .thenReturn(new PageImpl<>(List.of(answer)));
@@ -104,22 +90,8 @@ class AnswerCodePostQueryServiceImplTest {
     // ── getDetail ────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("풀이를 제출하지 않은 경우 상세 조회 시 ACCESS_DENIED를 던진다")
-    void getDetailThrowsWhenNotSubmitted() {
-        when(answerCodePostRepository.existsByDailyChallengeIdAndAuthorId(10L, 1L)).thenReturn(false);
-
-        assertThatThrownBy(() -> answerCodePostQueryService.getDetail(10L, 100L, viewer))
-                .isInstanceOf(BusinessException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.ACCESS_DENIED);
-
-        verify(answerCodePostRepository, never()).findWithDetailById(any());
-    }
-
-    @Test
-    @DisplayName("풀이를 제출했지만 해당 answer가 없으면 RESOURCE_NOT_FOUND를 던진다")
+    @DisplayName("해당 answer가 없으면 RESOURCE_NOT_FOUND를 던진다")
     void getDetailThrowsWhenAnswerNotFound() {
-        when(answerCodePostRepository.existsByDailyChallengeIdAndAuthorId(10L, 1L)).thenReturn(true);
         when(answerCodePostRepository.findWithDetailById(100L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> answerCodePostQueryService.getDetail(10L, 100L, viewer))
@@ -129,9 +101,8 @@ class AnswerCodePostQueryServiceImplTest {
     }
 
     @Test
-    @DisplayName("풀이를 제출한 경우 findWithDetailById로 상세 조회한다")
+    @DisplayName("findWithDetailById로 상세 조회한다")
     void getDetailCallsFindWithDetailById() {
-        when(answerCodePostRepository.existsByDailyChallengeIdAndAuthorId(10L, 1L)).thenReturn(true);
         when(answerCodePostRepository.findWithDetailById(100L)).thenReturn(Optional.of(answer));
 
         AnswerCodePostDetailResponse response = answerCodePostQueryService.getDetail(10L, 100L, viewer);
@@ -180,7 +151,6 @@ class AnswerCodePostQueryServiceImplTest {
         @Test
         @DisplayName("목록 조회: 탈퇴한 작성자의 닉네임이 '탈퇴한 회원'으로 표시된다")
         void getListShowsWithdrawnAuthorNickname() {
-            when(answerCodePostRepository.existsByDailyChallengeIdAndAuthorId(10L, 1L)).thenReturn(true);
             when(answerCodePostRepository.findByDailyChallengeId(eq(10L), any(Pageable.class)))
                     .thenReturn(new PageImpl<>(List.of(postByWithdrawn)));
 
@@ -196,7 +166,6 @@ class AnswerCodePostQueryServiceImplTest {
         @Test
         @DisplayName("상세 조회: 탈퇴한 작성자의 닉네임이 '탈퇴한 회원'으로 표시된다")
         void getDetailShowsWithdrawnAuthorNickname() {
-            when(answerCodePostRepository.existsByDailyChallengeIdAndAuthorId(10L, 1L)).thenReturn(true);
             when(answerCodePostRepository.findWithDetailById(200L)).thenReturn(Optional.of(postByWithdrawn));
 
             AnswerCodePostDetailResponse response =
@@ -209,7 +178,6 @@ class AnswerCodePostQueryServiceImplTest {
         @Test
         @DisplayName("상세 조회: 탈퇴 작성자 게시글 조회 시 예외 없이 정상 응답한다")
         void getDetailDoesNotThrowForWithdrawnAuthor() {
-            when(answerCodePostRepository.existsByDailyChallengeIdAndAuthorId(10L, 1L)).thenReturn(true);
             when(answerCodePostRepository.findWithDetailById(200L)).thenReturn(Optional.of(postByWithdrawn));
 
             // @SQLRestriction 제거 전이라면 EntityNotFoundException 발생 위치

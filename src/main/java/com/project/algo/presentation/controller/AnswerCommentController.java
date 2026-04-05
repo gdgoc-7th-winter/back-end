@@ -5,6 +5,7 @@ import com.project.algo.application.dto.AnswerCommentResponse;
 import com.project.algo.application.dto.AnswerCommentUpdateRequest;
 import com.project.algo.application.service.AnswerCommentCommandService;
 import com.project.algo.application.service.AnswerCommentQueryService;
+import com.project.algo.presentation.swagger.AnswerCommentControllerDocs;
 import com.project.global.annotation.CurrentUser;
 import com.project.global.response.CommonResponse;
 import com.project.global.response.PageResponse;
@@ -36,7 +37,7 @@ import java.util.Map;
 @RequestMapping("/api/v1/algo/{challengeId}/answers/{answerId}/comments")
 @Validated
 @RequiredArgsConstructor
-public class AnswerCommentController {
+public class AnswerCommentController implements AnswerCommentControllerDocs {
 
     private final AnswerCommentCommandService commandService;
     private final AnswerCommentQueryService queryService;

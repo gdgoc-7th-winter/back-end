@@ -23,11 +23,6 @@ public class AnswerCodePostLikeServiceImpl implements AnswerCodePostLikeService 
     @Override
     @Transactional
     public AlgoLikeToggleResponse toggle(Long challengeId, Long answerId, User user) {
-        // 풀이 제출 여부 검증
-        if (!answerCodePostRepository.existsByDailyChallengeIdAndAuthorId(challengeId, user.getId())) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED, "풀이를 먼저 제출해주세요.");
-        }
-
         // 배타락으로 동시 토글 직렬화
         AnswerCodePost answer = answerCodePostRepository.findByIdWithLock(answerId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "풀이를 찾을 수 없습니다."));

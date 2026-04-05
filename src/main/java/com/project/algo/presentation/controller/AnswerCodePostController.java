@@ -13,6 +13,7 @@ import com.project.algo.application.service.AnswerCodePostLikeService;
 import com.project.algo.application.service.AnswerCodePostQueryService;
 import com.project.algo.application.service.CodeExecutionService;
 import com.project.algo.application.service.ProgrammingLanguageQueryService;
+import com.project.algo.presentation.swagger.AnswerCodePostControllerDocs;
 import com.project.global.annotation.CurrentUser;
 import com.project.global.response.CommonResponse;
 import com.project.global.response.PageResponse;
@@ -45,7 +46,7 @@ import java.util.Map;
 @RequestMapping("/api/v1/algo")
 @Validated
 @RequiredArgsConstructor
-public class AnswerCodePostController {
+public class AnswerCodePostController implements AnswerCodePostControllerDocs {
 
     private final AnswerCodePostCommandService commandService;
     private final AnswerCodePostQueryService queryService;
