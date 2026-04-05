@@ -4,6 +4,7 @@ import com.project.user.domain.repository.impl.CustomAuthorizationRequestReposit
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,6 +24,9 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    @Value("${csrf.cookie.domain:}")
+    private String csrfCookieDomain;
+
     private final OAuth2ConnectSuccessHandler oAuth2ConnectSuccessHandler;
 
     @Bean
@@ -39,16 +43,20 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
         return http
                 .sessionManagement(session -> session.sessionFixation().changeSessionId())
-                .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrf(csrf -> {
+                    CookieCsrfTokenRepository csrfRepo = CookieCsrfTokenRepository.withHttpOnlyFalse();
+                    if (!csrfCookieDomain.isBlank()) {
+                        csrfRepo.setCookieDomain(csrfCookieDomain);
+                    }
+                    csrf.csrfTokenRepository(csrfRepo)
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                         .ignoringRequestMatchers(
                                 "/actuator/health", "/actuator/health/**", "/actuator/info",
                                 "/api/health", "/api/ping", "/api/v1/auth/**",
                                 "/swagger-ui/**", "/v3/api-docs/**", "/api/v1/users/signup", "/api/v1/users/login",
                                 "/login/oauth2/code/**"
-                        )
-                )
+                        );
+                })
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
