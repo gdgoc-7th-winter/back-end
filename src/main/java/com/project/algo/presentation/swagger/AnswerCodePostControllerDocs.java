@@ -52,12 +52,10 @@ public interface AnswerCodePostControllerDocs {
 
     @Operation(
             summary = "풀이 목록 조회",
-            description = "특정 문제에 등록된 풀이 목록을 좋아요 내림차순으로 페이징 조회합니다. "
-                    + "해당 문제에 풀이를 제출한 사용자만 조회할 수 있습니다."
+            description = "특정 문제에 등록된 풀이 목록을 좋아요 내림차순으로 페이징 조회합니다."
     )
     @ApiResponse(responseCode = "200", description = "성공")
     @ApiResponse(responseCode = "401", description = "인증 필요")
-    @ApiResponse(responseCode = "403", description = "풀이를 먼저 제출해야 조회 가능")
     @ApiResponse(responseCode = "404", description = "문제 없음")
     ResponseEntity<CommonResponse<PageResponse<AnswerCodePostListResponse>>> getList(
             @Parameter(description = "문제 ID") @Positive @NonNull Long challengeId,
@@ -67,12 +65,10 @@ public interface AnswerCodePostControllerDocs {
 
     @Operation(
             summary = "풀이 상세 조회",
-            description = "특정 풀이의 상세 정보를 조회합니다. 코드 전문, 설명, 알고리즘 태그 등이 포함됩니다. "
-                    + "해당 문제에 풀이를 제출한 사용자만 조회할 수 있습니다."
+            description = "특정 풀이의 상세 정보를 조회합니다. 코드 전문, 설명, 알고리즘 태그 등이 포함됩니다."
     )
     @ApiResponse(responseCode = "200", description = "성공")
     @ApiResponse(responseCode = "401", description = "인증 필요")
-    @ApiResponse(responseCode = "403", description = "풀이를 먼저 제출해야 조회 가능")
     @ApiResponse(responseCode = "404", description = "문제 또는 풀이 없음")
     ResponseEntity<CommonResponse<AnswerCodePostDetailResponse>> getDetail(
             @Parameter(description = "문제 ID") @Positive @NonNull Long challengeId,
@@ -127,12 +123,10 @@ public interface AnswerCodePostControllerDocs {
 
     @Operation(
             summary = "풀이 좋아요 토글",
-            description = "풀이에 좋아요를 토글합니다. 좋아요가 없으면 추가, 있으면 취소합니다. "
-                    + "해당 문제에 풀이를 제출한 사용자만 좋아요를 누를 수 있습니다."
+            description = "풀이에 좋아요를 토글합니다. 좋아요가 없으면 추가, 있으면 취소합니다."
     )
     @ApiResponse(responseCode = "200", description = "성공")
     @ApiResponse(responseCode = "401", description = "인증 필요")
-    @ApiResponse(responseCode = "403", description = "풀이를 먼저 제출해야 좋아요 가능")
     @ApiResponse(responseCode = "404", description = "풀이 없음")
     ResponseEntity<CommonResponse<AlgoLikeToggleResponse>> toggleLike(
             @Parameter(description = "문제 ID") @Positive @NonNull Long challengeId,

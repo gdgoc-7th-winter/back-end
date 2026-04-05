@@ -23,7 +23,6 @@ public class AnswerCodePostQueryServiceImpl implements AnswerCodePostQueryServic
 
     @Override
     public Page<AnswerCodePostListResponse> getList(Long challengeId, User viewer, Pageable pageable) {
-        validateSubmitted(challengeId, viewer);
         return answerCodePostRepository
                 .findByDailyChallengeId(challengeId, pageable)
                 .map(AnswerCodePostListResponse::from);
@@ -31,19 +30,11 @@ public class AnswerCodePostQueryServiceImpl implements AnswerCodePostQueryServic
 
     @Override
     public AnswerCodePostDetailResponse getDetail(Long challengeId, Long answerId, User viewer) {
-        validateSubmitted(challengeId, viewer);
         AnswerCodePost answer = answerCodePostRepository.findWithDetailById(answerId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "풀이를 찾을 수 없습니다."));
         if (!answer.getDailyChallenge().getId().equals(challengeId)) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "풀이를 찾을 수 없습니다.");
         }
         return AnswerCodePostDetailResponse.from(answer);
-    }
-
-    /** 해당 문제에 풀이를 제출하지 않은 경우 열람 불가 */
-    private void validateSubmitted(Long challengeId, User viewer) {
-        if (!answerCodePostRepository.existsByDailyChallengeIdAndAuthorId(challengeId, viewer.getId())) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED, "풀이를 먼저 제출해주세요.");
-        }
     }
 }
