@@ -7,6 +7,7 @@ import com.project.algo.application.dto.DailyChallengeUpdateRequest;
 import com.project.algo.domain.enums.AlgorithmTag;
 import com.project.algo.application.service.DailyChallengeCommandService;
 import com.project.algo.application.service.DailyChallengeQueryService;
+import com.project.algo.presentation.swagger.DailyChallengeControllerDocs;
 import com.project.global.annotation.CurrentUser;
 import com.project.global.response.CommonResponse;
 import com.project.global.response.PageResponse;
@@ -40,7 +41,7 @@ import java.util.Map;
 @RequestMapping("/api/v1/algo")
 @Validated
 @RequiredArgsConstructor
-public class DailyChallengeController {
+public class DailyChallengeController implements DailyChallengeControllerDocs {
 
     private final DailyChallengeCommandService commandService;
     private final DailyChallengeQueryService queryService;
