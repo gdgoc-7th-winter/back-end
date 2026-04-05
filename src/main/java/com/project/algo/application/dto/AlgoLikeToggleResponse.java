@@ -1,3 +1,5 @@
 package com.project.algo.application.dto;
 
-public record AlgoLikeToggleResponse(boolean liked, long likeCount) {}
+import java.util.Optional;
+
+public record AlgoLikeToggleResponse(boolean liked, Optional<Integer> likeCount) {}

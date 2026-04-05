@@ -49,5 +49,5 @@ public interface AnswerCodePostRepository extends JpaRepository<AnswerCodePost, 
     int decrementLikeCount(@Param("id") Long id);
 
     @Query("SELECT a.likeCount FROM AnswerCodePost a WHERE a.id = :id")
-    int findLikeCountById(@Param("id") Long id);
+    Optional<Integer> findLikeCountById(@Param("id") Long id);
 }
