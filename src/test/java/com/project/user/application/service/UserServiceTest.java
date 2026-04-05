@@ -1,9 +1,10 @@
 package com.project.user.application.service;
 
+import com.project.contribution.application.dto.ActivityContext;
+import com.project.contribution.application.port.ContributionOutboxPort;
+import com.project.global.event.ActivityType;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
-import com.project.global.event.impl.UserPromotionEvent;
-
 import com.project.user.application.dto.UserSession;
 import com.project.user.application.service.impl.UserServiceImpl;
 import com.project.user.domain.entity.Department;
@@ -43,6 +44,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -63,6 +65,7 @@ class UserServiceTest {
     @Mock private TrackRepository trackRepository;
     @Mock private TechStackRepository techStackRepository;
     @Mock private DepartmentRepository departmentRepository;
+    @Mock private ContributionOutboxPort contributionOutboxPort;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -124,7 +127,7 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("프로필 초기 설정 시 권한이 승급되고 이벤트가 발행된다")
+    @DisplayName("프로필 초기 설정 시 권한이 승급되고 기여 Outbox 적재가 호출된다")
     void updateProfilePromotionSuccess() {
         try (MockedStatic<RequestContextHolder> mockedContext = mockStatic(RequestContextHolder.class)) {
             // given
@@ -158,7 +161,10 @@ class UserServiceTest {
             // then
             assertThat(user.getAuthority()).isEqualTo(Authority.USER);
             assertThat(user.needsInitialSetup()).isFalse();
-            verify(eventPublisher, times(1)).publishEvent(any(UserPromotionEvent.class));
+            verify(contributionOutboxPort, times(1)).append(argThat((ActivityContext c) ->
+                    c.activityType() == ActivityType.PROFILE_SETUP_COMPLETED
+                            && c.subjectUserId() == userId
+                            && c.referenceId() == userId));
         }
     }
 

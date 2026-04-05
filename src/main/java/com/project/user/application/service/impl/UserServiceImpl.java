@@ -1,14 +1,11 @@
 package com.project.user.application.service.impl;
 
-import com.project.contribution.domain.entity.ContributionScore;
-import com.project.contribution.domain.entity.UserContribution;
-import com.project.contribution.domain.repository.ContributionScoreRepository;
-import com.project.contribution.domain.repository.UserContributionRepository;
+import com.project.contribution.application.dto.ActivityContext;
+import com.project.contribution.application.port.ContributionOutboxPort;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 
 import com.project.user.application.dto.UserSession;
-import com.project.global.event.impl.UserPromotionEvent;
 import com.project.user.application.dto.request.UserRegistrationCompletedEvent;
 import com.project.user.application.dto.response.ProfileResponse;
 import com.project.user.application.service.UserService;
@@ -55,6 +52,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.time.Instant;
 import java.util.List;
 
 @Slf4j
@@ -70,8 +68,7 @@ public class UserServiceImpl implements UserService {
     private final TrackRepository trackRepository;
     private final DepartmentRepository departmentRepository;
 
-    private final ContributionScoreRepository contributionScoreRepository;
-    private final UserContributionRepository userContributionRepository;
+    private final ContributionOutboxPort contributionOutboxPort;
 
     // 회원가입
     @Override
@@ -220,10 +217,9 @@ public class UserServiceImpl implements UserService {
         );
 
         if (!user.needsInitialSetup()) {
+            contributionOutboxPort.append(ActivityContext.profileCompleted(user.getId(), user.getId()));
             user.grantUserAuthority();
             updateSecurityContext(user.getId());
-            eventPublisher.publishEvent(new UserPromotionEvent(user.getId(), user.getId()));
-            log.info("유저 승급 이벤트 형성");
         }
     }
 
@@ -354,27 +350,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public User earnAScore(Long id, String scoreName, Long referenceId) {
-        User user = userRepository.findActiveById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "회원 정보가 없습니다."));
-        validateNotWithdrawn(user);
-        ContributionScore contributionScore = contributionScoreRepository.findByName(scoreName)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-
-        user.updatePoint(contributionScore.getPoint());
-
-        try {
-            UserContribution contribution = UserContribution.builder()
-                    .user(user)
-                    .contributionScore(contributionScore)
-                    .referenceId(referenceId)
-                    .build();
-            userContributionRepository.save(contribution);
-        } catch (DataIntegrityViolationException e) {
-            log.error("Unexpected error during score initialization for: {}", contributionScore.getName() + e.getMessage());
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "작업 실행 중 오류가 발생했습니다. 관리팀에 문의주세요.");
-        }
-        return user;
+    public void earnAScore(Long id, String scoreCode, Long referenceId) {
+        contributionOutboxPort.append(ActivityContext.systemScoreGrant(id, scoreCode, referenceId, Instant.now()));
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.project.post.application.service;
 
+import com.project.contribution.application.port.ContributionOutboxPort;
 import com.project.post.application.dto.PostCommentRequest;
 import com.project.post.domain.exception.PostDomainException;
 import com.project.post.domain.entity.Board;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
@@ -86,6 +88,16 @@ class PostCommentCommandServiceIntegrationTest {
         @Bean
         PostCommentRepository postCommentRepository() {
             return Mockito.mock(PostCommentRepository.class);
+        }
+
+        @Bean
+        ContributionOutboxPort contributionOutboxPort() {
+            return Mockito.mock(ContributionOutboxPort.class);
+        }
+
+        @Bean
+        ApplicationEventPublisher applicationEventPublisher() {
+            return Mockito.mock(ApplicationEventPublisher.class);
         }
     }
 }

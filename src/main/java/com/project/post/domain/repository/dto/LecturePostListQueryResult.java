@@ -7,6 +7,7 @@ import java.time.Instant;
 public record LecturePostListQueryResult(
         Long postId,
         String title,
+        String contentPreview,
         String thumbnailUrl,
         Long authorId,
         String authorNickname,

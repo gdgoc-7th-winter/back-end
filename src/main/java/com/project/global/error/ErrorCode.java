@@ -34,9 +34,17 @@ public enum ErrorCode {
     UNSUPPORTED_UPLOAD_TYPE(HttpStatus.BAD_REQUEST, "F005", "지원하지 않는 업로드 타입입니다."),
 
     // Code Execution
-    CODE_EXECUTION_ERROR(HttpStatus.BAD_GATEWAY, "CE001", "코드 실행 중 오류가 발생했습니다.");
-
-
+    CODE_EXECUTION_ERROR(HttpStatus.BAD_GATEWAY, "CE001", "코드 실행 중 오류가 발생했습니다."),
+    //Recruiting
+    DEADLINE_PASSED(HttpStatus.BAD_REQUEST, "R001", "모집이 마감되었습니다."),
+    ALREADY_APPLIED(HttpStatus.BAD_REQUEST, "R002", "이미 지원한 모집글입니다."),
+    INVALID_QUESTION(HttpStatus.BAD_REQUEST, "R003", "해당 지원폼의 질문이 아닙니다."),
+    INVALID_OPTION(HttpStatus.BAD_REQUEST, "R004", "해당 질문에 속하지 않은 선택지입니다."),
+    SUBMISSION_UPDATE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "R005", "모집 마감 후에는 지원서를 수정할 수 없습니다."),
+    SUBMISSION_CANCEL_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "R006", "모집 마감 후에는 지원을 취소할 수 없습니다."),
+    APPLICATION_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "R007", "현재는 지원할 수 없는 모집글입니다."),
+    RECRUITING_POST_DELETE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "R008", "지원자가 있는 모집글은 삭제할 수 없습니다."),
+    MISSING_REQUIRED_ANSWER(HttpStatus.BAD_REQUEST, "R009", "필수 질문에 대한 답변이 누락되었습니다.");
 
     private final HttpStatus status;
     private final String code;

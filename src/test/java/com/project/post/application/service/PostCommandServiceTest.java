@@ -6,10 +6,13 @@ import com.project.post.application.dto.PostCreateRequest;
 import com.project.post.application.dto.PostUpdateRequest;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
+import com.project.contribution.application.dto.ActivityContext;
+import com.project.contribution.application.port.ContributionOutboxPort;
 import com.project.post.application.service.impl.PostCommandServiceImpl;
 import com.project.post.domain.repository.BoardRepository;
 import com.project.post.domain.repository.PostRepository;
 import com.project.user.domain.entity.User;
+import com.project.global.event.ActivityType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,6 +47,9 @@ class PostCommandServiceTest {
 
     @Mock
     private PostAttachmentService postAttachmentService;
+
+    @Mock
+    private ContributionOutboxPort contributionOutboxPort;
 
     @InjectMocks
     private PostCommandServiceImpl postCommandService;
@@ -90,6 +97,13 @@ class PostCommandServiceTest {
 
         verify(postTagService).replaceTags(post, List.of("java", "spring"));
         verify(postAttachmentService).replaceAttachments(post, request.attachments());
+        verify(contributionOutboxPort)
+                .append(
+                        argThat(
+                                (ActivityContext c) ->
+                                        c.activityType() == ActivityType.POST_CREATED
+                                                && c.subjectUserId() == 1L
+                                                && c.referenceId() == 1L));
     }
 
     @Test
@@ -187,6 +201,13 @@ class PostCommandServiceTest {
         postCommandService.softDelete(1L, author);
 
         assertThat(post.isDeleted()).isTrue();
+        verify(contributionOutboxPort)
+                .append(
+                        argThat(
+                                (ActivityContext c) ->
+                                        c.activityType() == ActivityType.POST_DELETED
+                                                && c.subjectUserId() == 1L
+                                                && c.referenceId() == 1L));
     }
 
     @Test

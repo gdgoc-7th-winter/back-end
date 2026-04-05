@@ -1,11 +1,9 @@
 [
-  { "name": "뉴페이스", "point": 10 },
-  { "name": "게시글 작성", "point": 5 },
-  { "name": "댓글 작성", "point": 2 },
-  { "name": "채택된 답변(질문 해결)", "point": 20 },
-  { "name": "추천 1개 받음", "point": 2 },
-  { "name": "북마크 1개 받음", "point": 3 },
-  { "name": "자료가 주간 인기글 선정", "point": 40 },
-  { "name": "부적절 신고 누적 3회", "point": -30 },
-  { "name": "게시글 삭제(관리자)", "point": -50 }
+  { "code": "NEW_FACE", "name": "뉴페이스", "point": 10 },
+  { "code": "POST_WRITE", "name": "게시글 작성", "point": 5 },
+  { "code": "COMMENT_WRITE", "name": "댓글 작성", "point": 2 },
+  { "code": "LIKE_RECEIVED", "name": "좋아요 1개 받음", "point": 2 },
+  { "code": "SCRAP_RECEIVED", "name": "스크랩 1개 받음", "point": 3 },
+  { "code": "REPORT_ACCUMULATED_3", "name": "부적절 신고 누적 3회", "point": -30 },
+  { "code": "ADMIN_POST_DELETED", "name": "게시글 삭제(관리자)", "point": -50 }
 ]

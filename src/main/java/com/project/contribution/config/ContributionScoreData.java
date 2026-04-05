@@ -1,4 +1,4 @@
 package com.project.contribution.config;
 
-public record ContributionScoreData(String name, Integer point) {
+public record ContributionScoreData(String code, String name, Integer point) {
 }

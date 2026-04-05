@@ -1,8 +1,4 @@
 # 운영 서버
-piston:
-  api:
-    url: ${PISTON_API_URL:https://emkc.org/api/v2/piston/execute}
-
 cloud:
   aws:
     s3:
@@ -14,6 +10,7 @@ cloud:
 
 cors:
   allowed-origins:
+    - https://api.hufs.dev # Swagger UI - 이후 Swagger는 노출하지 않도록 수정
     - https://hufs.dev
     - https://www.hufs.dev
     - http://localhost:5173  # 로컬 개발 시 프로덕션 API 호출용

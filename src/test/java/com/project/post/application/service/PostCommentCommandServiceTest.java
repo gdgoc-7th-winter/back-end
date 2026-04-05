@@ -6,6 +6,9 @@ import com.project.post.application.dto.PostCommentRequest;
 import com.project.post.domain.exception.PostDomainException;
 import com.project.post.domain.entity.Board;
 import com.project.post.domain.entity.Post;
+import com.project.contribution.application.dto.ActivityContext;
+import com.project.contribution.application.port.ContributionOutboxPort;
+import com.project.global.event.ActivityType;
 import com.project.post.domain.entity.PostComment;
 import com.project.post.application.service.impl.PostCommentCommandServiceImpl;
 import com.project.post.domain.repository.PostCommentRepository;
@@ -24,6 +27,7 @@ import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -37,6 +41,9 @@ class PostCommentCommandServiceTest {
 
     @Mock
     private PostCommentRepository commentRepository;
+
+    @Mock
+    private ContributionOutboxPort contributionOutboxPort;
 
     @InjectMocks
     private PostCommentCommandServiceImpl postCommentCommandService;
@@ -59,6 +66,13 @@ class PostCommentCommandServiceTest {
         assertThat(result).isEqualTo(10L);
         verify(commentRepository).save(notNull());
         verify(postRepository).incrementCommentCount(1L);
+        verify(contributionOutboxPort)
+                .append(
+                        argThat(
+                                (ActivityContext c) ->
+                                        c.activityType() == ActivityType.COMMENT_WRITTEN
+                                                && c.subjectUserId() == 1L
+                                                && c.referenceId() == 10L));
     }
 
     @Test
@@ -122,6 +136,13 @@ class PostCommentCommandServiceTest {
         assertThat(comment.isDeleted()).isTrue();
         assertThat(comment.getContent()).isNull();
         verify(postRepository, never()).decrementCommentCount(1L);
+        verify(contributionOutboxPort)
+                .append(
+                        argThat(
+                                (ActivityContext c) ->
+                                        c.activityType() == ActivityType.COMMENT_DELETED
+                                                && c.subjectUserId() == 1L
+                                                && c.referenceId() == 100L));
     }
 
     private static User buildUser(Long id, String nickname) {
