@@ -47,4 +47,7 @@ public interface AnswerCodePostRepository extends JpaRepository<AnswerCodePost, 
     @Modifying
     @Query("UPDATE AnswerCodePost a SET a.likeCount = CASE WHEN a.likeCount > 0 THEN a.likeCount - 1 ELSE 0 END WHERE a.id = :id")
     int decrementLikeCount(@Param("id") Long id);
+
+    @Query("SELECT a.likeCount FROM AnswerCodePost a WHERE a.id = :id")
+    int findLikeCountById(@Param("id") Long id);
 }

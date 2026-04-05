@@ -35,11 +35,11 @@ public class AnswerCodePostLikeServiceImpl implements AnswerCodePostLikeService 
         if (answerCodePostLikeRepository.existsByAnswerCodePostIdAndUserId(answerId, user.getId())) {
             answerCodePostLikeRepository.deleteByAnswerCodePostIdAndUserId(answerId, user.getId());
             answerCodePostRepository.decrementLikeCount(answerId);
-            return new AlgoLikeToggleResponse(false, Math.max(answer.getLikeCount() - 1, 0));
+            return new AlgoLikeToggleResponse(false, answerCodePostRepository.findLikeCountById(answerId));
         }
 
         answerCodePostLikeRepository.save(AnswerCodePostLike.of(answer, user));
         answerCodePostRepository.incrementLikeCount(answerId);
-        return new AlgoLikeToggleResponse(true, answer.getLikeCount() + 1);
+        return new AlgoLikeToggleResponse(true, answerCodePostRepository.findLikeCountById(answerId));
     }
 }

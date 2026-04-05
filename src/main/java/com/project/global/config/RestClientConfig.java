@@ -1,5 +1,6 @@
 package com.project.global.config;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,11 +13,18 @@ import java.time.Duration;
 @Configuration
 public class RestClientConfig {
 
-    @Value("${piston.api.url:https://emkc.org/api/v2/piston/execute}")
+    @Value("${piston.api.url}")
     private String pistonApiUrl;
 
     @Value("${piston.api.timeout-seconds:15}")
     private int timeoutSeconds;
+
+    @PostConstruct
+    public void validatePistonApiUrl() {
+        if (pistonApiUrl == null || pistonApiUrl.isBlank()) {
+            throw new IllegalStateException("piston.api.url is not configured. Set the PISTON_API_URL environment variable.");
+        }
+    }
 
     @Bean
     public RestClient pistonClient() {
