@@ -7,10 +7,7 @@ import com.project.algo.domain.entity.AnswerComment;
 import com.project.algo.domain.entity.DailyChallenge;
 import com.project.algo.domain.enums.CodingTestSite;
 import com.project.algo.domain.enums.ProgrammingLanguage;
-import com.project.algo.domain.repository.AnswerCodePostRepository;
 import com.project.algo.domain.repository.AnswerCommentRepository;
-import com.project.global.error.BusinessException;
-import com.project.global.error.ErrorCode;
 import com.project.user.domain.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,11 +27,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,8 +36,6 @@ class AnswerCommentQueryServiceImplTest {
 
     @Mock
     private AnswerCommentRepository answerCommentRepository;
-    @Mock
-    private AnswerCodePostRepository answerCodePostRepository;
 
     @InjectMocks
     private AnswerCommentQueryServiceImpl answerCommentQueryService;
@@ -76,25 +68,11 @@ class AnswerCommentQueryServiceImplTest {
         ReflectionTestUtils.setField(answer, "id", 100L);
     }
 
-    // ── 접근 제어 ─────────────────────────────────────────────────────────────
+    // ── getList ───────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("풀이를 제출하지 않은 경우 코멘트 목록 조회 시 ACCESS_DENIED를 던진다")
-    void getListThrowsWhenNotSubmitted() {
-        when(answerCodePostRepository.existsByDailyChallengeIdAndAuthorId(10L, 1L)).thenReturn(false);
-
-        assertThatThrownBy(() ->
-                answerCommentQueryService.getList(10L, 100L, viewer, PageRequest.of(0, 10)))
-                .isInstanceOf(BusinessException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.ACCESS_DENIED);
-
-        verify(answerCommentRepository, never()).findByAnswerCodePostId(any(), any());
-    }
-
-    @Test
-    @DisplayName("풀이를 제출한 경우 코멘트 목록을 반환한다")
-    void getListReturnsPageWhenSubmitted() {
+    @DisplayName("코멘트 목록을 페이지로 반환한다")
+    void getListReturnsPage() {
         User commenter = User.builder().email("c@test.com").password("pw").nickname("commenter").build();
         ReflectionTestUtils.setField(commenter, "id", 2L);
 
@@ -105,7 +83,6 @@ class AnswerCommentQueryServiceImplTest {
                 .build();
         ReflectionTestUtils.setField(comment, "id", 50L);
 
-        when(answerCodePostRepository.existsByDailyChallengeIdAndAuthorId(10L, 1L)).thenReturn(true);
         when(answerCommentRepository.findByAnswerCodePostId(eq(100L), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(comment)));
 
@@ -153,7 +130,6 @@ class AnswerCommentQueryServiceImplTest {
         @Test
         @DisplayName("탈퇴한 댓글 작성자의 닉네임이 '탈퇴한 회원'으로 표시된다")
         void getListShowsWithdrawnCommenterNickname() {
-            when(answerCodePostRepository.existsByDailyChallengeIdAndAuthorId(10L, 1L)).thenReturn(true);
             when(answerCommentRepository.findByAnswerCodePostId(eq(100L), any(Pageable.class)))
                     .thenReturn(new PageImpl<>(List.of(commentByWithdrawn)));
 
@@ -170,7 +146,6 @@ class AnswerCommentQueryServiceImplTest {
         @Test
         @DisplayName("탈퇴 댓글 작성자 조회 시 예외 없이 정상 응답한다")
         void getListDoesNotThrowForWithdrawnCommenter() {
-            when(answerCodePostRepository.existsByDailyChallengeIdAndAuthorId(10L, 1L)).thenReturn(true);
             when(answerCommentRepository.findByAnswerCodePostId(eq(100L), any(Pageable.class)))
                     .thenReturn(new PageImpl<>(List.of(commentByWithdrawn)));
 
@@ -193,7 +168,6 @@ class AnswerCommentQueryServiceImplTest {
                     .build();
             ReflectionTestUtils.setField(activeComment, "id", 56L);
 
-            when(answerCodePostRepository.existsByDailyChallengeIdAndAuthorId(10L, 1L)).thenReturn(true);
             when(answerCommentRepository.findByAnswerCodePostId(eq(100L), any(Pageable.class)))
                     .thenReturn(new PageImpl<>(List.of(commentByWithdrawn, activeComment)));
 
