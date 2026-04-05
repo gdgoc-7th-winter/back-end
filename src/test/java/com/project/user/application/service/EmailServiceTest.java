@@ -91,7 +91,7 @@ class EmailServiceTest {
 
     @Test
     @DisplayName("이미 가입된 이메일로 인증 요청 시 DUPLICATED_ADDRESS 예외가 발생한다")
-    void sendAuthEmail_alreadyRegistered_throwsDuplicatedAddress() {
+    void alreadyRegisteredEmailThrowsDuplicatedAddress() {
         when(userRepository.existsByEmail(testEmail)).thenReturn(true);
 
         assertThatThrownBy(() -> emailService.sendAuthEmail(testEmail))
