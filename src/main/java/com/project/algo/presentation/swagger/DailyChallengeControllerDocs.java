@@ -35,7 +35,7 @@ public interface DailyChallengeControllerDocs {
     @ApiResponse(responseCode = "200", description = "성공")
     ResponseEntity<CommonResponse<PageResponse<DailyChallengeListResponse>>> getList(
             @Parameter(description = "검색 키워드 (제목·문제번호 부분 일치)") String keyword,
-            @Parameter(description = "알고리즘 태그 필터 (복수 가능, OR 조건)") List<AlgorithmTag> algorithmTags,
+            @Parameter(name = "tags", description = "알고리즘 태그 필터 (복수 가능, OR 조건)") List<AlgorithmTag> algorithmTags,
             @ParameterObject @NonNull Pageable pageable
     );
 
