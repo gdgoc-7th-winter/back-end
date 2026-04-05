@@ -5,7 +5,6 @@ import com.project.algo.application.dto.DailyChallengeUpdateRequest;
 import com.project.algo.application.service.DailyChallengeCommandService;
 import com.project.algo.domain.entity.DailyChallenge;
 import com.project.algo.domain.repository.DailyChallengeRepository;
-import com.project.algo.domain.repository.DailyMVPRepository;
 import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.user.domain.entity.User;
@@ -15,14 +14,11 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-
 @Service
 @RequiredArgsConstructor
 public class DailyChallengeCommandServiceImpl implements DailyChallengeCommandService {
 
     private final DailyChallengeRepository dailyChallengeRepository;
-    private final DailyMVPRepository dailyMVPRepository;
 
     @Override
     @Transactional
@@ -84,16 +80,10 @@ public class DailyChallengeCommandServiceImpl implements DailyChallengeCommandSe
         challenge.softDelete();
     }
 
-    /** ADMIN이거나 전일 rank 1 MVP인 경우 문제 등록 가능 */
+    /** DUMMY를 제외한 모든 로그인 사용자가 문제 등록 가능 */
     private void validateCreatePermission(User author) {
-        if (author.getAuthority() == Authority.ADMIN) {
-            return;
-        }
-        LocalDate yesterday = LocalDate.now().minusDays(1);
-        boolean isYesterdayMvp = dailyMVPRepository
-                .existsByUserIdAndAwardedAtAndRank(author.getId(), yesterday, 1);
-        if (!isYesterdayMvp) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED, "문제 등록 권한이 없습니다. (ADMIN 또는 전일 MVP만 가능)");
+        if (author.getAuthority() == Authority.DUMMY) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "문제 등록 권한이 없습니다.");
         }
     }
 }

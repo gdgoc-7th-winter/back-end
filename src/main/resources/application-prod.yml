@@ -1,4 +1,8 @@
 # 운영 서버
+piston:
+  api:
+    url: ${PISTON_API_URL:https://emkc.org/api/v2/piston/execute}
+
 cloud:
   aws:
     s3:

@@ -21,6 +21,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.util.HashSet;
@@ -62,6 +63,7 @@ public class DailyChallenge extends SoftDeleteEntity {
     )
     @Enumerated(EnumType.STRING)
     @Column(name = "tag", length = 50)
+    @BatchSize(size = 100)
     private Set<AlgorithmTag> algorithmTags = new HashSet<>();
 
     @Column(name = "original_url", nullable = false, columnDefinition = "TEXT")

@@ -31,7 +31,10 @@ public enum ErrorCode {
     FILE_METADATA_MISMATCH(HttpStatus.BAD_REQUEST, "F006", "요청한 파일 정보와 S3에 저장된 파일이 일치하지 않습니다."),
     INVALID_CONTENT_TYPE(HttpStatus.BAD_REQUEST, "F003", "허용되지 않은 파일 형식입니다."),
     FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "F004", "파일 크기가 제한을 초과했습니다."),
-    UNSUPPORTED_UPLOAD_TYPE(HttpStatus.BAD_REQUEST, "F005", "지원하지 않는 업로드 타입입니다.");
+    UNSUPPORTED_UPLOAD_TYPE(HttpStatus.BAD_REQUEST, "F005", "지원하지 않는 업로드 타입입니다."),
+
+    // Code Execution
+    CODE_EXECUTION_ERROR(HttpStatus.BAD_GATEWAY, "CE001", "코드 실행 중 오류가 발생했습니다.");
 
 
 

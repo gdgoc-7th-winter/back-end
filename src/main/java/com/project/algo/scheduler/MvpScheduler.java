@@ -18,11 +18,6 @@ public class MvpScheduler {
 
     private final MvpSelectionService mvpSelectionService;
 
-    /**
-     * 매일 KST 23:59:59 에 실행.
-     * cron = "초 분 시 일 월 요일"
-     * zone = "Asia/Seoul" 로 KST 기준 실행을 명시.
-     */
     @Scheduled(cron = "59 59 23 * * *", zone = "Asia/Seoul")
     public void runDailyMvpSelection() {
         LocalDate today = LocalDate.now(SEOUL);

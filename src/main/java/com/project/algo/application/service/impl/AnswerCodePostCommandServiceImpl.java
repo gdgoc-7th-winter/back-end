@@ -12,6 +12,7 @@ import com.project.global.error.ErrorCode;
 import com.project.user.domain.entity.User;
 import com.project.user.domain.enums.Authority;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,7 +48,11 @@ public class AnswerCodePostCommandServiceImpl implements AnswerCodePostCommandSe
             answer.getAlgorithmTags().addAll(request.algorithmTags());
         }
 
-        return answerCodePostRepository.save(answer).getId();
+        try {
+            return answerCodePostRepository.save(answer).getId();
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "이미 풀이를 제출하였습니다.");
+        }
     }
 
     @Override

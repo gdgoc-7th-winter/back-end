@@ -10,10 +10,9 @@ import com.project.global.error.BusinessException;
 import com.project.global.error.ErrorCode;
 import com.project.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,21 +32,18 @@ public class AnswerCodePostLikeServiceImpl implements AnswerCodePostLikeService 
         AnswerCodePost answer = answerCodePostRepository.findById(answerId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "풀이를 찾을 수 없습니다."));
 
-        Optional<AnswerCodePostLike> existing =
-                answerCodePostLikeRepository.findByAnswerCodePostIdAndUserId(answerId, user.getId());
-
-        boolean liked;
-        if (existing.isPresent()) {
-            answerCodePostLikeRepository.delete(existing.get());
+        int deleted = answerCodePostLikeRepository.deleteByAnswerCodePostIdAndUserId(answerId, user.getId());
+        if (deleted > 0) {
             answerCodePostRepository.decrementLikeCount(answerId);
-            liked = false;
-        } else {
-            answerCodePostLikeRepository.save(AnswerCodePostLike.of(answer, user));
-            answerCodePostRepository.incrementLikeCount(answerId);
-            liked = true;
+            return new AlgoLikeToggleResponse(false, Math.max(answer.getLikeCount() - 1, 0));
         }
 
-        long updatedLikeCount = answer.getLikeCount() + (liked ? 1 : -1);
-        return new AlgoLikeToggleResponse(liked, Math.max(updatedLikeCount, 0));
+        try {
+            answerCodePostLikeRepository.saveAndFlush(AnswerCodePostLike.of(answer, user));
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "이미 좋아요를 누른 풀이입니다.");
+        }
+        answerCodePostRepository.incrementLikeCount(answerId);
+        return new AlgoLikeToggleResponse(true, answer.getLikeCount() + 1);
     }
 }

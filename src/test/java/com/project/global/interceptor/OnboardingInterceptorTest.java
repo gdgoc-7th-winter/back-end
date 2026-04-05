@@ -77,6 +77,27 @@ class OnboardingInterceptorTest {
     }
 
     @Test
+    @DisplayName("DUMMY 권한 유저라도 프로필 조회 페이지 접근은 허용됨")
+    void preHandleAllowProfilePageGet() throws Exception {
+        // given
+        UserSession dummySession = UserSession.builder()
+                .userId(1L)
+                .authority(Authority.DUMMY)
+                .needsProfile(true)
+                .build();
+
+        request.setMethod("GET");
+        request.setRequestURI("/api/v1/me/profile");
+        request.getSession().setAttribute("LOGIN_USER", dummySession);
+
+        // when
+        boolean result = onboardingInterceptor.preHandle(request, response, handler);
+
+        // then
+        assertThat(result).isTrue();
+    }
+
+    @Test
     @DisplayName("DUMMY 권한 유저라도 학과 조회 API 접근은 허용됨")
     void preHandleAllowDepartmentsApi() throws Exception {
         // given

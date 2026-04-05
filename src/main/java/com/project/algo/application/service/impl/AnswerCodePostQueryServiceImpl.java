@@ -34,6 +34,9 @@ public class AnswerCodePostQueryServiceImpl implements AnswerCodePostQueryServic
         validateSubmitted(challengeId, viewer);
         AnswerCodePost answer = answerCodePostRepository.findWithDetailById(answerId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "풀이를 찾을 수 없습니다."));
+        if (!answer.getDailyChallenge().getId().equals(challengeId)) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "풀이를 찾을 수 없습니다.");
+        }
         return AnswerCodePostDetailResponse.from(answer);
     }
 

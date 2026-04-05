@@ -26,7 +26,7 @@ public class DailyChallengeRepositoryImpl implements DailyChallengeRepositoryCus
 
         String baseCondition = buildCondition(hasKeyword, hasTags);
 
-        String jpql      = "SELECT dc FROM DailyChallenge dc WHERE " + baseCondition + " ORDER BY dc.createdAt DESC";
+        String jpql      = "SELECT dc FROM DailyChallenge dc JOIN FETCH dc.author WHERE " + baseCondition + " ORDER BY dc.createdAt DESC";
         String countJpql = "SELECT COUNT(dc) FROM DailyChallenge dc WHERE " + baseCondition;
 
         TypedQuery<DailyChallenge> query      = em.createQuery(jpql, DailyChallenge.class);
