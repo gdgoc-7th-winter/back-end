@@ -5,13 +5,10 @@ import com.project.algo.application.dto.AnswerCodePostCreateRequest;
 import com.project.algo.application.dto.AnswerCodePostDetailResponse;
 import com.project.algo.application.dto.AnswerCodePostListResponse;
 import com.project.algo.application.dto.AnswerCodePostUpdateRequest;
-import com.project.algo.application.dto.CodeRunRequest;
-import com.project.algo.application.dto.CodeRunResponse;
 import com.project.algo.application.dto.ProgrammingLanguageResponse;
 import com.project.algo.application.service.AnswerCodePostCommandService;
 import com.project.algo.application.service.AnswerCodePostLikeService;
 import com.project.algo.application.service.AnswerCodePostQueryService;
-import com.project.algo.application.service.CodeExecutionService;
 import com.project.algo.application.service.ProgrammingLanguageQueryService;
 import com.project.algo.presentation.swagger.AnswerCodePostControllerDocs;
 import com.project.global.annotation.CurrentUser;
@@ -52,20 +49,11 @@ public class AnswerCodePostController implements AnswerCodePostControllerDocs {
     private final AnswerCodePostQueryService queryService;
     private final AnswerCodePostLikeService likeService;
     private final ProgrammingLanguageQueryService languageQueryService;
-    private final CodeExecutionService codeExecutionService;
 
     /** 풀이 작성 시 언어 선택 목록 — 에디터 syntaxMode 포함 */
-    @GetMapping("/answers/languages")
+    @GetMapping("/languages")
     public ResponseEntity<CommonResponse<List<ProgrammingLanguageResponse>>> getLanguages() {
         return ResponseEntity.ok(CommonResponse.ok(languageQueryService.getAll()));
-    }
-
-    @PostMapping("/answers/run")
-    public ResponseEntity<CommonResponse<CodeRunResponse>> run(
-            @RequestBody @Valid @NonNull CodeRunRequest request,
-            @CurrentUser @NonNull User user) {
-
-        return ResponseEntity.ok(CommonResponse.ok(codeExecutionService.run(request)));
     }
 
     @GetMapping("/{challengeId}/answers")
