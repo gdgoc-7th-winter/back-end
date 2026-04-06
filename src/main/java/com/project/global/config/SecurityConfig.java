@@ -53,8 +53,9 @@ public class SecurityConfig {
                     CookieCsrfTokenRepository csrfRepo = CookieCsrfTokenRepository.withHttpOnlyFalse();
                     csrfRepo.setCookiePath(csrfCookieProperties.path());
                     csrfRepo.setCookieCustomizer(builder -> {
-                        if (csrfCookieProperties.hasDomain()) {
-                            builder.domain(csrfCookieProperties.domain().trim());
+                        String cookieDomain = csrfCookieProperties.domainForSetCookie();
+                        if (cookieDomain != null) {
+                            builder.domain(cookieDomain);
                         }
                         builder.path(csrfCookieProperties.path());
                         builder.secure(csrfCookieProperties.secure());

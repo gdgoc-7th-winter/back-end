@@ -19,8 +19,8 @@ public class CsrfCookieStartupLogger {
     @PostConstruct
     void logCsrfCookiePolicy() {
         if (csrfCookieProperties.hasDomain()) {
-            log.info("CSRF cookie policy: Domain={}, secure={}, SameSite={}, path={}",
-                    csrfCookieProperties.domain().trim(),
+            log.info("CSRF cookie policy: Domain={} (Set-Cookie value), secure={}, SameSite={}, path={}",
+                    csrfCookieProperties.domainForSetCookie(),
                     csrfCookieProperties.secure(),
                     csrfCookieProperties.sameSite(),
                     csrfCookieProperties.path());

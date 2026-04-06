@@ -22,4 +22,15 @@ public record CsrfCookieProperties(
     public boolean hasDomain() {
         return domain != null && !domain.isBlank();
     }
+
+    public String domainForSetCookie() {
+        if (!hasDomain()) {
+            return null;
+        }
+        String d = domain.trim();
+        if (d.startsWith(".")) {
+            return d.substring(1);
+        }
+        return d;
+    }
 }
