@@ -4,7 +4,6 @@ import com.project.user.domain.repository.impl.CustomAuthorizationRequestReposit
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 @Slf4j
@@ -24,10 +24,14 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Value("${csrf.cookie.domain:}")
-    private String csrfCookieDomain;
-
+    private final CsrfCookieProperties csrfCookieProperties;
     private final OAuth2ConnectSuccessHandler oAuth2ConnectSuccessHandler;
+    private final CsrfAwareAccessDeniedHandler csrfAwareAccessDeniedHandler;
+
+    @Bean
+    public CsrfSetCookieLoggingFilter csrfSetCookieLoggingFilter() {
+        return new CsrfSetCookieLoggingFilter();
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -40,14 +44,23 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(final HttpSecurity http,
+                                                   final CsrfSetCookieLoggingFilter csrfSetCookieLoggingFilter) throws Exception {
+        http.addFilterBefore(csrfSetCookieLoggingFilter, CsrfFilter.class);
         return http
                 .sessionManagement(session -> session.sessionFixation().changeSessionId())
                 .csrf(csrf -> {
                     CookieCsrfTokenRepository csrfRepo = CookieCsrfTokenRepository.withHttpOnlyFalse();
-                    if (!csrfCookieDomain.isBlank()) {
-                        csrfRepo.setCookieDomain(csrfCookieDomain);
-                    }
+                    csrfRepo.setCookiePath(csrfCookieProperties.path());
+                    csrfRepo.setCookieCustomizer(builder -> {
+                        String cookieDomain = csrfCookieProperties.domainForSetCookie();
+                        if (cookieDomain != null) {
+                            builder.domain(cookieDomain);
+                        }
+                        builder.path(csrfCookieProperties.path());
+                        builder.secure(csrfCookieProperties.secure());
+                        builder.sameSite(csrfCookieProperties.sameSite());
+                    });
                     csrf.csrfTokenRepository(csrfRepo)
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                         .ignoringRequestMatchers(
@@ -92,6 +105,7 @@ public class SecurityConfig {
                 .exceptionHandling(handler -> handler
                         .authenticationEntryPoint((request, response, authException) ->
                                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
+                        .accessDeniedHandler(csrfAwareAccessDeniedHandler)
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(auth -> auth

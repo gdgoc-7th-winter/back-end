@@ -49,7 +49,11 @@ management:
 
 csrf:
   cookie:
-    domain: .hufs.dev
+    # registrable domain
+    domain: ${CSRF_COOKIE_DOMAIN:hufs.dev}
+    secure: true
+    same-site: Lax
+    path: /
 
 spring:
   data:

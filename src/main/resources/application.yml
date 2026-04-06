@@ -10,6 +10,13 @@ cors:
   allowed-origins:
     - http://localhost:5173
 
+csrf:
+  cookie:
+    domain: ""
+    secure: false
+    same-site: Lax
+    path: /
+
 server:
   port: 8080
   servlet:
