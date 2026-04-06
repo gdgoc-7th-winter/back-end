@@ -53,7 +53,11 @@ management:
 
 csrf:
   cookie:
-    domain: .hufs.dev
+    # 운영에서만 registrable domain
+    domain: ${CSRF_COOKIE_DOMAIN:.hufs.dev}
+    secure: true
+    same-site: Lax
+    path: /
 
 spring:
   data:
