@@ -126,6 +126,8 @@ public interface RecruitingPostControllerDocs {
     @Operation(summary = "내가 지원한 모집글 목록 조회", description = "현재 로그인한 사용자가 지원한 모집글 목록을 페이징 조회합니다.")
     @ApiResponse(responseCode = "200", description = "성공")
     CommonResponse<Page<AppliedRecruitingPostSummaryResponse>> getAppliedRecruitings(
+            @Parameter(description = "상태 필터 (UPCOMING, OPEN, CLOSED)")
+            @RequestParam(required = false) RecruitingStatus status,
             @Parameter(hidden = true) Pageable pageable,
             @Parameter(hidden = true) User user
     );

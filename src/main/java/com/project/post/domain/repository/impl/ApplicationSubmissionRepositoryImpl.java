@@ -4,6 +4,7 @@ import com.project.post.domain.entity.QApplicationSubmission;
 import com.project.post.domain.entity.QPost;
 import com.project.post.domain.entity.QRecruitingApplication;
 import com.project.post.domain.entity.QRecruitingPost;
+import com.project.post.domain.enums.RecruitingStatus;
 import com.project.post.domain.repository.ApplicationSubmissionRepositoryCustom;
 import com.project.post.domain.repository.dto.AppliedRecruitingPostListQueryResult;
 import com.project.user.domain.entity.QDepartment;
@@ -11,6 +12,7 @@ import com.project.user.domain.entity.QLevelBadge;
 import com.project.user.domain.entity.QUser;
 import com.project.user.domain.repository.querydsl.UserRepresentativeTrackExpressions;
 import com.project.user.domain.repository.querydsl.UserWithdrawnExpressions;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
@@ -19,8 +21,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -33,6 +37,8 @@ public class ApplicationSubmissionRepositoryImpl implements ApplicationSubmissio
     @Override
     public Page<AppliedRecruitingPostListQueryResult> findAppliedRecruitingPostListByUserId(
             Long userId,
+            @Nullable RecruitingStatus status,
+            Instant now,
             Pageable pageable
     ) {
         QApplicationSubmission submission = QApplicationSubmission.applicationSubmission;
@@ -44,10 +50,36 @@ public class ApplicationSubmissionRepositoryImpl implements ApplicationSubmissio
         QLevelBadge levelBadge = QLevelBadge.levelBadge;
 
         Expression<String> contentPreview = Expressions.stringTemplate(
-                "substring({0}, 1, 101)",
-                post.content,
-                100
+                "SUBSTRING({0}, 1, 101)",
+                post.content
         );
+
+        BooleanBuilder where = new BooleanBuilder();
+        where.and(submission.user.id.eq(userId));
+        where.and(submission.deletedAt.isNull());
+        where.and(recruitingPost.deletedAt.isNull());
+        where.and(post.deletedAt.isNull());
+
+        if (status != null) {
+            switch (status) {
+                case UPCOMING -> where.and(
+                        recruitingPost.startedAt.isNotNull()
+                                .and(recruitingPost.startedAt.gt(now))
+                );
+                case CLOSED -> where.and(
+                        recruitingPost.startedAt.isNull().or(recruitingPost.startedAt.loe(now))
+                ).and(
+                        recruitingPost.deadlineAt.isNotNull()
+                                .and(recruitingPost.deadlineAt.lt(now))
+                );
+                case OPEN -> where.and(
+                        recruitingPost.startedAt.isNull().or(recruitingPost.startedAt.loe(now))
+                ).and(
+                        recruitingPost.deadlineAt.isNull().or(recruitingPost.deadlineAt.goe(now))
+                );
+                default -> throw new IllegalArgumentException("Invalid RecruitingStatus: " + status);
+            }
+        }
 
         List<AppliedRecruitingPostListQueryResult> content = queryFactory
                 .select(Projections.constructor(
@@ -86,11 +118,7 @@ public class ApplicationSubmissionRepositoryImpl implements ApplicationSubmissio
                 .join(post.author, author)
                 .leftJoin(author.department, department)
                 .leftJoin(author.levelBadge, levelBadge)
-                .where(
-                        submission.user.id.eq(userId),
-                        submission.deletedAt.isNull(),
-                        post.deletedAt.isNull()
-                )
+                .where(where)
                 .orderBy(submission.submittedAt.desc(), submission.id.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -106,11 +134,7 @@ public class ApplicationSubmissionRepositoryImpl implements ApplicationSubmissio
                             .join(submission.recruitingApplication, recruitingApplication)
                             .join(recruitingApplication.recruitingPost, recruitingPost)
                             .join(recruitingPost.post, post)
-                            .where(
-                                    submission.user.id.eq(userId),
-                                    submission.deletedAt.isNull(),
-                                    post.deletedAt.isNull()
-                            )
+                            .where(where)
                             .fetchOne();
 
                     return count == null ? 0L : count;

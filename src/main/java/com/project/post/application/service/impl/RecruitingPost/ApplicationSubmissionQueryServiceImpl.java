@@ -11,6 +11,7 @@ import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionSumm
 import com.project.post.application.dto.RecruitingPost.AppliedRecruitingPostSummaryResponse;
 import com.project.post.application.service.ApplicationSubmissionQueryService;
 import com.project.post.application.util.PostContentUtils;
+import com.project.post.domain.constants.PostConstants;
 import com.project.post.domain.entity.ApplicationSubmission;
 import com.project.post.domain.entity.RecruitingApplication;
 import com.project.post.domain.entity.RecruitingApplicationAnswer;
@@ -33,6 +34,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -169,55 +171,60 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
 
     @Override
     public Page<AppliedRecruitingPostSummaryResponse> getAppliedRecruitings(
-            @NonNull User user,
-            @NonNull Pageable pageable
+            User user,
+            @Nullable RecruitingStatus status,
+            Pageable pageable
     ) {
-        int safeSize = Math.min(pageable.getPageSize(), MAX_PAGE_SIZE);
-
+        int pageSize = Math.min(pageable.getPageSize(), PostConstants.MAX_PAGE_SIZE);
         Pageable safePageable = PageRequest.of(
                 pageable.getPageNumber(),
-                safeSize,
-                Sort.by(Sort.Direction.DESC, "submittedAt")
+                pageSize,
+                pageable.getSort().isSorted()
+                        ? pageable.getSort()
+                        : Sort.by(Sort.Direction.DESC, "submittedAt")
         );
 
-        Page<AppliedRecruitingPostListQueryResult> results =
-                applicationSubmissionRepository.findAppliedRecruitingPostListByUserId(user.getId(), safePageable);
+        Instant now = Instant.now();
 
-        return results.map(result -> {
-            RecruitingStatus status = calculateStatus(result.startedAt(), result.deadlineAt());
+        Page<AppliedRecruitingPostListQueryResult> page =
+                applicationSubmissionRepository.findAppliedRecruitingPostListByUserId(
+                        user.getId(),
+                        status,
+                        now,
+                        safePageable
+                );
 
-            return new AppliedRecruitingPostSummaryResponse(
-                    result.submissionId(),
-                    result.category(),
-                    status,
-                    calculateStatusLabel(result.startedAt(), result.deadlineAt()),
-                    result.startedAt(),
-                    result.deadlineAt(),
-                    result.submittedAt(),
-                    new PostListResponse(
-                            result.postId(),
-                            result.title(),
-                            PostContentUtils.withEllipsis(result.contentPreview()),
-                            result.thumbnailUrl(),
-                            PostAuthorResponse.fromParts(
-                                    result.authorId(),
-                                    result.authorNickname(),
-                                    result.authorProfileImgUrl(),
-                                    result.authorDepartmentName(),
-                                    result.authorRepresentativeTrackName(),
-                                    result.authorLevelImageUrl(),
-                                    result.authorIsWithdrawn()
-                            ),
-                            result.viewCount(),
-                            result.likeCount(),
-                            result.scrapCount(),
-                            result.commentCount(),
-                            PostViewerResponse.guest(),
-                            List.of(),
-                            result.createdAt()
-                    )
-            );
-        });
+        return page.map(result -> new AppliedRecruitingPostSummaryResponse(
+                result.submissionId(),
+                result.category(),
+                calculateStatus(result.startedAt(), result.deadlineAt()),
+                calculateStatusLabel(result.startedAt(), result.deadlineAt()),
+                result.startedAt(),
+                result.deadlineAt(),
+                result.submittedAt(),
+                new PostListResponse(
+                        result.postId(),
+                        result.title(),
+                        PostContentUtils.withEllipsis(result.contentPreview()),
+                        result.thumbnailUrl(),
+                        PostAuthorResponse.fromParts(
+                                result.authorId(),
+                                result.authorNickname(),
+                                result.authorProfileImgUrl(),
+                                result.authorDepartmentName(),
+                                result.authorRepresentativeTrackName(),
+                                result.authorLevelImageUrl(),
+                                result.authorIsWithdrawn()
+                        ),
+                        result.viewCount(),
+                        result.likeCount(),
+                        result.scrapCount(),
+                        result.commentCount(),
+                        PostViewerResponse.guest(),
+                        List.of(),
+                        result.createdAt()
+                )
+        ));
     }
 
     private RecruitingStatus calculateStatus(Instant startedAt, Instant deadlineAt) {
