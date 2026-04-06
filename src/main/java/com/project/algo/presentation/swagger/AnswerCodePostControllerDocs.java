@@ -5,8 +5,6 @@ import com.project.algo.application.dto.AnswerCodePostCreateRequest;
 import com.project.algo.application.dto.AnswerCodePostDetailResponse;
 import com.project.algo.application.dto.AnswerCodePostListResponse;
 import com.project.algo.application.dto.AnswerCodePostUpdateRequest;
-import com.project.algo.application.dto.CodeRunRequest;
-import com.project.algo.application.dto.CodeRunResponse;
 import com.project.algo.application.dto.ProgrammingLanguageResponse;
 import com.project.global.response.CommonResponse;
 import com.project.global.response.PageResponse;
@@ -36,19 +34,6 @@ public interface AnswerCodePostControllerDocs {
     )
     @ApiResponse(responseCode = "200", description = "성공")
     ResponseEntity<CommonResponse<List<ProgrammingLanguageResponse>>> getLanguages();
-
-    @Operation(
-            summary = "코드 실행",
-            description = "제출한 코드를 Judge 엔진을 통해 실행하고 stdout/stderr 결과를 반환합니다. "
-                    + "테스트케이스 없이 자유 실행만 지원하며, 정답/오답 판별은 불가합니다. "
-                    + "stdin에 표준 입력을 넣을 수 있습니다."
-    )
-    @ApiResponse(responseCode = "200", description = "성공")
-    @ApiResponse(responseCode = "401", description = "인증 필요")
-    ResponseEntity<CommonResponse<CodeRunResponse>> run(
-            @RequestBody(description = "코드 실행 요청") @Valid @NonNull CodeRunRequest request,
-            @Parameter(hidden = true) @NonNull User user
-    );
 
     @Operation(
             summary = "풀이 목록 조회",

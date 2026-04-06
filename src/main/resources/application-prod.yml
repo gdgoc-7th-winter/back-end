@@ -1,8 +1,4 @@
 # 운영 서버
-piston:
-  api:
-    url: ${PISTON_API_URL}
-
 cloud:
   aws:
     s3:
