@@ -175,7 +175,7 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
             @Nullable RecruitingStatus status,
             @NonNull Pageable pageable
     ) {
-        int pageSize = Math.min(pageable.getPageSize(), PostConstants.MAX_PAGE_SIZE);
+        int pageSize = Math.min(pageable.getPageSize(), MAX_PAGE_SIZE);
         Pageable safePageable = PageRequest.of(
                 pageable.getPageNumber(),
                 pageSize,
