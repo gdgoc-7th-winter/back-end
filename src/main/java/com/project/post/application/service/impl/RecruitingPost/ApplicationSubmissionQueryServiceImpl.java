@@ -33,6 +33,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -125,7 +126,7 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
             Long departmentId,
             String applicantName,
             ApplicationSubmissionSortType sort,
-            Pageable pageable
+            @NonNull Pageable pageable
     ) {
         RecruitingPost recruitingPost = recruitingPostRepository.findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() -> new BusinessException(
@@ -170,59 +171,62 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
     @Override
     public Page<AppliedRecruitingPostSummaryResponse> getAppliedRecruitings(
             @NonNull User user,
+            @Nullable RecruitingStatus status,
             @NonNull Pageable pageable
     ) {
-        int safeSize = Math.min(pageable.getPageSize(), MAX_PAGE_SIZE);
-
+        int pageSize = Math.min(pageable.getPageSize(), MAX_PAGE_SIZE);
         Pageable safePageable = PageRequest.of(
                 pageable.getPageNumber(),
-                safeSize,
-                Sort.by(Sort.Direction.DESC, "submittedAt")
+                pageSize,
+                pageable.getSort().isSorted()
+                        ? pageable.getSort()
+                        : Sort.by(Sort.Direction.DESC, "submittedAt")
         );
 
-        Page<AppliedRecruitingPostListQueryResult> results =
-                applicationSubmissionRepository.findAppliedRecruitingPostListByUserId(user.getId(), safePageable);
-
-        return results.map(result -> {
-            RecruitingStatus status = calculateStatus(result.startedAt(), result.deadlineAt());
-
-            return new AppliedRecruitingPostSummaryResponse(
-                    result.submissionId(),
-                    result.category(),
-                    status,
-                    calculateStatusLabel(result.startedAt(), result.deadlineAt()),
-                    result.startedAt(),
-                    result.deadlineAt(),
-                    result.submittedAt(),
-                    new PostListResponse(
-                            result.postId(),
-                            result.title(),
-                            PostContentUtils.withEllipsis(result.contentPreview()),
-                            result.thumbnailUrl(),
-                            PostAuthorResponse.fromParts(
-                                    result.authorId(),
-                                    result.authorNickname(),
-                                    result.authorProfileImgUrl(),
-                                    result.authorDepartmentName(),
-                                    result.authorRepresentativeTrackName(),
-                                    result.authorLevelImageUrl(),
-                                    result.authorIsWithdrawn()
-                            ),
-                            result.viewCount(),
-                            result.likeCount(),
-                            result.scrapCount(),
-                            result.commentCount(),
-                            PostViewerResponse.guest(),
-                            List.of(),
-                            result.createdAt()
-                    )
-            );
-        });
-    }
-
-    private RecruitingStatus calculateStatus(Instant startedAt, Instant deadlineAt) {
         Instant now = Instant.now();
 
+        Page<AppliedRecruitingPostListQueryResult> page =
+                applicationSubmissionRepository.findAppliedRecruitingPostListByUserId(
+                        user.getId(),
+                        status,
+                        now,
+                        safePageable
+                );
+
+        return page.map(result -> new AppliedRecruitingPostSummaryResponse(
+                result.submissionId(),
+                result.category(),
+                calculateStatus(result.startedAt(), result.deadlineAt(), now),
+                calculateStatusLabel(result.startedAt(), result.deadlineAt(), now),
+                result.startedAt(),
+                result.deadlineAt(),
+                result.submittedAt(),
+                new PostListResponse(
+                        result.postId(),
+                        result.title(),
+                        PostContentUtils.withEllipsis(result.contentPreview()),
+                        result.thumbnailUrl(),
+                        PostAuthorResponse.fromParts(
+                                result.authorId(),
+                                result.authorNickname(),
+                                result.authorProfileImgUrl(),
+                                result.authorDepartmentName(),
+                                result.authorRepresentativeTrackName(),
+                                result.authorLevelImageUrl(),
+                                result.authorIsWithdrawn()
+                        ),
+                        result.viewCount(),
+                        result.likeCount(),
+                        result.scrapCount(),
+                        result.commentCount(),
+                        PostViewerResponse.guest(),
+                        List.of(),
+                        result.createdAt()
+                )
+        ));
+    }
+
+    private RecruitingStatus calculateStatus(Instant startedAt, Instant deadlineAt, Instant now) {
         if (startedAt != null && now.isBefore(startedAt)) {
             return RecruitingStatus.UPCOMING;
         }
@@ -234,9 +238,7 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
         return RecruitingStatus.OPEN;
     }
 
-    private String calculateStatusLabel(Instant startedAt, Instant deadlineAt) {
-        Instant now = Instant.now();
-
+    private String calculateStatusLabel(Instant startedAt, Instant deadlineAt, Instant now) {
         if (startedAt != null && now.isBefore(startedAt)) {
             return "모집 예정";
         }
