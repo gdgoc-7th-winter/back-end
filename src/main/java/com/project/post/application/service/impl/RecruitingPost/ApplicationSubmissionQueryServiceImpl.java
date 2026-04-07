@@ -127,7 +127,7 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
             Long departmentId,
             String applicantName,
             ApplicationSubmissionSortType sort,
-            Pageable pageable
+            @NonNull Pageable pageable
     ) {
         RecruitingPost recruitingPost = recruitingPostRepository.findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() -> new BusinessException(
@@ -171,9 +171,9 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
 
     @Override
     public Page<AppliedRecruitingPostSummaryResponse> getAppliedRecruitings(
-            User user,
+            @NonNull User user,
             @Nullable RecruitingStatus status,
-            Pageable pageable
+            @NonNull Pageable pageable
     ) {
         int pageSize = Math.min(pageable.getPageSize(), PostConstants.MAX_PAGE_SIZE);
         Pageable safePageable = PageRequest.of(
