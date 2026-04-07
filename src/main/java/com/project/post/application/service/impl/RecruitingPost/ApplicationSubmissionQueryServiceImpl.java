@@ -11,7 +11,6 @@ import com.project.post.application.dto.RecruitingPost.ApplicationSubmissionSumm
 import com.project.post.application.dto.RecruitingPost.AppliedRecruitingPostSummaryResponse;
 import com.project.post.application.service.ApplicationSubmissionQueryService;
 import com.project.post.application.util.PostContentUtils;
-import com.project.post.domain.constants.PostConstants;
 import com.project.post.domain.entity.ApplicationSubmission;
 import com.project.post.domain.entity.RecruitingApplication;
 import com.project.post.domain.entity.RecruitingApplicationAnswer;
@@ -197,8 +196,8 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
         return page.map(result -> new AppliedRecruitingPostSummaryResponse(
                 result.submissionId(),
                 result.category(),
-                calculateStatus(result.startedAt(), result.deadlineAt()),
-                calculateStatusLabel(result.startedAt(), result.deadlineAt()),
+                calculateStatus(result.startedAt(), result.deadlineAt(), now),
+                calculateStatusLabel(result.startedAt(), result.deadlineAt(), now),
                 result.startedAt(),
                 result.deadlineAt(),
                 result.submittedAt(),
@@ -227,9 +226,7 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
         ));
     }
 
-    private RecruitingStatus calculateStatus(Instant startedAt, Instant deadlineAt) {
-        Instant now = Instant.now();
-
+    private RecruitingStatus calculateStatus(Instant startedAt, Instant deadlineAt, Instant now) {
         if (startedAt != null && now.isBefore(startedAt)) {
             return RecruitingStatus.UPCOMING;
         }
@@ -241,9 +238,7 @@ public class ApplicationSubmissionQueryServiceImpl implements ApplicationSubmiss
         return RecruitingStatus.OPEN;
     }
 
-    private String calculateStatusLabel(Instant startedAt, Instant deadlineAt) {
-        Instant now = Instant.now();
-
+    private String calculateStatusLabel(Instant startedAt, Instant deadlineAt, Instant now) {
         if (startedAt != null && now.isBefore(startedAt)) {
             return "모집 예정";
         }
