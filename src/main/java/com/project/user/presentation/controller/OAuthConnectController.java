@@ -8,6 +8,7 @@ import com.project.user.application.dto.UserSession;
 import com.project.user.application.service.oauth.SocialLoginService;
 import com.project.user.presentation.swagger.OAuthControllerDocs;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,10 +34,11 @@ public class OAuthConnectController implements OAuthControllerDocs {
     public ResponseEntity<CommonResponse<Void>> loginWithProvider(
             @PathVariable @NonNull String provider,
             @RequestBody @Valid @NonNull OAuthCodeRequest request,
-            HttpServletRequest servletRequest) {
+            HttpServletRequest servletRequest,
+            HttpServletResponse servletResponse) {
 
         log.info("소셜 로그인 요청 - provider: {}", provider);
-        socialLoginService.login(provider, request.code(), request.redirectUri(), servletRequest);
+        socialLoginService.login(provider, request.code(), request.redirectUri(), servletRequest, servletResponse);
         return ResponseEntity.ok(CommonResponse.ok());
     }
 

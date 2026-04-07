@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -38,10 +39,11 @@ class OAuthConnectControllerTest {
     void loginWithProviderSuccess() {
         OAuthCodeRequest request = new OAuthCodeRequest(CODE, REDIRECT_URI);
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
+        MockHttpServletResponse servletResponse = new MockHttpServletResponse();
 
-        var response = controller.loginWithProvider("kakao", request, servletRequest);
+        var response = controller.loginWithProvider("kakao", request, servletRequest, servletResponse);
 
-        verify(socialLoginService).login("kakao", CODE, REDIRECT_URI, servletRequest);
+        verify(socialLoginService).login("kakao", CODE, REDIRECT_URI, servletRequest, servletResponse);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
@@ -50,10 +52,11 @@ class OAuthConnectControllerTest {
     void loginWithProviderPassesProviderAsIs() {
         OAuthCodeRequest request = new OAuthCodeRequest(CODE, REDIRECT_URI);
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
+        MockHttpServletResponse servletResponse = new MockHttpServletResponse();
 
-        controller.loginWithProvider("KAKAO", request, servletRequest);
+        controller.loginWithProvider("KAKAO", request, servletRequest, servletResponse);
 
-        verify(socialLoginService).login("KAKAO", CODE, REDIRECT_URI, servletRequest);
+        verify(socialLoginService).login("KAKAO", CODE, REDIRECT_URI, servletRequest, servletResponse);
     }
 
     @Test

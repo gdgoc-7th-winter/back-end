@@ -7,12 +7,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.client.ClientHttpRequestFactories;
+import org.springframework.http.client.ClientHttpRequestFactorySettings;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
@@ -52,7 +56,8 @@ public class RestClientOAuth2HttpClient implements OAuth2HttpClient {
 
         var spec = restClient.post()
                 .uri(reg.getProviderDetails().getTokenUri())
-                .header("Content-Type", "application/x-www-form-urlencoded");
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Accept", "application/json");
 
         if (!isPost) {
             String credentials = reg.getClientId() + ":" + reg.getClientSecret();
@@ -61,7 +66,14 @@ public class RestClientOAuth2HttpClient implements OAuth2HttpClient {
         }
 
         @SuppressWarnings("unchecked")
-        Map<String, Object> response = spec.body(body).retrieve().body(Map.class);
+        Map<String, Object> response = spec.body(body).retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
+                    throw new BusinessException(ErrorCode.OAUTH_PROVIDER_ERROR, "OAuth 제공자가 인가 코드를 거부했습니다.");
+                })
+                .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
+                    throw new BusinessException(ErrorCode.OAUTH_PROVIDER_ERROR, "OAuth 제공자 서버 오류가 발생했습니다.");
+                })
+                .body(Map.class);
 
         return Optional.ofNullable(response)
                 .map(r -> (String) r.get("access_token"))
@@ -75,6 +87,12 @@ public class RestClientOAuth2HttpClient implements OAuth2HttpClient {
                 .uri(reg.getProviderDetails().getUserInfoEndpoint().getUri())
                 .header("Authorization", "Bearer " + accessToken)
                 .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
+                    throw new BusinessException(ErrorCode.OAUTH_PROVIDER_ERROR, "사용자 정보를 조회할 수 없습니다.");
+                })
+                .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
+                    throw new BusinessException(ErrorCode.OAUTH_PROVIDER_ERROR, "OAuth 제공자 서버 오류가 발생했습니다.");
+                })
                 .body(Map.class);
     }
 }

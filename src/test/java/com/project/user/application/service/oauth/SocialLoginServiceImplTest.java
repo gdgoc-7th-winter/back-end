@@ -17,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Map;
@@ -69,7 +70,7 @@ class SocialLoginServiceImplTest {
         given(userRepository.findByProviderAndProviderId("KAKAO", PROVIDER_ID)).willReturn(Optional.of(user));
 
         MockHttpServletRequest request = new MockHttpServletRequest();
-        service.login(PROVIDER, CODE, REDIRECT_URI, request);
+        service.login(PROVIDER, CODE, REDIRECT_URI, request, new MockHttpServletResponse());
 
         HttpSession session = request.getSession(false);
         assertThat(session).isNotNull();
@@ -86,7 +87,7 @@ class SocialLoginServiceImplTest {
         given(oauth2HttpClient.fetchUserInfo(PROVIDER, CODE, REDIRECT_URI)).willReturn(kakaoAttrs);
         given(userRepository.findByProviderAndProviderId("KAKAO", PROVIDER_ID)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.login(PROVIDER, CODE, REDIRECT_URI, new MockHttpServletRequest()))
+        assertThatThrownBy(() -> service.login(PROVIDER, CODE, REDIRECT_URI, new MockHttpServletRequest(), new MockHttpServletResponse()))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.OAUTH_PROVIDER_ERROR);
     }
@@ -97,7 +98,7 @@ class SocialLoginServiceImplTest {
         given(oauth2HttpClient.fetchUserInfo("unknown", CODE, REDIRECT_URI))
                 .willThrow(new BusinessException(ErrorCode.INVALID_INPUT, "지원하지 않는 provider: unknown"));
 
-        assertThatThrownBy(() -> service.login("unknown", CODE, REDIRECT_URI, new MockHttpServletRequest()))
+        assertThatThrownBy(() -> service.login("unknown", CODE, REDIRECT_URI, new MockHttpServletRequest(), new MockHttpServletResponse()))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT);
     }

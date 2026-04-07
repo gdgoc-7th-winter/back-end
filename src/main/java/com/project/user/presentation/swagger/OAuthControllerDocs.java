@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
@@ -28,7 +29,8 @@ public interface OAuthControllerDocs {
             @Parameter(description = "OAuth2 provider (google, kakao, naver, github)")
             @NonNull String provider,
             @RequestBody(description = "인가 코드 및 리다이렉트 URI") @Valid @NonNull OAuthCodeRequest request,
-            HttpServletRequest servletRequest
+            HttpServletRequest servletRequest,
+            HttpServletResponse servletResponse
     );
 
     @Operation(
