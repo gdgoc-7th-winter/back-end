@@ -1,6 +1,5 @@
 package com.project.global.config;
 
-import com.project.user.domain.repository.impl.CustomAuthorizationRequestRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +24,6 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 public class SecurityConfig {
 
     private final CsrfCookieProperties csrfCookieProperties;
-    private final OAuth2ConnectSuccessHandler oAuth2ConnectSuccessHandler;
     private final CsrfAwareAccessDeniedHandler csrfAwareAccessDeniedHandler;
 
     @Bean
@@ -36,11 +34,6 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public CustomAuthorizationRequestRepository customAuthorizationRequestRepository() {
-        return new CustomAuthorizationRequestRepository();
     }
 
     @Bean
@@ -67,7 +60,7 @@ public class SecurityConfig {
                                 "/actuator/health", "/actuator/health/**", "/actuator/info",
                                 "/api/health", "/api/ping", "/api/v1/auth/**",
                                 "/swagger-ui/**", "/v3/api-docs/**", "/api/v1/users/signup", "/api/v1/users/login",
-                                "/login/oauth2/code/**"
+                                "/api/v1/oauth2/login/**"
                         );
                 })
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -84,8 +77,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/v1/users/signup", "/api/v1/users/login", "/api/v1/users/logout").permitAll()
-                        // OAuth2 로그인 시작 (비로그인 사용자도 접근 가능)
-                        .requestMatchers(HttpMethod.GET, "/api/v1/oauth2/login/**").permitAll()
+                        // OAuth2 로그인 (비로그인 사용자도 접근 가능)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/oauth2/login/**").permitAll()
                         // 정적 리소스 (테스트 UI)
                         .requestMatchers(HttpMethod.GET, "/", "/index.html", "/css/**", "/js/**").permitAll()
                         // 비로그인 허용: 학과 목록 조회
@@ -106,16 +99,6 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, authException) ->
                                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
                         .accessDeniedHandler(csrfAwareAccessDeniedHandler)
-                )
-                .oauth2Login(oauth2 -> oauth2
-                        .authorizationEndpoint(auth -> auth
-                                .authorizationRequestRepository(customAuthorizationRequestRepository())
-                        )
-                        .successHandler(oAuth2ConnectSuccessHandler)
-                        .failureHandler((request, response, exception) -> {
-                            log.error("OAuth2 Login Failed: {}", exception.getMessage());
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "OAuth2 인증 실패");
-                        })
                 )
                 .logout(AbstractHttpConfigurer::disable)
                 .build();
