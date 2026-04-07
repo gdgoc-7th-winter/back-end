@@ -1,7 +1,4 @@
 # 테스트
-piston:
-  api:
-    url: http://localhost:2000/api/v2/piston/execute
 
 cloud:
   aws:

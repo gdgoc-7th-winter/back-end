@@ -1,10 +1,8 @@
 package com.project.global.config;
 
-import com.project.user.domain.repository.impl.CustomAuthorizationRequestRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,6 +14,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 @Slf4j
@@ -24,10 +23,13 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Value("${csrf.cookie.domain:}")
-    private String csrfCookieDomain;
+    private final CsrfCookieProperties csrfCookieProperties;
+    private final CsrfAwareAccessDeniedHandler csrfAwareAccessDeniedHandler;
 
-    private final OAuth2ConnectSuccessHandler oAuth2ConnectSuccessHandler;
+    @Bean
+    public CsrfSetCookieLoggingFilter csrfSetCookieLoggingFilter() {
+        return new CsrfSetCookieLoggingFilter();
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -35,26 +37,30 @@ public class SecurityConfig {
     }
 
     @Bean
-    public CustomAuthorizationRequestRepository customAuthorizationRequestRepository() {
-        return new CustomAuthorizationRequestRepository();
-    }
-
-    @Bean
-    public SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(final HttpSecurity http,
+                                                   final CsrfSetCookieLoggingFilter csrfSetCookieLoggingFilter) throws Exception {
+        http.addFilterBefore(csrfSetCookieLoggingFilter, CsrfFilter.class);
         return http
                 .sessionManagement(session -> session.sessionFixation().changeSessionId())
                 .csrf(csrf -> {
                     CookieCsrfTokenRepository csrfRepo = CookieCsrfTokenRepository.withHttpOnlyFalse();
-                    if (!csrfCookieDomain.isBlank()) {
-                        csrfRepo.setCookieDomain(csrfCookieDomain);
-                    }
+                    csrfRepo.setCookiePath(csrfCookieProperties.path());
+                    csrfRepo.setCookieCustomizer(builder -> {
+                        String cookieDomain = csrfCookieProperties.domainForSetCookie();
+                        if (cookieDomain != null) {
+                            builder.domain(cookieDomain);
+                        }
+                        builder.path(csrfCookieProperties.path());
+                        builder.secure(csrfCookieProperties.secure());
+                        builder.sameSite(csrfCookieProperties.sameSite());
+                    });
                     csrf.csrfTokenRepository(csrfRepo)
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                         .ignoringRequestMatchers(
                                 "/actuator/health", "/actuator/health/**", "/actuator/info",
                                 "/api/health", "/api/ping", "/api/v1/auth/**",
                                 "/swagger-ui/**", "/v3/api-docs/**", "/api/v1/users/signup", "/api/v1/users/login",
-                                "/login/oauth2/code/**"
+                                "/api/v1/oauth2/login/**"
                         );
                 })
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -71,8 +77,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/v1/users/signup", "/api/v1/users/login", "/api/v1/users/logout").permitAll()
-                        // OAuth2 로그인 시작 (비로그인 사용자도 접근 가능)
-                        .requestMatchers(HttpMethod.GET, "/api/v1/oauth2/login/**").permitAll()
+                        // OAuth2 로그인 (비로그인 사용자도 접근 가능)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/oauth2/login/**").permitAll()
                         // 정적 리소스 (테스트 UI)
                         .requestMatchers(HttpMethod.GET, "/", "/index.html", "/css/**", "/js/**").permitAll()
                         // 비로그인 허용: 학과 목록 조회
@@ -92,16 +98,7 @@ public class SecurityConfig {
                 .exceptionHandling(handler -> handler
                         .authenticationEntryPoint((request, response, authException) ->
                                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
-                )
-                .oauth2Login(oauth2 -> oauth2
-                        .authorizationEndpoint(auth -> auth
-                                .authorizationRequestRepository(customAuthorizationRequestRepository())
-                        )
-                        .successHandler(oAuth2ConnectSuccessHandler)
-                        .failureHandler((request, response, exception) -> {
-                            log.error("OAuth2 Login Failed: {}", exception.getMessage());
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "OAuth2 인증 실패");
-                        })
+                        .accessDeniedHandler(csrfAwareAccessDeniedHandler)
                 )
                 .logout(AbstractHttpConfigurer::disable)
                 .build();

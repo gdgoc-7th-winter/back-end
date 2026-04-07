@@ -1,4 +1,5 @@
 # 로컬 개발용 (PostgreSQL + Redis)
+# 코드 실행 기능(Piston)은 cgroup 이슈로 인해 완전히 제거되었습니다.
 services:
   postgres:
     image: postgres:17-alpine
@@ -21,51 +22,6 @@ services:
     volumes:
       - redis-data:/data
     restart: unless-stopped
-
-  piston:
-    image: ghcr.io/engineer-man/piston
-    container_name: hufsdev-piston
-    privileged: true
-    ports:
-      - "2000:2000"
-    tmpfs:
-      - /piston/jobs
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "node", "-e", "const h=require('http');h.get('http://localhost:2000/api/v2/runtimes',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-
-  piston-init:
-    image: curlimages/curl:latest
-    container_name: hufsdev-piston-init
-    depends_on:
-      piston:
-        condition: service_healthy
-    restart: "no"
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        install() {
-          echo "Installing $$1 $$2..."
-          curl -sf -X POST http://piston:2000/api/v2/packages \
-            -H 'Content-Type: application/json' \
-            -d "{\"language\":\"$$1\",\"version\":\"$$2\"}" && echo "OK: $$1 $$2" || echo "SKIP: $$1 $$2"
-        }
-        install python     3.10.0
-        install java       15.0.2
-        install c++        10.2.0
-        install c          10.2.0
-        install javascript 18.15.0
-        install typescript 5.0.3
-        install go         1.16.2
-        install kotlin     1.8.20
-        install swift      5.3.3
-        install rust       1.50.0
-        install ruby       3.0.1
-        echo "Piston package installation complete."
 
 volumes:
   postgres-data:
