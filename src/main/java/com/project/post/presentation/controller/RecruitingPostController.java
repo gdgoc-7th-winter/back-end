@@ -170,7 +170,7 @@ public class RecruitingPostController implements RecruitingPostControllerDocs {
         return CommonResponse.ok();
     }
 
-    @GetMapping("/recruitings/me")
+    @GetMapping("/me/recruitings")
     public CommonResponse<Page<MyRecruitingPostSummaryResponse>> getMyRecruitingPosts(
             @RequestParam(required = false) RecruitingCategory category,
             @RequestParam(required = false) RecruitingStatus status,
@@ -187,7 +187,7 @@ public class RecruitingPostController implements RecruitingPostControllerDocs {
         );
     }
 
-    @GetMapping("/recruitings/applied")
+    @GetMapping("/me/recruitings/applied")
     public CommonResponse<Page<AppliedRecruitingPostSummaryResponse>> getAppliedRecruitings(
             @RequestParam(required = false) RecruitingStatus status,
             Pageable pageable,
