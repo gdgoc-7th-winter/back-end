@@ -58,7 +58,7 @@ public class SocialLoginServiceImpl implements SocialLoginService {
         request.changeSessionId();
 
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
-                user.getEmail(), null, List.of(new SimpleGrantedAuthority(user.getAuthority().name())));
+                user.getEmail(), null, List.of(new SimpleGrantedAuthority("ROLE_" + user.getAuthority().name())));
 
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(token);
