@@ -39,19 +39,18 @@ public class SocialLoginServiceImpl implements SocialLoginService {
 
         User user = userRepository.findByProviderAndProviderId(provider.toUpperCase(), attrs.providerId())
                 .orElseThrow(() -> {
-                    log.warn("연동된 계정이 없음 - provider: {}, providerId: {}", provider, attrs.providerId());
+                    log.warn("연동된 계정이 없음 - provider: {}", provider);
                     return new BusinessException(ErrorCode.OAUTH_PROVIDER_ERROR, "연동된 계정이 없습니다.");
                 });
 
         createSession(user, request, response);
-        log.info("소셜 로그인 완료 - provider: {}, userId: {}", provider, user.getId());
+        log.info("소셜 로그인 완료 - provider: {}", provider);
     }
 
     @Override
     public void connect(Long userId, String provider, String code, String redirectUri) {
         OAuthAttributes attrs = oauth2HttpClient.fetchUserInfo(provider, code, redirectUri);
         userService.linkSocialAccount(userId, provider.toUpperCase(), attrs.email(), attrs.providerId());
-        log.info("소셜 계정 연동 완료 - provider: {}, userId: {}", provider, userId);
     }
 
     private void createSession(User user, HttpServletRequest request, HttpServletResponse response) {
@@ -73,6 +72,5 @@ public class SocialLoginServiceImpl implements SocialLoginService {
                 .build();
 
         request.getSession().setAttribute("LOGIN_USER", userSession);
-        log.info("세션 생성 완료: {}", user.getEmail());
     }
 }
