@@ -19,8 +19,19 @@ public interface OAuthControllerDocs {
     @Operation(
             summary = "소셜 로그인",
             description = "프론트엔드에서 OAuth2 인가 코드를 발급받은 후 백엔드로 전달합니다. "
-                    + "백엔드가 액세스 토큰 교환 및 사용자 정보 조회를 수행하고 세션을 생성합니다. "
-                    + "지원 provider: google, kakao, naver, github"
+                    + "백엔드가 액세스 토큰 교환 및 사용자 정보 조회를 수행하고 세션을 생성합니다.\n\n"
+                    + "**지원 provider 및 인가 코드 발급 URL**\n\n"
+                    + "프론트엔드는 아래 URL로 사용자를 리디렉트하여 인가 코드를 발급받아야 합니다. "
+                    + "`redirect_uri`는 프론트엔드 콜백 URL이며, 각 provider 개발자 콘솔에 사전 등록되어 있어야 합니다.\n\n"
+                    + "- **google**: `https://accounts.google.com/o/oauth2/v2/auth`"
+                    + "  — client_id: `1096799300976-akog0e37c0ts18paibhgqk05c3bcitl9.apps.googleusercontent.com`, scope: `email`\n"
+                    + "- **kakao**: `https://kauth.kakao.com/oauth/authorize`"
+                    + "  — client_id: `5a4a147f9196dfeedbdd0bcf71194453`, scope: `account_email`\n"
+                    + "- **naver**: `https://nid.naver.com/oauth2.0/authorize`"
+                    + "  — client_id: `5xH3uG86WYk52uKfr_tl`, scope: `email`\n"
+                    + "- **github**: `https://github.com/login/oauth/authorize`"
+                    + "  — client_id: `Iv23linXPNfeihww9K3G`, scope: `read:user user:email`\n\n"
+                    + "공통 파라미터: `response_type=code`, `redirect_uri={프론트엔드 콜백 URI}`"
     )
     @ApiResponse(responseCode = "200", description = "로그인 성공 (세션 생성됨)")
     @ApiResponse(responseCode = "400", description = "잘못된 provider 또는 인가 코드")
@@ -37,7 +48,7 @@ public interface OAuthControllerDocs {
             summary = "소셜 계정 연동",
             description = "로그인된 사용자의 계정에 소셜 로그인 수단을 추가합니다. "
                     + "프론트엔드에서 OAuth2 인가 코드를 발급받은 후 백엔드로 전달합니다. "
-                    + "지원 provider: google, kakao, naver, github"
+                    + "인가 코드 발급 URL 및 client_id는 소셜 로그인 API 설명을 참고하세요."
     )
     @ApiResponse(responseCode = "200", description = "연동 성공")
     @ApiResponse(responseCode = "404", description = "세션 만료 또는 사용자 없음")
