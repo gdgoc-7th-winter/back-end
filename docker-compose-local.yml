@@ -1,6 +1,5 @@
 # 로컬 개발용 (PostgreSQL + Redis)
-# Piston 코드 실행은 퍼블릭 API(application-local.yml의 piston.api.url)를 사용합니다.
-# cgroup 이슈로 인해 로컬 Docker 실행을 제거하였습니다.
+# 코드 실행 기능(Piston)은 cgroup 이슈로 인해 완전히 제거되었습니다.
 services:
   postgres:
     image: postgres:17-alpine
