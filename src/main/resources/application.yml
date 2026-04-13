@@ -49,6 +49,11 @@ spring:
     redis:
       namespace: "{hufsdev:session}"
 
+ranking:
+  max-page-size: 100
+  default-page-size: 20
+  use-window-rank-sql: true
+
 contribution:
   outbox:
     poll-interval-ms: 500
