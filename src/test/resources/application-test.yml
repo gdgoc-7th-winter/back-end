@@ -16,6 +16,9 @@ contribution:
   outbox:
     use-skip-locked: false
 
+ranking:
+  use-window-rank-sql: false
+
 cors:
   allowed-origins:
     - http://localhost:5173

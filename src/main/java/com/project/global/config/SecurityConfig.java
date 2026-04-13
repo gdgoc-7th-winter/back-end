@@ -92,6 +92,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/lectures/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/promotions").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/promotions/{postId}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/rankings").permitAll()
                         // 그 외 모든 요청은 인증 필요 (Redis 세션 기반 인증 적용 예정)
                         .anyRequest().authenticated()
                 )
