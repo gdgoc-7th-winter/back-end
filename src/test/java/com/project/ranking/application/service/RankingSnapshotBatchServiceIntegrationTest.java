@@ -38,7 +38,7 @@ class RankingSnapshotBatchServiceIntegrationTest {
     private ContributionOutboxStaleReclaimer contributionOutboxStaleReclaimer;
 
     @Autowired
-    private RankingSnapshotBatchService batchService;
+    private RankingSnapshotRebuildService snapshotRebuildService;
 
     @Autowired
     private UserRepository userRepository;
@@ -66,8 +66,8 @@ class RankingSnapshotBatchServiceIntegrationTest {
         User u3 = persistUser(badge, 50);
 
         Instant t = Instant.parse("2026-04-01T00:00:00Z");
-        batchService.rebuildAllTime(t);
-        batchService.rebuildAllTime(t);
+        snapshotRebuildService.rebuildAllTime(t);
+        snapshotRebuildService.rebuildAllTime(t);
 
         List<Integer> ranks = jdbcTemplate.query(
                 """
@@ -86,11 +86,11 @@ class RankingSnapshotBatchServiceIntegrationTest {
         persistUser(badge, 10);
 
         Instant t = Instant.now();
-        batchService.rebuildAllTime(t);
+        snapshotRebuildService.rebuildAllTime(t);
         long c = countAllTimeRows();
         assertThat(c).isEqualTo(1L);
 
-        batchService.rebuildAllTime(t);
+        snapshotRebuildService.rebuildAllTime(t);
         assertThat(countAllTimeRows()).isEqualTo(c);
     }
 
@@ -133,7 +133,7 @@ class RankingSnapshotBatchServiceIntegrationTest {
                 java.sql.Timestamp.from(end.plusSeconds(1)),
                 "wk2-" + UUID.randomUUID());
 
-        batchService.rebuildWeekly(weekKey, start, end, Instant.now());
+        snapshotRebuildService.rebuildWeekly(weekKey, start, end, Instant.now());
 
         Long score = jdbcTemplate.queryForObject(
                 "SELECT score FROM ranking_snapshot WHERE period_type = 'WEEKLY' AND period_key = ? AND user_id = ?",

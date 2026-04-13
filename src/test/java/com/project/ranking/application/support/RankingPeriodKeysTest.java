@@ -34,6 +34,23 @@ class RankingPeriodKeysTest {
     }
 
     @Test
+    @DisplayName("주차 0 또는 54 이상은 예외")
+    void weekNumberOutOfRange() {
+        assertThatThrownBy(() -> RankingPeriodKeys.parseWeekMondayOrThrow("2026-W00"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> RankingPeriodKeys.parseWeekMondayOrThrow("2026-W54"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("ISO 주차와 week-based year가 어긋나면 round-trip 실패(예: 1995-W53 → 1996-W01)")
+    void weekKeyMustMatchNormalizedForm() {
+        assertThatThrownBy(() -> RankingPeriodKeys.parseWeekMondayOrThrow("1995-W53"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("정규 형식");
+    }
+
+    @Test
     @DisplayName("월 키 파싱")
     void monthKey() {
         assertThat(RankingPeriodKeys.parseYearMonthOrThrow("2026-03")).isEqualTo(YearMonth.of(2026, 3));

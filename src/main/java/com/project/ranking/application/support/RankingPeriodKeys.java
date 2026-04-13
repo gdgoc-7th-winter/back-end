@@ -1,5 +1,6 @@
 package com.project.ranking.application.support;
 
+import java.time.DateTimeException;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -48,16 +49,32 @@ public final class RankingPeriodKeys {
         return ym.format(MONTH_FMT);
     }
 
+    /**
+     * {@code YYYY-Www} ISO 주차 키를 검증하고 해당 주의 월요일을 반환한다.
+     * 주차 번호는 1~53이며, 파싱 후 {@link #formatWeekKey(LocalDate)}로 직렬화했을 때 입력과 동일해야 한다.
+     */
     public static LocalDate parseWeekMondayOrThrow(String periodKey) {
         if (!WEEK_KEY.matcher(periodKey).matches()) {
             throw new IllegalArgumentException("WEEKLY period_key은 YYYY-Www 형식이어야 합니다: " + periodKey);
         }
-        int y = Integer.parseInt(periodKey.substring(0, 4));
         int w = Integer.parseInt(periodKey.substring(6));
+        if (w < 1 || w > 53) {
+            throw new IllegalArgumentException("WEEKLY period_key의 주차는 1~53이어야 합니다: " + periodKey);
+        }
+        int y = Integer.parseInt(periodKey.substring(0, 4));
         LocalDate anchor = LocalDate.of(y, 1, 4);
-        return anchor
-                .with(ISO_WEEK.weekOfWeekBasedYear(), w)
-                .with(DayOfWeek.MONDAY);
+        LocalDate monday;
+        try {
+            monday = anchor.with(ISO_WEEK.weekOfWeekBasedYear(), w).with(DayOfWeek.MONDAY);
+        } catch (DateTimeException e) {
+            throw new IllegalArgumentException("유효하지 않은 ISO 주차입니다: " + periodKey, e);
+        }
+        String normalized = formatWeekKey(monday);
+        if (!periodKey.equals(normalized)) {
+            throw new IllegalArgumentException(
+                    "WEEKLY period_key가 정규 형식이 아닙니다. 입력=" + periodKey + ", 정규화=" + normalized);
+        }
+        return monday;
     }
 
     public static YearMonth parseYearMonthOrThrow(String periodKey) {

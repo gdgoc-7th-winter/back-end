@@ -13,7 +13,9 @@ import java.time.Instant;
 /**
  * 배치용 네이티브 SQL — 집계 후 순위 부여·스테이징→본 테이블 프로모션.
  * <p>
- * 운영(PostgreSQL)은 {@code RANK() OVER (ORDER BY score DESC, user_id ASC)}(설정 기본).
+ * 트랜잭션 경계는 호출하는 {@link com.project.ranking.application.service.RankingSnapshotRebuildService}에서 잡는다.
+ * <p>
+ * 운영(PostgreSQL)은 {@code RANK() OVER (ORDER BY score DESC)}(설정 기본).
  * H2 통합 테스트는 {@link RankingProperties#isUseWindowRankSql()} 가 false일 때 동점에 표준 {@code RANK}와 동일한 식을 쓴다.
  */
 @Repository
@@ -78,7 +80,7 @@ public class RankingSnapshotJdbcRepository {
 
     /**
      * 본 테이블에서 해당 기간 행을 삭제한 뒤 스테이징에서 복사한다.
-     * 호출부({@code RankingSnapshotBatchService}의 {@code @Transactional})와 같은 트랜잭션에서 실행되어야 한다.
+     * 호출부({@code RankingSnapshotRebuildService}의 {@code @Transactional})와 같은 트랜잭션에서 실행되어야 한다.
      */
     public void promoteStagingToMain(RankingPeriodType periodType, String periodKey) {
         MapSqlParameterSource p = new MapSqlParameterSource()

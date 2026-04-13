@@ -38,7 +38,7 @@ class RankingQueryServiceIntegrationTest {
     private ContributionOutboxStaleReclaimer contributionOutboxStaleReclaimer;
 
     @Autowired
-    private RankingSnapshotBatchService batchService;
+    private RankingSnapshotRebuildService snapshotRebuildService;
 
     @Autowired
     private RankingQueryService rankingQueryService;
@@ -68,7 +68,7 @@ class RankingQueryServiceIntegrationTest {
         User active = persistUser(badge, 10);
         User withdrawn = persistUser(badge, 20);
 
-        batchService.rebuildAllTime(Instant.now());
+        snapshotRebuildService.rebuildAllTime(Instant.now());
 
         RankingListResponse before = rankingQueryService.list(RankingPeriodType.ALL_TIME, "ALL", 0, 10, null);
         assertThat(before.page().totalElements()).isEqualTo(2L);
@@ -91,7 +91,7 @@ class RankingQueryServiceIntegrationTest {
         persistUser(badge, 100);
         persistUser(badge, 100);
 
-        batchService.rebuildAllTime(Instant.now());
+        snapshotRebuildService.rebuildAllTime(Instant.now());
 
         RankingListResponse res = rankingQueryService.list(RankingPeriodType.ALL_TIME, "ALL", 0, 10, null);
         assertThat(res.content().get(0).displayRank()).isEqualTo(1);

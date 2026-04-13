@@ -21,10 +21,14 @@ public class RankingBatchScheduler {
 
     @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Seoul")
     public void runDailyRankingBatch() {
+        Instant calculatedAt = Instant.now();
         try {
-            rankingSnapshotBatchService.runDailySnapshotBatch(Instant.now());
+            rankingSnapshotBatchService.runDailySnapshotBatch(calculatedAt);
         } catch (Exception e) {
-            log.error("랭킹 스냅샷 배치 실패", e);
+            log.error(
+                    "랭킹 스냅샷 배치(일일) 실패 calculatedAt={} — 상세는 기간별 로그 또는 스택트레이스 참고",
+                    calculatedAt,
+                    e);
         }
     }
 }
